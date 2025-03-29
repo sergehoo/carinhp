@@ -1,0 +1,420 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load unicorn %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+				<!--begin::Content-->
+
+
+<div class="container">
+    <!-- Détails du Patient -->
+    <div class="card card-custom gutter-b">
+        <div class="card-body">
+            <!-- Informations générales -->                             <a href="{% url 'exposition_list' %}" class="btn btn-secondary float-right"><i class="fa fa-arrow-left"></i>Retour</a>
+
+            <div class="d-flex mb-9">
+                <!-- Avatar -->
+                <div class="flex-shrink-0 mr-7 mt-lg-0 mt-3">
+                    <div class="symbol symbol-50 symbol-lg-120">
+                        <img src="{% static 'assets/media/users/300_1.jpg' %}" alt="image"/>
+                    </div>
+
+                </div>
+
+                <!-- Détails du patient -->
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between flex-wrap mt-1">
+                        <div class="d-flex mr-3">
+                            <h3 class="text-dark font-weight-bold mr-3">{{ exposition.patient.prenoms }} {{ exposition.patient.nom }}</h3>
+                            <i class="flaticon2-correct text-success font-size-h5"></i>
+
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap mt-2">
+                        <p class="mr-4"><i class="flaticon2-phone text-primary"></i> <strong>Téléphone:</strong> {{ exposition.patient.telephone }}</p>
+                        <p class="mr-4"><i class="flaticon2-placeholder text-primary"></i> <strong>Adresse:</strong> {{ exposition.patient.lieu_habitation|default:"Non renseigné" }}</p>
+                        <p class="mr-4"><i class="flaticon2-calendar-3 text-primary"></i> <strong>Âge:</strong> {{ exposition.patient.calculate_age }}</p>
+                        <p class="mr-4"><i class="flaticon2-user text-primary"></i> <strong>Genre:</strong> {{ exposition.patient.get_genre_display }}</p>
+                    </div>
+
+                    <button data-toggle="modal" data-target="#symptomes" class="btn btn-secondary ml-5">Symptomes</button>
+                    <button data-toggle="modal" data-target="#symptomes" class="btn btn-secondary ml-5">Episode actuel</button>
+                    <button data-toggle="modal" data-target="#prelevement" class="btn btn-secondary ml-5">Prélèvement</button>
+                    <button data-toggle="modal" data-target="#prelevement" class="btn btn-secondary ml-5">Antécédent</button>
+                    <button data-toggle="modal" data-target="#protocole" class="btn btn-warning ml-5"> Protocole</button>
+                </div>
+                <!-- Modal  symptomes-->
+                <div class="modal fade" id="symptomes" data-backdrop="static" tabindex="-1" role="dialog"
+                     aria-labelledby="staticBackdrop" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">Modal Title</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <i aria-hidden="true" class="ki ki-close"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                ...
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light-primary font-weight-bold"
+                                        data-dismiss="modal">Close
+                                </button>
+                                <button type="button" class="btn btn-primary font-weight-bold">Save changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <!-- Modal  prelevement-->
+<div class="modal fade" id="prelevement" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal Title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i aria-hidden="true" class="ki ki-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary font-weight-bold">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+           <!-- Modal protocole-->
+<div class="modal fade" id="protocole" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Ajout de Procolole de traitmentt</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i aria-hidden="true" class="ki ki-close"></i>
+                </button>
+            </div>
+            <form method="post" action="{% url 'ajout-protocole-expo' exposition_id=exposition.id %}">
+            <div class="modal-body">
+
+                    {% csrf_token %}
+                    {{ protocolefrom.as_p }}
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-danger font-weight-bold" data-dismiss="modal">Fermer</button>
+                <button type="submit" class="btn btn-primary font-weight-bold ml-5">Creer</button>
+            </div></form>
+        </div>
+    </div>
+</div>
+            </div>
+
+            <div class="separator separator-solid"></div>
+
+            <!-- Détails de l'Exposition -->
+             <div class="row">
+                 <div class="col-5">
+            <div class="mt-8">
+                <h3 class="card-title font-weight-bolder text-dark">Détails de l'Exposition</h3>
+                <div class="table-responsive">
+                    <table class="table table-vertical-center ">
+                        <tbody>
+                            <tr><th>Date</th><td>{{ exposition.date_exposition }}</td></tr>
+                            <tr><th>Lieu</th><td>{{ exposition.lieu_exposition }}</td></tr>
+                            <tr><th>Commune</th><td>{{ exposition.commune }}</td></tr>
+                            <tr><th>Quartier</th><td>{{ exposition.quartier }}</td></tr>
+                            <tr><th>Type d'Exposition</th><td>{{ exposition.get_type_exposition_display }}</td></tr>
+                            <tr><th>Animal concerné</th><td>{{ exposition.get_animal_concerne_display }}</td></tr>
+                            <tr><th>Circonstance</th><td>{{ exposition.circonstance }}</td></tr>
+                            <tr><th>Nature de l'exposition</th><td>{{ exposition.nature_exposition }}</td></tr>
+                            <tr><th>Siège de l'exposition</th><td>{{ exposition.siege_exposition }}</td></tr>
+                            <tr><th>Saignement immédiat</th><td>{{ exposition.saignement_immediat|yesno:"Oui,Non" }}</td></tr>
+                            <tr><th>Vêtements présents</th><td>{{ exposition.vetements_presents|yesno:"Oui,Non" }}</td></tr>
+                            <tr><th>État des vêtements</th><td>{{ exposition.get_vetements_etat_display|default:"-" }}</td></tr>
+                            <tr><th>Nombre de lésions</th><td>{{ exposition.nombre_lesions|default:"-" }}</td></tr>
+                            <tr><th>Gravité des lésions</th><td>{{ exposition.get_gravite_lesions_display|default:"-" }}</td></tr>
+                            <tr><th>Prise en charge</th><td>{{ exposition.prise_en_charge|yesno:"Oui,Non" }}</td></tr>
+                            <tr><th>Traitements administrés</th><td>{{ exposition.traitements_administres|default:"-" }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+                 </div>
+                 <div class="col-6 ml-15">
+                     <div class="row">
+                         <div class="mt-8">
+                             <h3 class="card-title font-weight-bolder text-dark">Symptomes</h3>
+                             <div class="table-responsive">
+                                 <div class="table-responsive">
+                                     <table class="table table-vertical-center">
+                                         <thead class="bg-light">
+                                         <tr class="align-center text-center">
+                                             <th class="p-0" style="width: 50px">#</th>
+                                             <th class="p-0" style="width: 20px">Date</th>
+                                             <th class="p-0" style="min-width: 100px">Type</th>
+                                             <th class="p-0" style="min-width: 30px">Nbr doses</th>
+                                             <th class="p-0" style="min-width: 30px">Intervalle</th>
+                                             <th class="p-0" style="min-width: 50px">Voie</th>
+                                             <th class="p-0" style="min-width: 20px">Durée (jours)</th>
+                                         </tr>
+                                         </thead>
+                                         <tbody class="text-center">
+{#                                         {% for protocole in protocoles_vaccination %}#}
+{#                                             <tr>#}
+{#                                                 <td class="pl-0 py-4">{{ forloop.counter }}</td>#}
+{#                                                 <td class="pl-0 py-4">{{ protocole.created_at|date:'j/m/y' }}</td>#}
+{#                                                 <td>{{ protocole.get_nom_display }}</td>#}
+{#                                                 <td>{{ protocole.nombre_doses }}</td>#}
+{#                                                 <td>{{ protocole.intervale_jours }}</td>#}
+{#                                                 <td>{{ protocole.get_voie_administration_display }}</td>#}
+{#                                                 <td>{{ protocole.duree|default:"-" }}</td>#}
+{#                                             </tr>#}
+{#                                         {% empty %}#}
+{#                                             <tr>#}
+{#                                                 <td colspan="6" class="text-center text-muted">Aucun protocole#}
+{#                                                     enregistré pour ce patient.#}
+{#                                                 </td>#}
+{#                                             </tr>#}
+{#                                         {% endfor %}#}
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="mt-8">
+                             <h3 class="card-title font-weight-bolder text-dark">Episode actuel</h3>
+                             <div class="table-responsive">
+                                 <div class="table-responsive">
+                                     <table class="table table-vertical-center">
+                                         <thead class="bg-light">
+                                         <tr class="align-center text-center">
+                                             <th class="p-0" style="width: 50px">#</th>
+                                             <th class="p-0" style="width: 20px">Date</th>
+                                             <th class="p-0" style="min-width: 100px">Type</th>
+                                             <th class="p-0" style="min-width: 30px">Nbr doses</th>
+                                             <th class="p-0" style="min-width: 30px">Intervalle</th>
+                                             <th class="p-0" style="min-width: 50px">Voie</th>
+                                             <th class="p-0" style="min-width: 20px">Durée (jours)</th>
+                                         </tr>
+                                         </thead>
+                                         <tbody class="text-center">
+{#                                         {% for protocole in protocoles_vaccination %}#}
+{#                                             <tr>#}
+{#                                                 <td class="pl-0 py-4">{{ forloop.counter }}</td>#}
+{#                                                 <td class="pl-0 py-4">{{ protocole.created_at|date:'j/m/y' }}</td>#}
+{#                                                 <td>{{ protocole.get_nom_display }}</td>#}
+{#                                                 <td>{{ protocole.nombre_doses }}</td>#}
+{#                                                 <td>{{ protocole.intervale_jours }}</td>#}
+{#                                                 <td>{{ protocole.get_voie_administration_display }}</td>#}
+{#                                                 <td>{{ protocole.duree|default:"-" }}</td>#}
+{#                                             </tr>#}
+{#                                         {% empty %}#}
+{#                                             <tr>#}
+{#                                                 <td colspan="6" class="text-center text-muted">Aucun protocole#}
+{#                                                     enregistré pour ce patient.#}
+{#                                                 </td>#}
+{#                                             </tr>#}
+{#                                         {% endfor %}#}
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="mt-8">
+                             <h3 class="card-title font-weight-bolder text-dark">Prélèvements</h3>
+                             <div class="table-responsive">
+                                 <div class="table-responsive">
+                                     <table class="table table-vertical-center">
+                                         <thead class="bg-light">
+                                         <tr class="align-center text-center">
+                                             <th class="p-0" style="width: 50px">#</th>
+                                             <th class="p-0" style="width: 20px">Date</th>
+                                             <th class="p-0" style="min-width: 100px">Type</th>
+                                             <th class="p-0" style="min-width: 30px">Nbr doses</th>
+                                             <th class="p-0" style="min-width: 30px">Intervalle</th>
+                                             <th class="p-0" style="min-width: 50px">Voie</th>
+                                             <th class="p-0" style="min-width: 20px">Durée (jours)</th>
+                                         </tr>
+                                         </thead>
+                                         <tbody class="text-center">
+{#                                         {% for protocole in protocoles_vaccination %}#}
+{#                                             <tr>#}
+{#                                                 <td class="pl-0 py-4">{{ forloop.counter }}</td>#}
+{#                                                 <td class="pl-0 py-4">{{ protocole.created_at|date:'j/m/y' }}</td>#}
+{#                                                 <td>{{ protocole.get_nom_display }}</td>#}
+{#                                                 <td>{{ protocole.nombre_doses }}</td>#}
+{#                                                 <td>{{ protocole.intervale_jours }}</td>#}
+{#                                                 <td>{{ protocole.get_voie_administration_display }}</td>#}
+{#                                                 <td>{{ protocole.duree|default:"-" }}</td>#}
+{#                                             </tr>#}
+{#                                         {% empty %}#}
+{#                                             <tr>#}
+{#                                                 <td colspan="6" class="text-center text-muted">Aucun protocole#}
+{#                                                     enregistré pour ce patient.#}
+{#                                                 </td>#}
+{#                                             </tr>#}
+{#                                         {% endfor %}#}
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+             </div>
+<div class="separator separator-solid mt-8"></div>
+        <h3 class="card-title font-weight-bolder text-dark mt-5">Protocole de vaccination</h3>
+        <div class="card-body">
+        <div class="row">
+
+                         {% if protocoles_vaccination %}
+
+                             {% for protocole in protocoles_vaccination %}
+                                 {% if protocole.nom.nom_protocole == 'Pré-exposition' %}
+                                 <div class="col-lg-6 mb-5 ">
+                                     <!--begin::Card-->
+                                     <div class="card card-custom card-stretch bg-primary">
+                                         <div class="card-header">
+                                             <div class="card-title">
+                                                 <h3 class="card-label">Protocole {{ protocole.nom.nom_protocole}}
+                                                 </h3>
+                                             </div>
+                                         </div>
+                                         <div class="card-body">
+                                             <div class="mb-4">
+                                                 <p class="">
+                                                     <strong>Date :</strong> {{ protocole.created_at }}
+                                                     <br>
+                                                     <strong>Nombre de doses :</strong> {{ protocole.nombre_doses }}
+                                                     <br>
+                                                     <strong>Intervalle :</strong> {{ protocole.intervale_jours }} <br>
+                                                     <strong>Voie
+                                                         :</strong> {{ protocole.get_voie_administration_display }} <br>
+                                                     <strong>Durée :</strong> {{ protocole.duree|default:"-" }} jours
+                                                 </p>
+                                                 <hr>
+                                             </div>
+
+                                         </div>
+                                     </div>
+                                     <!--end::Card-->
+                                 </div>
+                                 {% else %}
+                                     <div class="col-lg-6">
+                                     <!--begin::Card-->
+                                     <div class="card card-custom card-stretch bg-warning">
+                                         <div class="card-header">
+                                             <div class="card-title">
+                                                 <h3 class="card-label">Protocole {{ protocole.nom.nom_protocole }}
+                                                 </h3>
+                                             </div>
+                                         </div>
+                                         <div class="card-body">
+                                             <div class="mb-4">
+                                                 <p class="">
+                                                     <strong>Date :</strong> {{ protocole.created_at }}
+                                                     <br>
+                                                     <strong>Nombre de doses :</strong> {{ protocole.nombre_doses }}
+                                                     <br>
+                                                     <strong>Intervalle :</strong> {{ protocole.intervale_jours }} <br>
+                                                     <strong>Voie
+                                                         :</strong> {{ protocole.get_voie_administration_display }} <br>
+                                                     <strong>Durée :</strong> {{ protocole.duree|default:"-" }} jours
+                                                 </p>
+                                                 <hr>
+                                             </div>
+
+                                         </div>
+                                     </div>
+                                     <!--end::Card-->
+                                 </div>
+                                 {% endif %}
+                             {% endfor %}
+                         {% else %}
+                             <p class="text-center text-muted">Aucun protocole disponible.</p>
+                         {% endif %}
+        </div>
+             </div>
+
+        <div class="separator separator-solid mt-8"></div>
+                 <div class="row">
+                 <div class="col-12">
+                     <div class="mt-8">
+                         <h3 class="card-title font-weight-bolder text-dark">Rendez-vous vaccination</h3>
+                         <div class="table-responsive">
+                             <div class="table-responsive">
+                                 <table class="table table-vertical-center">
+                                     <thead class="bg-light">
+                                     <tr class="align-center text-center">
+                                         <th class="p-0" style="width: 50px">#</th>
+                                         <th class="p-0" style="width: 20px">Date</th>
+                                         <th class="p-0" style="min-width: 100px">Type</th>
+                                         <th class="p-0" style="min-width: 30px">Date Rendez-vous</th>
+                                         <th class="p-0" style="min-width: 30px">Numero dose</th>
+                                         <th class="p-0" style="min-width: 50px">Statut</th>
+{#                                         <th class="p-0" style="min-width: 20px">Durée (jours)</th>#}
+                                     </tr>
+                                     </thead>
+                                     <tbody class="text-center">
+                                     {% for rdv in rdvvaccin %}
+                                         <tr>
+                                             <td class="pl-0 py-4">{{ forloop.counter }}</td>
+                                             <td class="pl-0 py-4">{{ rdv.created_at|date:'j/m/y' }}</td>
+                                             <td>{{ rdv.exposition }}</td>
+                                             <td>{{ rdv.date_rendez_vous }}</td>
+                                             <td>{{ rdv.dose_numero }}</td>
+                                             <td>{{ rdv.est_effectue }}</td>
+{#                                             <td>{{ protocole.duree|default:"-" }}</td>#}
+                                         </tr>
+                                     {% empty %}
+                                         <tr>
+                                             <td colspan="6" class="text-center text-muted">Aucun protocole enregistré
+                                                 pour ce patient.
+                                             </td>
+                                         </tr>
+                                     {% endfor %}
+                                     </tbody>
+                                 </table>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+                 </div>
+</div>
+
+
+
+				<!--end::Content-->
+
+				<!--begin::Footer-->
+<!--doc: add "bg-white" class to have footer with solod background color-->
+<div class="footer py-4 d-flex flex-lg-column " id="kt_footer">
+	<!--begin::Container-->
+	<div class=" container  d-flex flex-column flex-md-row align-items-center justify-content-between">
+		<!--begin::Copyright-->
+		<div class="text-dark order-2 order-md-1">
+			<span class="text-muted font-weight-bold mr-2">2020&copy;</span>
+			<a href="http://keenthemes.com/metronic" target="_blank" class="text-dark-75 text-hover-primary">Keenthemes</a>
+		</div>
+		<!--end::Copyright-->
+
+		<!--begin::Nav-->
+		<div class="nav nav-dark order-1 order-md-2">
+			<a href="http://keenthemes.com/metronic" target="_blank" class="nav-link pr-3 pl-0">About</a>
+			<a href="http://keenthemes.com/metronic" target="_blank" class="nav-link px-3">Team</a>
+			<a href="http://keenthemes.com/metronic" target="_blank" class="nav-link pl-3 pr-0">Contact</a>
+		</div>
+		<!--end::Nav-->
+	</div>
+	<!--end::Container-->
+</div>
+<!--end::Footer-->
+			</div>
+{% endblock %}

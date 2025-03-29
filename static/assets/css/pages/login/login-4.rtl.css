@@ -72,9 +72,9 @@
           transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, -webkit-box-shadow 0.15s ease;
           transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
           transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, -webkit-box-shadow 0.15s ease;
-          background-color: #E1F0FF; }
+          background-color: #C9F7F5; }
           .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="done"] .wizard-icon .wizard-check {
-            color: #3699FF;
+            color: #1BC5BD;
             display: inline-block; }
           .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="done"] .wizard-icon .wizard-number {
             display: none; }
@@ -92,12 +92,12 @@
             transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, -webkit-box-shadow 0.15s ease;
             transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
             transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, -webkit-box-shadow 0.15s ease;
-            background-color: #E1F0FF; }
+            background-color: #C9F7F5; }
             .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="current"] .wizard-icon .wizard-check {
-              color: #3699FF;
+              color: #1BC5BD;
               display: none; }
             .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="current"] .wizard-icon .wizard-number {
-              color: #3699FF; }
+              color: #1BC5BD; }
           .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="current"] .wizard-label .wizard-title {
             color: #181C32; }
           .login.login-4 .login-container .login-content .wizard-nav .wizard-steps .wizard-step[data-wizard-state="current"] .wizard-label .wizard-desc {

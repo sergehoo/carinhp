@@ -1,10 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+<!-- Bouton pour ouvrir le modal -->
+{% if not record.est_effectue %}
+    <button type="button" class="btn btn-warning btn-icon btn-xs" data-toggle="modal" data-target="#vaccinerModal{{ record.id }}">
+        <i class="fas fa-money-bill mr-2"></i>
+    </button>
+{% else %}
+{#    <span class="badge badge-success">Effectué</span>#}
+{% endif %}
+
+<!-- Modal Vaccination -->
+<div class="modal fade" id="vaccinerModal{{ record.id }}" tabindex="-1" role="dialog" aria-labelledby="vaccinerLabel{{ record.id }}" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vaccinerLabel{{ record.id }}">Paiement du patient {{ record.patient.nom }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form method="post" action="{% url 'effectuer_paiement' record.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ paiement_form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-primary">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton pour voir les détails -->
+<a href="{% url 'detail_rendez_vous' record.pk %}" class="btn btn-icon btn-info btn-xs">
+    <i class="fa fa-list-alt"></i>
+</a>

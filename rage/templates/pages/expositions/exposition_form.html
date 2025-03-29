@@ -1,0 +1,113 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load unicorn %}
+
+{% block content %}
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <div class="d-flex flex-column-fluid">
+                <!--begin::Container-->
+                <div class=" container ">
+                    <!--begin::Card-->
+                    <div class="card card-custom">
+                        <!--begin::Header-->
+                        <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                            <div class="card-title">
+                                <h3 class="card-label">
+                                   Formulaire de Pré-exposition
+                                    <span class="d-block text-muted pt-2 font-size-sm">Informations sur l'exposition</span>
+                                </h3>
+                            </div>
+                        </div>
+                        <!--end::Header-->
+
+
+                        <!--begin::Body-->
+                        <div class="card-body">
+                            <!--begin: Datatable-->
+                            <form method="post" enctype="multipart/form-data" x-data="{ patientMineur: false }">
+                                {% csrf_token %}
+                                <div class="row">
+                                    {% for field in form %}
+                                        <div class="col-6 col-md-3 mb-3"
+                                             x-show="patientMineur || '{{ field.name }}' !== 'accompagnateur'"
+                                             x-transition.opacity>
+
+                                            <label for="{{ field.id_for_label }}"
+                                                   class="{% if field.field.required %}required-label{% endif %}">
+                                                {{ field.label }}
+                                                {% if field.field.required %}
+                                                    <span class="text-danger" data-toggle="tooltip" data-theme="dark"
+                                                          title="Champ obligatoire">*</span>
+                                                {% endif %}
+                                            </label>
+
+                                            {% if field.name == "patient_mineur" %}
+                                                <input type="checkbox" id="id_patient_mineur"
+                                                       name="patient_mineur"
+                                                       class="ml-2"
+                                                       x-model="patientMineur">
+                                            {% else %}
+                                                {{ field }}
+                                            {% endif %}
+
+                                            {% if field.help_text %}
+                                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                            {% endif %}
+                                            {% for error in field.errors %}
+                                                <div class="text-danger">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="text-right mt-3">
+                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                    <a href="{% url 'patient_list' %}"  class="btn btn-secondary">Annuler</a>
+                                </div>
+                            </form>
+                            <!--end: Datatable-->
+                        </div>
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Card-->
+                </div>
+                <!--end::Container-->
+            </div>
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <!--begin::Footer-->
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        <div class="footer py-4 d-flex flex-lg-column " id="kt_footer">
+            <!--begin::Container-->
+            <div class=" container  d-flex flex-column flex-md-row align-items-center justify-content-between">
+                <!--begin::Copyright-->
+                <div class="text-dark order-2 order-md-1">
+                    <span class="text-muted font-weight-bold mr-2">2020&copy;</span>
+                    <a href="http://keenthemes.com/metronic" target="_blank" class="text-dark-75 text-hover-primary">Keenthemes</a>
+                </div>
+                <!--end::Copyright-->
+
+                <!--begin::Nav-->
+                <div class="nav nav-dark order-1 order-md-2">
+                    <a href="http://keenthemes.com/metronic" target="_blank" class="nav-link pr-3 pl-0">About</a>
+                    <a href="http://keenthemes.com/metronic" target="_blank" class="nav-link px-3">Team</a>
+                    <a href="http://keenthemes.com/metronic" target="_blank" class="nav-link pl-3 pr-0">Contact</a>
+                </div>
+                <!--end::Nav-->
+            </div>
+            <!--end::Container-->
+        </div>
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}

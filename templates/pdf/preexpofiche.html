@@ -1,10 +1,204 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossier Pré-Exposition</title>
+{#    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">#}
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+
+    h2 {
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .headtable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .headtable, th, td {
+        {#border: 1px solid black;#}
+        text-align: center;
+    }
+
+    th, td {
+        padding: 2px;
+    }
+
+    .section {
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    /* ✅ Remplacement de grid par flexbox */
+    .corps {
+        display: table;
+        flex-wrap: wrap;
+        justify-content: space-between; /* Répartition équilibrée */
+        width: 100%;
+    }
+
+    .info {
+        width: 48%; /* Chaque élément occupe environ la moitié de la ligne */
+        padding: 2px;
+        border-bottom: 1px solid #ccc;
+        text-align: left;
+        box-sizing: border-box;
+    }
+
+
+    .label {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .valeur {
+        font-weight: bold;
+        color: #ff0000;
+        text-align: left;
+        margin-left: 5px;
+    }
+</style>
 </head>
 <body>
+<table class="headtable" style="border: 1px solid black;">
+    <tr>
+        <td rowspan="4">
+            <img alt="Logo" src="{{ inhplogo }}" class="logo-default max-h-30px">
+            <strong><br>BPV 14 Abidjan
+            <br>TEL : 27-21-25-92-54
+            <br>FAX : 27-21-24-69-81
+            <br>e-mail : inhp@inhp.ci
+            <br>web : inhp@inhp.com
+            </strong>
+        </td>
+        <td rowspan="2"><strong>
+            PROCESSUS VACCINATION<br>
+            Sous processus : CENTRE ANTIRABIQUE
+        </strong></td>
+        <td rowspan="4">
+            <img alt="Logo" src="{{ mshplogo }}" class="max-h-20px">
+        </td>
+        <td><strong>Référence :</strong> EN11-R02-CAR</td>
+    </tr>
+    <tr>
+        <td><strong>Création :</strong> 29 Décembre 2022</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><strong>DOSSIER DE VACCINATION EN PRE-EXPOSITION CAR</strong></td>
+        <td><strong>Pages :</strong> 1 sur 2</td>
+    </tr>
+    <tr>
+        <td><strong>Version :</strong> 01</td>
+    </tr>
 
+</table>
+
+<table style="width: 100%; font-weight: bold; border-collapse: collapse; border: white"; >
+    <tr>
+        <td style="width: 50%;">Service antirabique : {{ centre_nom }}</td>
+        <td style="width: 25%; text-align: center;">Date : {{ date_creation }}</td>
+        <td style="width: 25%; text-align: right;">Numéro : {{ numero }}</td>
+    </tr>
+</table>
+
+    <div class="section">I. Identification du Client</div>
+<div class="corps">
+    <div class="info"><span class="label">Nom :</span> <span class="valeur">{{ client.nom }}</span></div>
+    <div class="info"><span class="label">Prénoms :</span> <span class="valeur">{{ client.prenoms }}</span></div>
+
+    <div class="info"><span class="label">Sexe :</span> <span class="valeur">{{ client.sexe }}</span></div>
+    <div class="info"><span class="label">Âge :</span> <span class="valeur">{{ client.calculate_age }} ans / né le : {{ client.date_naissance }}</span></div>
+
+    <div class="info"><span class="label">Contact :</span> <span class="valeur">{{ client.contact }}</span></div>
+    <div class="info"><span class="label">Profession :</span> <span class="valeur">{{ client.profession }}</span></div>
+
+    <div class="info"><span class="label">Résidence Commune:</span> <span class="valeur"> {{ client.residence_commune }}</span></div>
+    <div class="info"><span class="label">Quartier :</span> <span class="valeur">{{ client.quartier }}</span></div>
+    <div class="info"><span class="label">Village :</span> <span class="valeur">{{ client.village }}</span></div>
+
+    <div class="info"><span class="label">Niveau d'étude :</span> <span class="valeur">{{ client.niveau_etude }}</span></div>
+
+    <div class="info"><span class="label">Propriétaire d'un animal :</span> <span class="valeur">{{ client.proprietaire_animal|yesno:"Oui,Non" }}</span></div>
+</div>
+<hr>
+    <div class="section">II. Motif de vaccination</div>
+    <ul>
+
+       <li>  a/ Voyage  <span class="valeur"> {{ voyage|yesno:"Oui,Non" }}</span></li>
+        <li> b/ Mise à jour calendrier vaccinal  <span class="valeur"> {{ mise_a_jour|yesno:"Oui,Non" }}</span></li>
+       <li>  c/ Protection contre la rage  <span class="valeur"> {{ protection_rage|yesno:"Oui,Non" }}</span></li>
+        <li> d/ A cause du chien du voisin  <span class="valeur"> {{ chien_voisin|yesno:"Oui,Non" }}</span></li>
+        <li> e-Beaucoup de chiens errants <span class="valeur"> {{ chiens_errants|yesno:"Oui,Non" }}</span> </li>
+        <li> f/ autres <span class="valeur"> {{ autre|yesno:"Oui,Non" }}</span></li>
+    </ul>
+<hr>
+    <div class="section">III. Canaux d’information</div>
+    <ul>
+       <li> a/ Télé  <span class="valeur"> {{ tele|yesno:"Oui,Non" }}</span></li>
+       <li> b/ Radio <span class="valeur"> {{ radio|yesno:"Oui,Non" }}</span></li>
+       <li> c/lors d’une séance de sensibilisation  <span class="valeur"> {{ sensibilisation|yesno:"Oui,Non" }}</span></li>
+       <li> e/ Presse écrite <span class="valeur"> {{ presse|yesno:"Oui,Non" }}</span> </li>
+       <li> f/ Lors de mon passage au CAR <span class="valeur"> {{ presse|yesno:"Oui,Non" }}</span></li>
+       <li> g/ Information reçue d’un proche <span class="valeur"> {{ proche|yesno:"Oui,Non" }}</span></li>
+       <li> h/ aure canal <span class="valeur"> {{ canal_infos|yesno:"Oui,Non" }}</span></li>
+    </ul>
+
+    <div class="section">IV. Connaissance et attitude sur la rage</div>
+    <ul>
+         <li> Aime les animaux ? <span class="valeur"> {{ aime_animaux|yesno:"Oui,Non" }}</span></li>
+        <li> Conduite face à un animal mordeur :  <span class="valeur"> {{ conduite_animal_mordeur }}</span> </li>
+         <li> Connaissance du protocole VaR :  <span class="valeur"> {{ connait_protocole_var|yesno:"Oui,Non" }}</span></li>
+         <li> Mesures contre la rage :  <span class="valeur"> {{ mesures_elimination_rage }}</span></li>
+         <li> Appréciation du coût VaR: <span class="valeur"> {{ appreciation_cout_var }}</span></li>
+    </ul>
+<hr>
+    <div class="section">V. Suivi vaccinal</div>
+
+{% if vaccinations %}
+    <table class="table-vaccination" style="border: 1px solid black;">
+        <thead>
+            <tr>
+                <th>Date Prévue</th>
+                <th>Date Effective</th>
+                <th>Vaccin</th>
+                <th>Dose (ml)</th>
+                <th>Voie d'Injection</th>
+                <th>Lieu</th>
+                <th>Réactions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vaccination in vaccinations %}
+                <tr>
+                    <td>{{ vaccination.date_prevue|date:"d/m/Y" }}</td>
+                    <td>{{ vaccination.date_effective|default:"Non renseignée" }}</td>
+                    <td>{{ vaccination.vaccin.nom }}</td>
+                    <td>{{ vaccination.dose_ml }}</td>
+                    <td>{{ vaccination.get_voie_injection_display }}</td>
+                    <td>{{ vaccination.lieu }}</td>
+                    <td>{{ vaccination.reactions|default:"Aucune" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Aucune vaccination enregistrée pour ce patient.</p>
+{% endif %}
+
+    <p>
+        Nombre de doses reçues : {{ vaccinations.date_prevue }}<br>
+        Observance vaccinale : Oui ☐ Non ☐<br>
+        Identité de l’agent enregistreur : ____________________
+    </p>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 </html>

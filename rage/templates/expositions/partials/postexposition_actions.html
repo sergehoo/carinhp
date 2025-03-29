@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+<a href="{% url 'postexposition_detail' record.pk %}" class="btn btn-info btn-icon btn-xs"><i class="fa fa-eye"></i></a>
+<a href="{% url 'postexposition_edit' record.pk %}" class="btn btn-warning btn-icon btn-xs"><i class="fa fa-edit"></i></a>
+<a href="{% url 'postexposition_delete' record.pk %}" class="btn btn-danger btn-icon btn-xs"><i class="fa fa-trash"></i></a>
+<a href="{% url 'fichepostexpoPDF' record.pk %}" class="btn btn-dark btn-icon btn-xs"><i class="fa fa-file-pdf"></i></a>

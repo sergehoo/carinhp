@@ -1,0 +1,362 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+
+
+{% block content %}
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <!-- content @s -->
+        <div class="nk-content" style="background-color: #f8f9fa;">
+            <div class="container-fluid">
+                <div class="nk-content-inner">
+                    <div class="nk-content-body">
+                        <div class="nk-block">
+                            <div class="card card-bordered">
+                                <div class="card-inner">
+                                    <!-- En-tête -->
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div>
+                                            <h4 class="nk-block-title">Dossier Pré-Exposition #{{ preexposition.codeexpo }}</h4>
+                                            <p class="text-soft">Créé le {{ preexposition.created_at|date:"d/m/Y" }} par {{ preexposition.created_by.get_full_name }}</p>
+                                        </div>
+                                        <div>
+                                            <a href="" class="btn btn-sm btn-outline-primary">
+                                                <em class="icon ni ni-edit"></em> Modifier
+                                            </a>
+                                            <a href="{% url 'preexposition_list' %}" class="btn btn-sm btn-outline-secondary">
+                                                <em class="icon ni ni-list"></em> Retour à la liste
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Onglets -->
+                                    <ul class="nav nav-tabs nav-tabs-mb-icon nav-tabs-card">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" data-toggle="tab" href="#motif">
+                                                <em class="icon ni ni-clipboard mr-1"></em> Motif
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#information">
+                                                <em class="icon ni ni-info mr-1"></em> Information
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#connaissance">
+                                                <em class="icon ni ni-brain mr-1"></em> Connaissance
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#protocole">
+                                                <em class="icon ni ni-syringe mr-1"></em> Protocole
+                                            </a>
+                                        </li>
+                                    </ul>
+
+                                    <!-- Contenu des onglets -->
+                                    <div class="tab-content mt-4">
+                                        <!-- Onglet Motif -->
+                                        <div class="tab-pane active" id="motif">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="card card-bordered mb-4">
+                                                        <div class="card-header bg-light">
+                                                            <h5 class="card-title">Motif de la consultation</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <ul class="list-group list-group-flush">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Voyage
+                                                                    <span class="badge badge-{% if preexposition.voyage %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.voyage|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Mise à jour vaccinale
+                                                                    <span class="badge badge-{% if preexposition.mise_a_jour %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.mise_a_jour|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Protection contre la rage
+                                                                    <span class="badge badge-{% if preexposition.protection_rage %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.protection_rage|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Chiens errants dans le voisinage
+                                                                    <span class="badge badge-{% if preexposition.chiens_errants %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.chiens_errants|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                {% if preexposition.autre %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Autre motif</h6>
+                                                                    <p>{{ preexposition.autre_motif }}</p>
+                                                                </li>
+                                                                {% endif %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="card card-bordered">
+                                                        <div class="card-header bg-light">
+                                                            <h5 class="card-title">Patient</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="d-flex align-items-center mb-3">
+                                                                <div class="user-avatar bg-primary mr-3">
+                                                                    <span>{{ preexposition.client.nom|first }}{{ preexposition.client.prenoms|first }}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <h5>{{ preexposition.client.nom_complet }}</h5>
+                                                                    <p class="text-soft mb-0">Code: {{ preexposition.client.code_patient }}</p>
+                                                                    <p class="text-soft">Tél: {{ preexposition.client.telephone1 }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <a href="{% url 'patient_detail' preexposition.client.id %}" class="btn btn-sm btn-outline-primary">
+                                                                Voir dossier complet
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Onglet Information -->
+                                        <div class="tab-pane" id="information">
+                                            <div class="card card-bordered">
+                                                <div class="card-header bg-light">
+                                                    <h5 class="card-title">Source d'information</h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <ul class="list-group list-group-flush">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Télévision
+                                                                    <span class="badge badge-{% if preexposition.tele %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.tele|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Radio
+                                                                    <span class="badge badge-{% if preexposition.radio %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.radio|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Sensibilisation
+                                                                    <span class="badge badge-{% if preexposition.sensibilisation %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.sensibilisation|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <ul class="list-group list-group-flush">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Proche
+                                                                    <span class="badge badge-{% if preexposition.proche %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.proche|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Presse
+                                                                    <span class="badge badge-{% if preexposition.presse %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.presse|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                {% if preexposition.canal_infos %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Autre canal</h6>
+                                                                    <p>{{ preexposition.canal_infos }}</p>
+                                                                </li>
+                                                                {% endif %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Onglet Connaissance -->
+                                        <div class="tab-pane" id="connaissance">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="card card-bordered mb-4">
+                                                        <div class="card-header bg-light">
+                                                            <h5 class="card-title">Connaissance et attitudes</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <ul class="list-group list-group-flush">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Aime les animaux
+                                                                    <span class="badge badge-{% if preexposition.aime_animaux %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.aime_animaux|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                                {% if preexposition.aime_animaux %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Type d'animal préféré</h6>
+                                                                    <p>{{ preexposition.type_animal_aime }}</p>
+                                                                </li>
+                                                                {% endif %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Conduite face à un animal mordeur</h6>
+                                                                    <p>{{ preexposition.conduite_animal_mordeur }}</p>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    Connaît le protocole VAR
+                                                                    <span class="badge badge-{% if preexposition.connait_protocole_var %}success{% else %}light{% endif %}">
+                                                                        {{ preexposition.connait_protocole_var|yesno:"Oui,Non" }}
+                                                                    </span>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="card card-bordered">
+                                                        <div class="card-header bg-light">
+                                                            <h5 class="card-title">Historique et perception</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <ul class="list-group list-group-flush">
+                                                                {% if preexposition.dernier_var_animal_date %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Dernier VAR effectué</h6>
+                                                                    <p>{{ preexposition.dernier_var_animal_type }} le {{ preexposition.dernier_var_animal_date|date:"d/m/Y" }}</p>
+                                                                </li>
+                                                                {% endif %}
+                                                                <li class="list-group-item">
+                                                                    <h6>Mesures pour éliminer la rage</h6>
+                                                                    <p>{{ preexposition.mesures_elimination_rage }}</p>
+                                                                </li>
+                                                                <li class="list-group-item">
+                                                                    <h6>Appréciation du coût VAR</h6>
+                                                                    <p>{{ preexposition.appreciation_cout_var }}</p>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Onglet Protocole -->
+                                        <div class="tab-pane" id="protocole">
+                                            <div class="card card-bordered">
+                                                <div class="card-header bg-light">
+                                                    <h5 class="card-title">Protocole de vaccination</h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% if preexposition.protocole_vaccination %}
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>Protocole sélectionné</h6>
+                                                            <div class="alert alert-light">
+                                                                <h5>{{ preexposition.protocole_vaccination.nom }}</h5>
+                                                                <p>{{ preexposition.protocole_vaccination.description }}</p>
+                                                                <p class="mb-0">
+                                                                    <strong>Doses :</strong> {{ preexposition.protocole_vaccination.doses_requises }}
+                                                                    <span class="mx-2">|</span>
+                                                                    <strong>Intervalle :</strong> {{ preexposition.protocole_vaccination.intervalle_jours }} jours
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>Statut du protocole</h6>
+                                                            <div class="alert alert-{% if preexposition.fin_protocole %}success{% else %}warning{% endif %}">
+                                                                <div class="d-flex align-items-center">
+                                                                    <em class="icon ni ni-{% if preexposition.fin_protocole %}check-circle{% else %}clock{% endif %} mr-2" style="font-size: 1.5rem;"></em>
+                                                                    <div>
+                                                                        <h5 class="mb-0">Protocole {% if preexposition.fin_protocole %}terminé{% else %}en cours{% endif %}</h5>
+                                                                        {% if not preexposition.fin_protocole %}
+                                                                        <p class="mb-0">Prochaine dose recommandée : {{ preexposition.get_prochaine_dose|date:"d/m/Y" }}</p>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <h6 class="mt-4">Historique des vaccinations</h6>
+                                                    {% with vaccinations=preexposition.vaccination_set.all %}
+                                                    {% if vaccinations %}
+                                                    <div class="table-responsive">
+                                                        <table class="table table-striped">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Date</th>
+                                                                    <th>Vaccin</th>
+                                                                    <th>Dose</th>
+                                                                    <th>Centre</th>
+                                                                    <th>Lot</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for vacc in vaccinations %}
+                                                                <tr>
+                                                                    <td>{{ vacc.date_vaccination|date:"d/m/Y" }}</td>
+                                                                    <td>{{ vacc.vaccin.nom }}</td>
+                                                                    <td>{{ vacc.dose }}/{{ vacc.vaccin.doses_requises }}</td>
+                                                                    <td>{{ vacc.centre.nom }}</td>
+                                                                    <td>{{ vacc.lot.numero_lot|default:"-" }}</td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    {% else %}
+                                                    <div class="alert alert-light text-center">
+                                                        <em class="icon ni ni-info text-soft" style="font-size: 2rem;"></em>
+                                                        <h5 class="mt-3">Aucune vaccination enregistrée</h5>
+                                                        <p>Le protocole vaccinal n'a pas encore commencé.</p>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% endwith %}
+                                                    {% else %}
+                                                    <div class="alert alert-light text-center">
+                                                        <em class="icon ni ni-info text-soft" style="font-size: 2rem;"></em>
+                                                        <h5 class="mt-3">Aucun protocole sélectionné</h5>
+                                                        <p>Veuillez sélectionner un protocole vaccinal pour ce patient.</p>
+                                                        <a href="" class="btn btn-primary">
+                                                            <em class="icon ni ni-plus"></em> Sélectionner un protocole
+                                                        </a>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- content @e -->
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <!--begin::Footer-->
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        {% include 'layout/footer.html' %}
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}

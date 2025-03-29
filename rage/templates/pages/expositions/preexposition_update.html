@@ -1,0 +1,231 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Subheader-->
+        {% include 'layout/header-title.html' %}
+        <!--end::Subheader-->
+
+        <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <!--begin::Header-->
+                    <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                {{ page_title }}
+                                <span class="d-block text-muted pt-2 font-size-sm">{{ page_subtitle }}</span>
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'preexposition_list' %}" class="btn btn-light-primary font-weight-bold">
+                                <i class="ki ki-arrow-back"></i> Retour à la liste
+                            </a>
+                        </div>
+                    </div>
+                    <!--end::Header-->
+
+                    <!--begin::Body-->
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data" class="form">
+                            {% csrf_token %}
+
+                            <!-- Section 1: Motif de vaccination -->
+                            <div class="mb-10">
+                                <h4 class="text-dark font-weight-bold mb-6">1. Motif de vaccination</h4>
+                                <div class="row">
+                                    {% for field in form %}
+                                        {% if field.name in "voyage mise_a_jour protection_rage chien_voisin chiens_errants autre autre_motif" %}
+                                        <div class="col-md-6 mb-4">
+                                            <div class="form-group">
+                                                <label class="{% if field.field.required %}required{% endif %}">
+                                                    {{ field.label }}
+                                                </label>
+                                                <div class="input-group input-group-solid">
+                                                    {% if field.field.widget.input_type == 'checkbox' %}
+                                                        <div class="form-check form-check-custom form-check-solid">
+                                                            {{ field }}
+                                                            <label class="form-check-label" for="{{ field.id_for_label }}"></label>
+                                                        </div>
+                                                    {% else %}
+                                                        {{ field }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if field.help_text %}
+                                                    <span class="form-text text-muted">{{ field.help_text }}</span>
+                                                {% endif %}
+                                                {% for error in field.errors %}
+                                                    <div class="fv-plugins-message-container">
+                                                        <div class="fv-help-block">{{ error }}</div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+<hr>
+                            <!-- Section 2: Information sur la vaccination -->
+                            <div class="mb-10">
+                                <h4 class="text-dark font-weight-bold mb-6">2. Information sur la vaccination</h4>
+                                <div class="row">
+                                    {% for field in form %}
+                                        {% if field.name in "tele radio sensibilisation proche presse passage_car diff_canal canal_infos" %}
+                                        <div class="col-md-6 mb-4">
+                                            <div class="form-group">
+                                                <label class="{% if field.field.required %}required{% endif %}">
+                                                    {{ field.label }}
+                                                </label>
+                                                <div class="input-group input-group-solid">
+                                                    {% if field.field.widget.input_type == 'checkbox' %}
+                                                        <div class="form-check form-check-custom form-check-solid">
+                                                            {{ field }}
+                                                            <label class="form-check-label" for="{{ field.id_for_label }}"></label>
+                                                        </div>
+                                                    {% else %}
+                                                        {{ field }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if field.help_text %}
+                                                    <span class="form-text text-muted">{{ field.help_text }}</span>
+                                                {% endif %}
+                                                {% for error in field.errors %}
+                                                    <div class="fv-plugins-message-container">
+                                                        <div class="fv-help-block">{{ error }}</div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+<hr>
+                            <!-- Section 3: Connaissance et attitude -->
+                            <div class="mb-10">
+                                <h4 class="text-dark font-weight-bold mb-6">3. Connaissance et attitude</h4>
+                                <div class="row">
+                                    {% for field in form %}
+                                        {% if field.name in "aime_animaux type_animal_aime conduite_animal_mordeur connait_protocole_var dernier_var_animal_type dernier_var_animal_date mesures_elimination_rage appreciation_cout_var" %}
+                                            <div class="col-md-6 mb-4">
+                                                <div class="form-group">
+                                                    <label class="{% if field.field.required %}required{% endif %}">
+                                                        {{ field.label }}
+                                                    </label>
+                                                    <div class="input-group input-group-solid">
+                                                        {% if field.field.widget.input_type == 'checkbox' %}
+                                                            <div class="form-check form-check-custom form-check-solid">
+                                                                {{ field }}
+                                                                <label class="form-check-label"
+                                                                       for="{{ field.id_for_label }}"></label>
+                                                            </div>
+                                                        {% elif field.field.widget.input_type == 'selectmultiple' %}
+                                                            <div class="checkbox-list">
+                                                                {% for choice in field %}
+                                                                    <label class="checkbox">
+                                                                        {{ choice.tag }} {{ choice.choice_label }}
+                                                                    </label>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% else %}
+                                                            {{ field }}
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if field.help_text %}
+                                                        <span class="form-text text-muted">{{ field.help_text }}</span>
+                                                    {% endif %}
+                                                    {% for error in field.errors %}
+                                                        <div class="fv-plugins-message-container">
+                                                            <div class="fv-help-block">{{ error }}</div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+<hr>
+                            <!-- Section 4: Suivi vaccination -->
+                            <div class="mb-10">
+                                <h4 class="text-dark font-weight-bold mb-6">4. Suivi vaccination</h4>
+                                <div class="row">
+                                    {% for field in form %}
+                                        {% if field.name in "protocole_vaccination date_prevue date_effective dose_ml lot voie_administration lieu reactions doses_recues fin_protocole" %}
+                                        <div class="col-md-3 mb-4">
+                                            <div class="form-group">
+                                                <label class="{% if field.field.required %}required{% endif %}">
+                                                    {{ field.label }}
+                                                </label>
+                                                <div class="input-group input-group-solid">
+                                                    {% if field.field.widget.input_type == 'checkbox' %}
+                                                        <div class="form-check form-check-custom form-check-solid">
+                                                            {{ field }}
+                                                            <label class="form-check-label" for="{{ field.id_for_label }}"></label>
+                                                        </div>
+                                                    {% else %}
+                                                        {{ field }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if field.help_text %}
+                                                    <span class="form-text text-muted">{{ field.help_text }}</span>
+                                                {% endif %}
+                                                {% for error in field.errors %}
+                                                    <div class="fv-plugins-message-container">
+                                                        <div class="fv-help-block">{{ error }}</div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="card-footer text-right">
+                                <button type="submit" class="btn btn-primary mr-2">
+                                    <i class="flaticon2-check-mark"></i> Enregistrer
+                                </button>
+                                <a href="{% url 'preexposition_list' %}" class="btn btn-secondary">
+                                    <i class="flaticon2-close"></i> Annuler
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    <!--end::Body-->
+                </div>
+                <!--end::Card-->
+            </div>
+            <!--end::Container-->
+        </div>
+        <!--end::Entry-->
+    </div>
+    <!--end::Content-->
+</div>
+{% endblock %}
+
+{% block scripts %}
+{#<script>#}
+{#    // Initialisation des composants JS si nécessaire#}
+{#    $(document).ready(function() {#}
+{#        // Activer les tooltips#}
+{#        $('[data-toggle="tooltip"]').tooltip();#}
+{##}
+{#        // Gestion des champs date#}
+{#        $('.datepicker').datepicker({#}
+{#            format: 'dd/mm/yyyy',#}
+{#            todayHighlight: true,#}
+{#            autoclose: true#}
+{#        });#}
+{#    });#}
+{#</script>#}
+{% endblock %}

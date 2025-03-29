@@ -1,0 +1,730 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load unicorn %}
+
+
+{% block content %}
+
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Container-->
+        <div class="container">
+            <!-- Détails du Patient -->
+            <div class="card card-custom gutter-b">
+                <div class="card-header border-0 py-5">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label font-weight-bolder text-dark">Dossier complet du patient</span>
+                        <span class="text-muted mt-3 font-weight-bold font-size-sm">{{ patientdossier.nom }} {{ patientdossier.prenoms }} - {{ patientdossier.code_patient }}</span>
+                    </h3>
+                    <div class="card-toolbar">
+                        <a href="#" class="btn btn-sm btn-light-primary font-weight-bolder mr-2">
+                            <i class="flaticon2-edit"></i> Modifier
+                        </a>
+                        <a href="#" class="btn btn-sm btn-light-success font-weight-bolder">
+                            <i class="flaticon2-printer"></i> Imprimer
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body pt-0">
+                    <!-- Section Informations Personnelles -->
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Informations Personnelles</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-user"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Nom complet</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.nom }} {{ patientdossier.prenoms }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-calendar"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Date de naissance / Âge</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {{ patientdossier.date_naissance|date:"d/m/Y"|default:"Non renseigné" }}
+                                            ({{ patientdossier.calculate_age|default:"-" }} ans)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-gender"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Sexe</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.get_sexe_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-phone"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Téléphone</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.contact|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-home"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Adresse</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {{ patientdossier.quartier|default:"" }}
+                                            {{ patientdossier.village|default:"" }}
+                                            {% if patientdossier.residence_commune %}, {{ patientdossier.residence_commune }}{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-suitcase"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Secteur d'activité</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.secteur_activite|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informations sur l'accompagnateur si mineur -->
+                        {% if patientdossier.patient_mineur %}
+                        <div class="separator separator-dashed my-5"></div>
+                        <h5 class="text-dark font-weight-bold mb-4">Informations sur l'accompagnateur</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-user"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Nom</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.accompagnateur|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-phone"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Téléphone</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.accompagnateur_contact|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-home"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Adresse</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.accompagnateur_adresse|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-network"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Lien avec le patient</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.get_accompagnateur_nature_display|default:"Non renseigné" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Section Statut Médical -->
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Statut Médical</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-medical"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Statut</span>
+                                        <span class="badge badge-{% if patientdossier.status == 'En cours' %}warning{% elif patientdossier.status == 'Guéri' %}success{% elif patientdossier.status == 'Décédé' %}danger{% else %}secondary{% endif %}">
+                                            {{ patientdossier.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {% if patientdossier.decede %}
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-danger"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Date de décès</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.date_deces|date:"d/m/Y" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-file"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Cause du décès</span>
+                                        <span class="text-dark-75 font-weight-bold">{{ patientdossier.cause_deces|default:"Non précisée" }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-blood-test"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Problème de coagulation</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {% if postexposition.probleme_coagulation %}
+                                            Oui ({{ postexposition.details_problemes|default:"détails non précisés" }})
+                                            {% else %}Non{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-immunity"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Immunodépression</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {% if postexposition.immunodepression %}
+                                            Oui ({{ postexposition.details_immo|default:"détails non précisés" }})
+                                            {% else %}Non{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {% if patientdossier.sexe == 'F' %}
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3">
+                                        <i class="flaticon-pregnant"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Grossesse</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {% if postexposition.grossesse %}
+                                            Oui ({{ postexposition.details_grosesse|default:"détails non précisés" }})
+                                            {% else %}Non{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Antécédents Médicaux -->
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Antécédents Médicaux</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3 mt-1">
+                                        <i class="flaticon-medical-records"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Antécédents médicaux</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {{ postexposition.antecedents_medicaux|default:"Aucun antécédent médical renseigné" }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-start mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3 mt-1">
+                                        <i class="flaticon-medicine"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Traitements en cours</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {{ postexposition.traitements_en_cours|default:"Aucun traitement en cours" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start mb-4">
+                                    <span class="svg-icon svg-icon-primary mr-3 mt-1">
+                                        <i class="flaticon-allergy"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-muted font-weight-bold d-block">Allergies</span>
+                                        <span class="text-dark-75 font-weight-bold">
+                                            {{ postexposition.allergies|default:"Aucune allergie connue" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Animaux -->
+                    {% with animaux=patientdossier.animal_set.all %}
+                    {% if animaux %}
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Animaux enregistrés ({{ animaux.count }})</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr class="text-center">
+                                        <th>Espèce</th>
+                                        <th>Statut</th>
+                                        <th>Vaccination</th>
+                                        <th>Date dernière vacc.</th>
+                                        <th>Statut actuel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for animal in animaux %}
+                                    <tr>
+                                        <td class="text-center">
+                                            {{ animal.get_espece_display }}
+                                            {% if animal.precisions %}({{ animal.precisions }}){% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if animal.domestique %}
+                                            <span class="badge badge-success">Domestique</span>
+                                            {% else %}
+                                            <span class="badge badge-warning">Non domestique</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">{{ animal.statut_vaccinal|default:"Inconnu" }}</td>
+                                        <td class="text-center">{{ animal.date_derniere_vaccination|date:"d/m/Y"|default:"-" }}</td>
+                                        <td class="text-center">
+                                            {% if animal.decede %}
+                                            <span class="badge badge-danger">Décédé</span>
+                                            {% elif animal.gueris %}
+                                            <span class="badge badge-success">Guéri</span>
+                                            {% else %}
+                                            <span class="badge badge-info">{{ animal.get_statut_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Section Expositions -->
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Expositions</h4>
+
+                        <!-- Onglets Expositions -->
+                        <ul class="nav nav-tabs nav-tabs-line" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-toggle="tab" href="#post_expositions">
+                                    <span class="nav-icon"><i class="flaticon-danger"></i></span>
+                                    <span class="nav-text">Post-Expositions ({{ patientdossier.postexposition_set.count }})</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-toggle="tab" href="#pre_expositions">
+                                    <span class="nav-icon"><i class="flaticon2-shield"></i></span>
+                                    <span class="nav-text">Pré-Expositions ({{ patientdossier.preexposition_set.count }})</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content mt-5">
+                            <!-- Tab Post-Expositions -->
+                            <div class="tab-pane fade show active" id="post_expositions" role="tabpanel">
+                                {% with post_expos=patientdossier.postexposition_set.all %}
+                                {% if post_expos %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead>
+                                            <tr class="text-center">
+                                                <th>Date</th>
+                                                <th>Lieu</th>
+                                                <th>Type</th>
+                                                <th>Animal</th>
+                                                <th>Gravité</th>
+                                                <th>Statut</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for expo in post_expos %}
+                                            <tr>
+                                                <td class="text-center">{{ expo.date_exposition|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    {{ expo.lieu_exposition|default:"-" }}
+                                                    {% if expo.exposition_commune %}({{ expo.exposition_commune }}){% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if expo.morsure %}<span class="badge badge-danger">Morsure</span>{% endif %}
+                                                    {% if expo.griffure %}<span class="badge badge-warning">Griffure</span>{% endif %}
+                                                    {% if expo.lechage_saine or expo.lechage_lesee %}<span class="badge badge-info">Léchage</span>{% endif %}
+                                                    {% if expo.autre %}<span class="badge badge-secondary">Autre</span>{% endif %}
+                                                </td>
+                                                <td>
+                                                    {{ expo.get_espece_display }}
+                                                    {% if expo.autre_animal %}({{ expo.autre_animal }}){% endif %}
+                                                    {% if expo.domestic %}<span class="badge badge-success">Domestique</span>{% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-{% if expo.gravite_oms == 'III' %}danger{% elif expo.gravite_oms == 'II' %}warning{% else %}info{% endif %}">
+                                                        {{ expo.gravite_oms|default:"Non classé" }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if expo.evolution_patient == 'Décédé' %}
+                                                    <span class="badge badge-danger">Décédé</span>
+                                                    {% elif expo.issue == 'Terminé' %}
+                                                    <span class="badge badge-success">Terminé</span>
+                                                    {% elif expo.issue == 'Perdu de vue' %}
+                                                    <span class="badge badge-warning">Perdu de vue</span>
+                                                    {% else %}
+                                                    <span class="badge badge-info">En cours</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{% url 'postexposition_detail' expo.id %}" class="btn btn-sm btn-icon btn-light-primary mr-2" title="Voir détails">
+                                                        <i class="flaticon-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-custom alert-light-primary fade show mb-5" role="alert">
+                                    <div class="alert-icon">
+                                        <i class="flaticon-information"></i>
+                                    </div>
+                                    <div class="alert-text">Aucune post-exposition enregistrée pour ce patient.</div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+
+                            <!-- Tab Pre-Expositions -->
+                            <div class="tab-pane fade" id="pre_expositions" role="tabpanel">
+                                {% with pre_expos=patientdossier.preexposition_set.all %}
+                                {% if pre_expos %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead>
+                                            <tr class="text-center">
+                                                <th>Date</th>
+                                                <th>Motif</th>
+                                                <th>Protocole</th>
+                                                <th>Statut</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for expo in pre_expos %}
+                                            <tr>
+                                                <td class="text-center">{{ expo.created_at|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    {% if expo.voyage %}<span class="badge badge-primary">Voyage</span>{% endif %}
+                                                    {% if expo.mise_a_jour %}<span class="badge badge-info">Mise à jour</span>{% endif %}
+                                                    {% if expo.protection_rage %}<span class="badge badge-success">Protection</span>{% endif %}
+                                                    {% if expo.chiens_errants %}<span class="badge badge-warning">Chiens errants</span>{% endif %}
+                                                    {% if expo.autre %}<span class="badge badge-secondary">Autre</span>{% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if expo.protocole_vaccination %}
+                                                    {{ expo.protocole_vaccination.nom }}
+                                                    {% else %}
+                                                    <span class="text-muted">Non défini</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if expo.fin_protocole %}
+                                                    <span class="badge badge-success">Terminé</span>
+                                                    {% else %}
+                                                    <span class="badge badge-info">En cours</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{% url 'preexposition_detail' expo.id %}" class="btn btn-sm btn-icon btn-light-primary mr-2" title="Voir détails">
+                                                        <i class="flaticon-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-custom alert-light-primary fade show mb-5" role="alert">
+                                    <div class="alert-icon">
+                                        <i class="flaticon-information"></i>
+                                    </div>
+                                    <div class="alert-text">Aucune pré-exposition enregistrée pour ce patient.</div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Vaccinations -->
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Vaccinations</h4>
+
+                        <div class="row">
+                            <!-- Antécédents vaccinaux -->
+                            <div class="col-md-6">
+                                <div class="card card-custom gutter-b">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Antécédents vaccinaux</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-4">
+                                            <span class="svg-icon svg-icon-primary mr-3">
+                                                <i class="flaticon2-checking"></i>
+                                            </span>
+                                            <div>
+                                                <span class="text-muted font-weight-bold d-block">Vaccin antirabique</span>
+                                                <span class="text-dark-75 font-weight-bold">
+                                                    {% if postexposition.vaccin_antirabique %}Oui{% else %}Non{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {% if postexposition.vat_dernier_injection %}
+                                        <div class="d-flex align-items-center mb-4">
+                                            <span class="svg-icon svg-icon-primary mr-3">
+                                                <i class="flaticon-calendar"></i>
+                                            </span>
+                                            <div>
+                                                <span class="text-muted font-weight-bold d-block">Dernière injection</span>
+                                                <span class="text-dark-75 font-weight-bold">
+                                                    {{ postexposition.vat_dernier_injection|date:"d/m/Y" }}
+                                                    {% if postexposition.vat_lot %}(Lot: {{ postexposition.vat_lot }}){% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if postexposition.vat_rappel %}
+                                        <div class="d-flex align-items-center mb-4">
+                                            <span class="svg-icon svg-icon-primary mr-3">
+                                                <i class="flaticon2-refresh"></i>
+                                            </span>
+                                            <div>
+                                                <span class="text-muted font-weight-bold d-block">Dernier rappel</span>
+                                                <span class="text-dark-75 font-weight-bold">
+                                                    {{ postexposition.vat_rappel|date:"d/m/Y" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if postexposition.carnet_vaccinal %}
+                                        <div class="d-flex align-items-start">
+                                            <span class="svg-icon svg-icon-primary mr-3 mt-1">
+                                                <i class="flaticon-medical-records"></i>
+                                            </span>
+                                            <div>
+                                                <span class="text-muted font-weight-bold d-block">Carnet vaccinal</span>
+                                                <span class="text-dark-75 font-weight-bold">
+                                                    {{ postexposition.carnet_vaccinal }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Historique des vaccinations -->
+                            <div class="col-md-6">
+                                <div class="card card-custom gutter-b">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Historique des vaccinations</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        {% with vaccinations=patientdossier.vaccination_set.all %}
+                                        {% if vaccinations %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover">
+                                                <thead>
+                                                    <tr class="text-center">
+                                                        <th>Date</th>
+                                                        <th>Dose</th>
+                                                        <th>Protocole</th>
+                                                        <th>Lieu</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for vaccin in vaccinations %}
+                                                    <tr>
+                                                        <td class="text-center">{{ vaccin.date_effective|date:"d/m/Y"|default:vaccin.date_prevue|date:"d/m/Y" }}</td>
+                                                        <td class="text-center">{{ vaccin.dose_ml }} ml</td>
+                                                        <td>{{ vaccin.protocole }}</td>
+                                                        <td>{{ vaccin.lieu }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-custom alert-light-primary fade show mb-5" role="alert">
+                                            <div class="alert-icon">
+                                                <i class="flaticon-information"></i>
+                                            </div>
+                                            <div class="alert-text">Aucune vaccination enregistrée pour ce patient.</div>
+                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rendez-vous de vaccination -->
+                        <div class="mt-6">
+                            <div class="card card-custom gutter-b">
+                                <div class="card-header">
+                                    <h3 class="card-title">Rendez-vous de vaccination</h3>
+                                </div>
+                                <div class="card-body">
+                                    {% with rdvs=patientdossier.rendez_vous_vaccination.all %}
+                                    {% if rdvs %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>Date</th>
+                                                    <th>Protocole</th>
+                                                    <th>Dose n°</th>
+                                                    <th>Statut</th>
+                                                    <th>Exposition liée</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rdv in rdvs %}
+                                                <tr>
+                                                    <td class="text-center">{{ rdv.date_rendez_vous|date:"d/m/Y" }}</td>
+                                                    <td>{{ rdv.protocole }}</td>
+                                                    <td class="text-center">{{ rdv.dose_numero }}</td>
+                                                    <td class="text-center">
+                                                        {% if rdv.est_effectue %}
+                                                        <span class="badge badge-success">Effectué</span>
+                                                        {% elif rdv.statut_rdv == 'Aujourd\'hui' %}
+                                                        <span class="badge badge-primary">Aujourd'hui</span>
+                                                        {% elif rdv.statut_rdv == 'À venir' %}
+                                                        <span class="badge badge-info">À venir</span>
+                                                        {% else %}
+                                                        <span class="badge badge-warning">Non effectué</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if rdv.preexposition %}
+                                                        Pré-expo: {{ rdv.preexposition.codeexpo }}
+                                                        {% elif rdv.postexposition %}
+                                                        Post-expo: {{ rdv.postexposition.id }}
+                                                        {% else %}
+                                                        -
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-custom alert-light-primary fade show mb-5" role="alert">
+                                        <div class="alert-icon">
+                                            <i class="flaticon-information"></i>
+                                        </div>
+                                        <div class="alert-text">Aucun rendez-vous de vaccination programmé.</div>
+                                    </div>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Effets secondaires (MAPI) -->
+                    {% with mapis=patientdossier.mapi.all %}
+                    {% if mapis %}
+                    <div class="mb-10">
+                        <h4 class="text-dark font-weight-bold mb-4">Effets secondaires (MAPI)</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr class="text-center">
+                                        <th>Date</th>
+                                        <th>Vaccination</th>
+                                        <th>Symptômes</th>
+                                        <th>Gravité</th>
+                                        <th>Évolution</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mapi in mapis %}
+                                    <tr>
+                                        <td class="text-center">{{ mapi.date_apparition|date:"d/m/Y" }}</td>
+                                        <td>
+                                            {{ mapi.vaccination.protocole }} ({{ mapi.vaccination.date_effective|date:"d/m/Y" }})
+                                        </td>
+                                        <td>{{ mapi.description }}</td>
+                                        <td class="text-center">
+                                            <span class="badge badge-{% if mapi.gravite == 'sévère' %}danger{% elif mapi.gravite == 'modéré' %}warning{% else %}info{% endif %}">
+                                                {{ mapi.get_gravite_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'complications' %}danger{% else %}warning{% endif %}">
+                                                {{ mapi.get_evolution_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Content-->
+</div>
+
+{% endblock %}

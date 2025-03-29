@@ -1,10 +1,674 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load unicorn %}
+{% load django_tables2 %}
+
+
+{% block content %}
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <div class="d-flex flex-column-fluid">
+                <!--begin::Container-->
+                <div class=" container ">
+                    <!--begin::Card-->
+                    <div class="card card-custom">
+                        <!--begin::Header-->
+                        <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                            <div class="card-title">
+                                <h3 class="card-label">
+                                    Formulaire de Post-Exposition
+                                    <span class="d-block text-muted pt-2 font-size-sm">Donnees en Post-Exposition</span>
+                                </h3>
+                            </div>
+
+                        </div>
+                        <!--end::Header-->
+
+                        <!--begin::Body-->
+
+                        <div class="card-body">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+                            <form method="post" class="needs-validation" x-data="{
+                            patientMineur: false,
+                            aimeAnimaux: false,
+                            autre: false,
+                            diffCanal: false,
+                            connaitProtocoleVar: false }">
+                                {% csrf_token %}
+
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {% for error in form.non_field_errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Identification du Patient -->
+                                <h2 class="mt-4 text-center text-primary">IDENTIFICATION DU CLIENT</h2>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label>Nom</label>
+                                        {{ form.nom }}
+                                        <small class="text-danger">{{ form.nom.errors }}</small>
+
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Prénom</label>
+                                        {{ form.prenoms }}
+                                        <small class="text-danger">{{ form.prenoms.errors }}</small>
+
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Date de Naissance</label>
+                                        {{ form.date_naissance }}
+                                        <small class="text-danger">{{ form.date_naissance.errors }}</small>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Sexe</label>
+                                        {{ form.sexe }}
+                                        <small class="text-danger">{{ form.sexe.errors }}</small>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Contact</label>
+                                        {{ form.contact }}
+                                        <small class="text-danger">{{ form.contact.errors }}</small>
+                                    </div>
+
+                                    <div x-data="{
+    search: '',
+    options: [],
+    async fetchOptions() {
+        if (this.search.length > 1) {
+            const response = await fetch('/api/communes?query=' + this.search);
+            this.options = await response.json();
+        } else {
+            this.options = [];
+        }
+    }
+}" class="col-md-6 form-group position-relative">
+                                        <label for="commune">Commune</label>
+                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
+                                               class="form-control" placeholder="Rechercher une commune..."
+                                               autocomplete="off">
+
+                                        <!-- Liste déroulante améliorée -->
+                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
+                                             x-show="options.length" x-on:click.away="options = []">
+                                            <ul class="list-group shadow bg-white w-100">
+                                                <template x-for="option in options" :key="option.id">
+                                                    <li class="list-group-item list-group-item-action"
+                                                        x-text="option.name"
+                                                        x-on:click.prevent="search = option.name; options = []">
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 form-group">
+                                        <label>Quartier</label>
+                                        {{ form.quartier }}
+                                        <small class="text-danger">{{ form.quartier.errors }}</small>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Village</label>
+                                        {{ form.village }}
+                                        <small class="text-danger">{{ form.village.errors }}</small>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label>Niveau d'Étude</label>
+                                        {{ form.niveau_etude }}
+                                        <small class="text-danger">{{ form.niveau_etude.errors }}</small>
+                                    </div>
+
+                                    <!-- Checkbox Patient Mineur -->
+                                    <div class="col-md-6 form-group" x-data="{ checked: false }">
+                                        <label>Le Patient est-il mineur ? (moins de 15 ans)</label>
+                                        <div class="d-flex align-items-center">
+                                            <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                                            <span class="switch switch-lg switch-icon">
+                        <label>
+                            <input type="checkbox" name="patient_mineur" x-model="checked"
+                                   @change="patientMineur = checked">
+                            <span></span>
+                        </label>
+                    </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Accompagnateur si Patient Mineur -->
+                                <div class="row" x-show="patientMineur" x-transition>
+                                    <div class="col-md-3 form-group">
+                                        <label>Nom & Prénom de l’Accompagnateur</label>
+                                        {{ form.accompagnateur }}
+                                        <small class="text-danger">{{ form.accompagnateur.errors }}</small>
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Contact</label>
+                                        {{ form.accompagnateur_contact }}
+                                        <small class="text-danger">{{ form.accompagnateur_contact.errors }}</small>
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Adresse</label>
+                                        {{ form.accompagnateur_adresse }}
+                                        <small class="text-danger">{{ form.accompagnateur_adresse.errors }}</small>
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Lien avec Patient </label>
+                                        {{ form.accompagnateur_nature }}
+                                        <small class="text-danger">{{ form.accompagnateur_nature.errors }}</small>
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Niveau d'Étude</label>
+                                        {{ form.accompagnateur_niveau_etude }}
+                                        <small class="text-danger">{{ form.accompagnateur_niveau_etude.errors }}</small>
+                                    </div>
+                                </div>
+
+                                <!-- Motif de Vaccination -->
+                                <h2 class="mt-4 text-center text-primary">EXPOSITION</h2>
+
+
+                                <div class="row">
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Date d'exposition</label>
+                                        {{ form.date_exposition }}
+                                        <small class="text-danger">{{ form.date_exposition.errors }}</small>
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Lieu de l'exposition</label>
+                                        {{ form.lieu_exposition }}
+                                        <small class="text-danger">{{ form.lieu_exposition.errors }}</small>
+                                    </div>
+
+                                    <div x-data="{
+    search: '',
+    options: [],
+    async fetchOptions() {
+        if (this.search.length > 1) {
+            const response = await fetch('/api/communes?query=' + this.search);
+            this.options = await response.json();
+        } else {
+            this.options = [];
+        }
+    }
+}" class="col-md-3 form-group position-relative">
+                                        <label for="commune">Commune</label>
+                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
+                                               class="form-control" placeholder="Rechercher une commune..."
+                                               autocomplete="off">
+
+                                        <!-- Liste déroulante améliorée -->
+                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
+                                             x-show="options.length" x-on:click.away="options = []">
+                                            <ul class="list-group shadow bg-white w-100">
+                                                <template x-for="option in options" :key="option.id">
+                                                    <li class="list-group-item list-group-item-action"
+                                                        x-text="option.name"
+                                                        x-on:click.prevent="search = option.name; options = []">
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Quartier</label>
+                                        {{ form.exposition_quartier }}
+                                        <small class="text-danger">{{ form.exposition_quartier.errors }}</small>
+
+                                    </div>
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Circonstance :</h4></div>
+
+                                    {#                                  <div class="col-md-3 form-group">#}
+                                    {#                                        <label>Circonstance de l'exposition : </label>#}
+                                    {#                                        {{ form.circonstance }}#}
+                                    {#                                    </div>#}
+
+
+                                    {% for field in form %}
+                                        {% if field.name in " attaque_provoquee agression attaque_collective professionnel" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Nature de l’exposition
+                                        :</h4></div>
+                                    {% for field in form %}
+                                        {% if field.name in "morsure griffure lechage_saine lechage_lesee contactanimalpositif contactpatientpositif autre" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-3 form-group">
+                                        <label>detail de la nature d'exposition : </label>
+                                        {{ form.autre_nature_exposition }}
+                                    </div>
+
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Siège de l’exposition
+                                        :</h4></div>
+                                    {% for field in form %}
+                                        {% if field.name in "tete cou membre_superieur tronc organes_genitaux_externes membre_inferieur " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Aspect du siège de
+                                        l’exposition :</h4></div>
+
+                                    {% for field in form %}
+                                        {% if field.name in "saignement_immediat vetements_presents dechires " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Nombre de lésions</label>
+                                        {{ form.nbrlesions }}
+                                    </div>
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Animal:</h4></div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Espèce de l'animal : </label>
+                                        {{ form.espece }}
+                                    </div>
+
+                                    {% for field in form %}
+                                        {% if field.name in "domestic" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Statut de l'animal
+                                        (Mordeur) :</h4></div>
+
+                                    {% for field in form %}
+                                        <!--- Corriger inconnu pour connu et ajouter errant -->
+                                        {% if field.name in "connu disponible disparu mort abatu errant" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"></div>
+
+
+                                    <p class="text-muted col-12">Information sur le propriétaire par la victime : </p>
+                                    {% for field in form %}
+                                        {% if field.name in "connais_proprio" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+
+                                    <p class="text-muted col-12">Retour d’information au propriétaire par le CAR </p>
+                                    {% for field in form %}
+                                        {% if field.name in "avis convocation prophylaxie" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+
+
+                                    <!-- Autre Motif -->
+                                    <div class="form-group" x-show="autre" x-transition>
+                                        <label>Préciser le motif</label>
+                                        {{ form.autre_motif }}
+                                    </div>
+
+                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Statut Vaccinal de
+                                        l'animal:</h4></div>
+                                    <!-- Retirer inconn n double-->
+                                    {% for field in form %}
+                                        {% if field.name in "correctement_vaccine non_vaccine nonajours vacinconnu" %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Date denier vaccin: </label>
+                                        {{ form.date_derniere_vaccination }}
+                                    </div>
+                                </div>
+                                <!-- Canaux d'Information -->
+                                <h4 class="mt-4  mb-5 text-success">Surveillance vétérinaire : </h4>
+                                <div class="row">
+                                    {% for field in form %}
+                                        {% if field.name in "surveillance_veterinaire prelevement_animal diagnostic_laboratoire " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Date de diagnostique: </label>
+                                    {{ form.date_diagnostic }}
+                                </div>
+
+                                <div class="col-md-3 form-group">
+                                    <label>Gravite OMS </label>
+                                    {{ form.gravite_oms }}
+                                </div>
+
+
+                                <!-- Connaissance et Attitude -->
+                                <h1 class="mt-4 text-center text-primary">DOSSIER MEDICAL</h1>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h4 class="mt-4 mb-5 text-success">Antécédents médicaux : </h4></div>
+
+                                    <div class="col-md-6 form-group">
+                                        <label>Antécédents médicaux : </label>
+                                        {{ form.antecedents_medicaux }}
+                                    </div>
+
+                                    {% for field in form %}
+                                        {% if field.name in " probleme_coagulation  immunodepression  grossesse  vat_dernier_injection vat_rappel vat_lot traitements_en_cours " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-3 form-group">
+                                        <label>detail Probleme : </label>
+                                        {{ form.details_problemes }}
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>detail Immuno : </label>
+                                        {{ form.details_immo }}
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>detail Grosesse : </label>
+                                        {{ form.details_grosesse }}
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>detail Allergies : </label>
+                                        {{ form.allergies }}
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>detail Traitements en cours : </label>
+                                        {{ form.detail_traitements_en_cours }}
+                                    </div>
+
+                                    {#                                 <div class="col-12">#}
+                                    {#                                <h4 class="mt-4  mb-5 text-success">Antécédents vaccinaux : </h4> </div>#}
+
+                                    {#                                <div class="col-md-3 form-group">#}
+                                    {#                                        <label>VAT : Dernière injection le : </label>#}
+                                    {#                                        {{ form.vat_dernier_injection }}#}
+                                    {#                                    </div>#}
+                                    {#                                <div class="col-md-3 form-group">#}
+                                    {#                                        <label>detail Traitements en cours : </label>#}
+                                    {#                                        {{ form.vat_rappel }}#}
+                                    {#                                    </div>#}
+                                    {#                                <div class="col-md-3 form-group">#}
+                                    {#                                        <label>detail Traitements en cours : </label>#}
+                                    {#                                        {{ form.vat_lot }}#}
+                                    {#                                    </div>#}
+                                    {#                                <div class="col-md-3 form-group">#}
+                                    {#                                        <label>detail Traitements en cours : </label>#}
+                                    {#                                        {{ form.carnet_vaccinal }}#}
+                                    {#                                    </div>#}
+                                    {##}
+                                    {#                                 {% for field in form %}#}
+                                    {#                                        {% if field.name in "antecedents_medicaux probleme_coagulation details_problemes immunodepression details_immo grossesse details_grosesse allergies traitements_en_cours vat_dernier_injection vat_rappel vat_lot vaccin_antirabique carnet_vaccinal" %}#}
+                                    {#                                            <div class="col-md-3 form-group" x-data="{ checked: false }">#}
+                                    {#                                                <label>{{ field.label }}</label>#}
+                                    {#                                                <div class="d-flex align-items-center">#}
+                                    {#                                                    <span x-text="checked ? 'Oui' : 'Non'"#}
+                                    {#                                                          class="mr-2 font-weight-bold"></span>#}
+                                    {#                                                    <span class="switch switch-lg switch-icon">#}
+                                    {#                                <label>#}
+                                    {#                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">#}
+                                    {#                                    <span></span>#}
+                                    {#                                </label>#}
+                                    {#                            </span>#}
+                                    {#                                                </div>#}
+                                    {#                                            </div>#}
+                                    {#                                        {% endif %}#}
+                                    {#                                    {% endfor %}#}
+
+                                    <div class="col-12">
+                                        <h4 class="mt-4  mb-5 text-success">Episode actuel : </h4></div>
+                                    {% for field in form %}
+                                        {% if field.name in "lavage_plaies desinfection_plaies " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Délai après exposition :</label>
+                                        {{ form.delai_apres_exposition }}
+                                    </div>
+                                    <div class="col-md-3 form-group">
+                                        <label>Produits utilisés</label>
+                                        {{ form.produits_utilises }}
+                                    </div>
+                                    {% for field in form %}
+                                        {% if field.name in "sutures serum_antitetanique antibiotiques " %}
+                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
+                                                <label>{{ field.label }}</label>
+                                                <div class="d-flex align-items-center">
+                                                    <span x-text="checked ? 'Oui' : 'Non'"
+                                                          class="mr-2 font-weight-bold"></span>
+                                                    <span class="switch switch-lg switch-icon">
+                                <label>
+                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
+                                    <span></span>
+                                </label>
+                            </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <div class="col-md-3 form-group">
+                                        <label>Si oui, préciser (dose, durée)</label>
+                                        {{ form.details_antibiotiques }}
+                                    </div>
+
+
+                                    {#                                    <div class="col-md-6 form-group" x-data="{ checked: false }">#}
+                                    {#                                        <label>Aime-t-il les animaux ?</label>#}
+                                    {#                                        <div class="d-flex align-items-center">#}
+                                    {#                                            <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>#}
+                                    {#                                            <span class="switch switch-lg switch-icon">#}
+                                    {#                        <label>#}
+                                    {#                            <input type="checkbox" name="aime_animaux" x-model="checked"#}
+                                    {#                                   @change="aimeAnimaux = checked">#}
+                                    {#                            <span></span>#}
+                                    {#                        </label>#}
+                                    {#                    </span>#}
+                                    {#                                        </div>#}
+                                    {#                                    </div>#}
+                                </div>
+
+                                <!-- Si Aime les Animaux -->
+                                {#                                <div class="form-group" x-show="aimeAnimaux" x-transition>#}
+                                {#                                    <label>Type d'Animal Aimé</label>#}
+                                {#                                    {{ form.type_animal_aime }}#}
+                                {#                                </div>#}
+
+                                <!-- Soumission -->
+                                <button type="submit" class="btn btn-primary mt-4">Soumettre et envoyer en vaccination
+                                </button>
+                            </form>
+                        </div>
+
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Card-->
+                </div>
+                <!--end::Container-->
+            </div>
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <!--begin::Footer-->
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        {% include 'layout/footer.html' %}
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}

@@ -1,0 +1,352 @@
+from django.contrib import admin
+from django.contrib.gis.admin import OSMGeoAdmin
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin, ExportMixin
+from leaflet.admin import LeafletGeoAdmin
+from simple_history.admin import SimpleHistoryAdmin
+
+from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSanitaire, CentreAntirabique, Commune, \
+    EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
+    PreleveMode, Epidemie, RendezVousVaccination, Echantillon, StockVaccin, Facture, Caisse, TypeProtocole, \
+    Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI
+from rage_INHP.resources import RageHumaineNotificationResource
+
+
+# 🔹 Définition des ressources pour l'import/export
+class CommuneResource(resources.ModelResource):
+    class Meta:
+        model = Commune
+        fields = ('id', 'name', 'type', 'population', 'is_in', 'district__nom', 'geom')
+
+
+class DistrictSanitaireResource(resources.ModelResource):
+    class Meta:
+        model = DistrictSanitaire
+        fields = ('id', 'nom', 'region__name', 'geom', 'geojson')
+
+
+class HealthRegionResource(resources.ModelResource):
+    class Meta:
+        model = HealthRegion
+        fields = ('id', 'name', 'poles__name')
+
+
+# 🔹 Ajout du module ImportExportModelAdmin
+@admin.register(Commune)
+class CommuneAdmin(ImportExportModelAdmin, LeafletGeoAdmin):
+    resource_class = CommuneResource
+    list_display = ('name', 'district', 'population')
+    search_fields = ('name', 'district__nom')
+    list_filter = ('district',)
+    ordering = ('name',)
+
+    # Personnalisation de Leaflet pour afficher les cartes correctement
+    settings_overrides = {
+        'DEFAULT_ZOOM': 7,
+        'MIN_ZOOM': 5,
+        'MAX_ZOOM': 28,
+    }
+
+
+@admin.register(DistrictSanitaire)
+class DistrictSanitaireAdmin(ImportExportModelAdmin, LeafletGeoAdmin):
+    resource_class = DistrictSanitaireResource
+    list_display = ('nom', 'region')
+    search_fields = ('nom', 'region__name')
+    list_filter = ('region',)
+
+
+@admin.register(CentreAntirabique)
+class CentreAntirabiqueAdmin(OSMGeoAdmin):
+    list_display = ('nom', 'type', 'district', 'completeness', 'version', 'date_modified')
+    search_fields = ('nom', 'district__nom')
+    list_filter = ('type', 'district')
+    ordering = ('-date_modified',)
+    default_lon = 0  # Coordonnée par défaut pour la carte
+    default_lat = 5
+    default_zoom = 6
+    autocomplete_fields = ['district']
+
+
+@admin.register(RageHumaineNotification)
+class RageHumaineNotificationAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = (
+        'date_notification', 'hopital', 'agent_declarant', 'nature_exposition', 'categorie_lesion', 'evolution')
+    list_filter = ('hopital', 'nature_exposition', 'categorie_lesion', 'evolution', 'date_notification')
+    search_fields = ('hopital', 'agent_declarant', 'lieu_exposition')
+    ordering = ('-date_notification',)
+    date_hierarchy = 'date_exposition'
+    list_per_page = 25
+    resource_class = RageHumaineNotificationResource  # Ajout de l'exportation
+
+
+class PolesRegionauxResource(resources.ModelResource):
+    class Meta:
+        model = PolesRegionaux
+        fields = ('id', 'name')
+
+
+#
+@admin.register(PolesRegionaux)
+class PolesRegionauxAdmin(ImportExportModelAdmin):
+    resource_class = PolesRegionauxResource
+    list_display = ['name']
+    search_fields = ['name']
+
+
+@admin.register(HealthRegion)
+class HealthRegionAdmin(ImportExportModelAdmin):
+    resource_class = HealthRegionResource
+    list_display = ('name', 'poles')
+    search_fields = ('name',)
+    list_filter = ('poles',)
+
+
+# Register your models here.
+class EmployeeUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'roleemployee', 'email', 'contact', 'fonction')
+    search_fields = ('username', 'email', 'contact')
+    list_filter = ('roleemployee',)
+
+
+@admin.register(Patient)
+class PatientAdmin(admin.ModelAdmin):
+    list_display = (
+        'code_patient', 'nom', 'prenoms',
+        'contact', 'accompagnateur_contact',
+        'calculate_age', 'status', 'gueris', 'decede', 'created_at'
+    )
+    list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'residence_commune', 'created_at')
+    search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateur_contact')
+    readonly_fields = ('code_patient', 'calculate_age', 'created_at')
+    fieldsets = (
+        ("Identité du patient", {
+            'fields': (
+                ('nom', 'prenoms', 'sexe'),
+                ('date_naissance', 'calculate_age'),
+                ('contact', 'status'),
+            )
+        }),
+        ("Informations complémentaires", {
+            'fields': (
+                'secteur_activite', 'niveau_etude',
+                'residence_commune', 'quartier', 'village',
+                'centre_ar',
+                'proprietaire_animal', 'typeanimal', 'autretypeanimal'
+            )
+        }),
+        ("Accompagnateur", {
+            'classes': ('collapse',),
+            'fields': (
+                'patient_mineur',
+                ('accompagnateur', 'accompagnateur_contact'),
+                ('accompagnateur_nature', 'accompagnateur_niveau_etude'),
+                'accompagnateur_adresse',
+            )
+        }),
+        ("Statut de santé", {
+            'fields': (
+                ('gueris', 'decede'),
+                ('date_deces', 'cause_deces'),
+            )
+        }),
+        ("Informations système", {
+            'fields': ('code_patient', 'created_by', 'created_at'),
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+
+class VaccinationAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'date_prevue', 'date_effective', 'dose_ml', 'protocole', 'lieu')
+    search_fields = ('patient__nom', 'patient__prenoms', 'protocole')
+    list_filter = ('date_prevue', 'date_effective', 'protocole')
+
+
+class EpidemieAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'date_debut', 'date_fin', 'is_active')
+    search_fields = ('nom',)
+    list_filter = ('date_debut', 'date_fin')
+
+
+admin.site.register(EmployeeUser, EmployeeUserAdmin)
+
+# admin.site.register(CentreAntirabique)
+admin.site.register(EmployeeProfile)
+# admin.site.register(Patient, PatientAdmin)
+admin.site.register(Animal)
+admin.site.register(DossierMedical)
+admin.site.register(Vaccination, VaccinationAdmin)
+admin.site.register(PreleveMode)
+admin.site.register(Epidemie, EpidemieAdmin)
+
+
+# @admin.register(Exposition)
+# class ExpositionAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'patient', 'date_exposition', 'type_exposition', 'animal_concerne')
+#     search_fields = ('patient__nom', 'patient__prenoms', 'lieu_exposition')
+#     list_filter = ('type_exposition', 'animal_concerne', 'created_at')
+
+
+# @admin.register(ProtocoleVaccination)
+# class ProtocoleVaccinationAdmin(admin.ModelAdmin):
+#     list_display = ('nom', 'patient', 'nombre_doses', 'intervale_jours', 'voie_administration', 'duree', 'created_at')
+#     search_fields = ('patient__nom', 'nom')
+#     list_filter = ('nom', 'voie_administration')
+#     ordering = ('-created_at',)
+
+
+@admin.register(RendezVousVaccination)
+class RendezVousVaccinationAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'date_rendez_vous', 'dose_numero', 'est_effectue', 'protocole', 'created_at')
+    search_fields = ('patient__nom', 'protocole__nom')
+    list_filter = ('est_effectue', 'protocole__nom')
+    ordering = ('date_rendez_vous',)
+
+
+@admin.register(Symptom)
+class SymptomAdmin(admin.ModelAdmin):
+    list_display = ('nom',)
+    search_fields = ('nom',)
+
+
+@admin.register(Echantillon)
+class EchantillonAdmin(admin.ModelAdmin):
+    list_display = ('code_echantillon', 'patient', 'maladie', 'date_collect', 'site_collect', 'resultat', 'created_at')
+    search_fields = ('code_echantillon', 'patient__nom', 'maladie__nom')
+    list_filter = ('resultat', 'maladie')
+
+
+@admin.register(StockVaccin)
+class StockVaccinAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'lot', 'quantite', 'unite', 'date_expiration', 'fournisseur', 'created_by', 'created_at')
+    search_fields = ('nom', 'lot', 'fournisseur')
+    list_filter = ('unite', 'date_expiration', 'fournisseur')
+    ordering = ('-created_at',)
+
+
+@admin.register(Facture)
+class FactureAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'patient', 'montant_total', 'montant_paye', 'reste_a_payer', 'statut_paiement', 'date_facture')
+    search_fields = ('patient__nom',)
+    list_filter = ('statut_paiement', 'date_facture')
+    ordering = ('-date_facture',)
+
+
+@admin.register(Caisse)
+class CaisseAdmin(admin.ModelAdmin):
+    list_display = ('facture', 'montant', 'mode_paiement', 'date_paiement', 'created_by')
+    search_fields = ('facture__patient__nom',)
+    list_filter = ('mode_paiement', 'date_paiement')
+    ordering = ('-date_paiement',)
+
+
+class PreexpositionInline(admin.StackedInline):
+    """
+    Affichage des enregistrements Preexposition directement dans l'admin Patient.
+    """
+    model = Preexposition
+    extra = 1  # Nombre de formulaires vides à afficher par défaut
+
+
+@admin.register(Preexposition)
+class PreexpositionAdmin(admin.ModelAdmin):
+    list_display = ('client', 'codeexpo', 'voyage', 'mise_a_jour', 'protection_rage', 'created_at')
+    list_filter = ('voyage', 'mise_a_jour', 'protection_rage', 'chien_voisin', 'chiens_errants')
+    search_fields = ('client__nom', 'client__prenoms', 'client__code_patient', 'dernier_var_animal_type')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'created_by', 'codeexpo',)
+
+    fieldsets = (
+        ("Patient", {"fields": ("client", "created_by")}),
+        ("Motif de Vaccination", {"fields": (
+            "voyage", "mise_a_jour", "protection_rage", "chien_voisin", "chiens_errants", "autre", "autre_motif")}),
+        ("Canaux d'Information", {"fields": (
+            "tele", "radio", "sensibilisation", "proche", "presse", "passage_car", "diff_canal", "canal_infos")}),
+        ("Connaissance et Attitude", {"fields": (
+            "aime_animaux", "type_animal_aime", "connait_protocole_var", "dernier_var_animal_type",
+            "dernier_var_animal_date")}),
+        ("Évaluation", {"fields": ("mesures_elimination_rage", "appreciation_cout_var")}),
+        ("Informations Générales", {"fields": ("created_at", "codeexpo")}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        """Attribuer automatiquement l'utilisateur qui crée l'enregistrement."""
+        if not obj.created_by:
+            obj.created_by = request.user
+        obj.save()
+
+
+class PatientAdmin(admin.ModelAdmin):
+    """
+    Personnalisation de l'affichage du modèle Patient.
+    """
+    list_display = ('nom', 'prenoms', 'contact', 'date_naissance', 'sexe', 'created_at')
+    search_fields = ('nom', 'prenoms', 'contact')
+    list_filter = ('sexe', 'created_at')
+    inlines = [PreexpositionInline]  # Ajoute Preexposition directement dans Patient
+
+
+@admin.register(ProtocoleVaccination)
+class ProtocoleVaccinationAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'nombre_doses', 'duree', 'created_at')
+    list_filter = ('nom',)
+    search_fields = ('nom__nom_protocole',)
+    ordering = ('-created_at',)
+
+
+@admin.register(TypeProtocole)
+class TypeProtocoleAdmin(admin.ModelAdmin):
+    list_display = ('nom_protocole', 'nombre_dose', 'prix')
+    search_fields = ('nom_protocole',)
+
+
+@admin.register(Technique)
+class TechniqueAdmin(admin.ModelAdmin):
+    list_display = ('nom',)
+
+
+@admin.register(PostExposition)
+class PostExpositionAdmin(admin.ModelAdmin):
+    list_display = ('client', 'date_exposition', 'lieu_exposition', 'gravite_oms', 'created_at')
+    list_filter = ('gravite_oms',)
+    search_fields = ('client__nom',)
+    date_hierarchy = 'date_exposition'
+
+
+@admin.register(MAPI)
+class MAPIAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'vaccination', 'date_apparition', 'gravite', 'evolution', 'created_at')
+    list_filter = ('gravite', 'evolution', 'date_apparition')
+    search_fields = ('patient__nom', 'patient__prenoms', 'description')
+    date_hierarchy = 'date_apparition'
+    ordering = ('-date_apparition',)
+    raw_id_fields = ('patient', 'vaccination')  # Useful if you have many patients/vaccinations
+
+    fieldsets = (
+        ('Informations patient', {
+            'fields': ('patient', 'vaccination')
+        }),
+        ('Détails MAPI', {
+            'fields': ('date_apparition', 'description', 'gravite')
+        }),
+        ('Suivi médical', {
+            'fields': ('traitement_administre', 'evolution')
+        }),
+        ('Métadonnées', {
+            'fields': ('created_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        # Make created_by and created_at read-only
+        if obj:  # editing an existing object
+            return ('created_by', 'created_at')
+        return ()

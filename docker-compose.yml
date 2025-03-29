@@ -1,113 +1,28 @@
-#services:
-#
-#  epidemieweb:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    ports:
-#      #port du server : port de l'appliaction
-#      - 5191:8000
-#    volumes:
-#      - .:/epidemie-app/
-#    env_file:
-#      - ./.env
-#    restart: always
-#    #    environment:
-#    #variable dans le setting de django : variable du ficher .env_exemple
-#    #      - NAME=$DATABASE_NAME
-#    #      - USER=$DATABASE_USER
-#    #      - PASSWORD=$DATABASE_PASSWORD
-#    #      - HOST=$DATABASE_HOST
-#    #      - PORT=$DATABASE_PORT
-#    depends_on:
-#      - epidemieDB
-#
-#networks:
-#  web:
-#    driver: bridge
-#
-#  nginx_epi:
-#    image: nginx:latest
-#    volumes:
-#      - ./nginx.conf:/etc/nginx/nginx.conf  # Montez votre fichier de configuration Nginx
-#      - static_volume:/staticfiles/  # Remplacez par le chemin absolu
-#      - media_volume:/media/  # Remplacez par le chemin absolu
-#    ports:
-#      - "80:80"
-#      - "443:443"
-#    depends_on:
-#      - epidemieweb
-#    networks:
-#      - web
-#
-#    certbot_epi:
-#      image: certbot/certbot
-#      container_name: certbot
-#      volumes:
-#        - ./nginx/ssl:/etc/letsencrypt
-#        - ./nginx/html:/usr/share/nginx/html
-#      entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'
-#  #      depends_on:
-#  #        - nginx_epi
-#  #      networks:
-#  #        - web
-#
-#  epidemieDB:
-#    image: postgis/postgis:16-3.4
-#    platform: linux/amd64
-#    restart: always
-#      #garder le port pour un acces a lexterrieur si non retirer
-#      #      ports:
-#    #        -5432:5432
-#    environment:
-#      - POSTGRES_USER=ogah
-#      - POSTGRES_PASSWORD=NEWdimension_MAC@24
-#      - POSTGRES_DB=epidemie
-#      - PG_DATA=/data
-#      #    ports:
-#      #      - "5432:5432"
-#
-#    volumes:
-#      - pgdata:/var/lib/postgresql/data
-#
-#  adminer:
-#    image: adminer
-#    restart: always
-#    ports:
-#      - 6080:8080
-#
-#
-#volumes:
-#  pgdata:
-#    driver: local
-#  static_volume:
-#  media_volume:
 
 services:
 
-  epidemieweb:
+  rageweb:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 5191:8000  # port du server : port de l'application
+      - 1524:8000  # port du server : port de l'application
     volumes:
-      - .:/epidemie-app/
+      - .:/rage-app/
     env_file:
       - ./.env
     restart: always
     depends_on:
-      - epidemieDB
+      - rageDB
 
-  epidemieDB:
+  rageDB:
     image: postgis/postgis:16-3.4
     platform: linux/amd64
     restart: always
     environment:
-      - POSTGRES_USER=ogah
-      - POSTGRES_PASSWORD=NEWdimension_MAC@24
-      - POSTGRES_DB=epidemie
-      - PG_DATA=/data
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -121,18 +36,18 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./certs:/etc/nginx/certs
     networks:
-      - epidemietracker_default
+      - rage_default
 
   adminer:
     image: adminer
     restart: always
     ports:
-      - 6080:8080
+      - 2502:8080
     networks:
-      - epidemietracker_default
+      - rage_default
 
 networks:
-  epidemietracker_default:
+  rage_default:
     external: true
 
 volumes:

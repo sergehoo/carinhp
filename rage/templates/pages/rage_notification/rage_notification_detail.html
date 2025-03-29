@@ -1,0 +1,111 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+            {% include 'layout/header-title.html' %}
+
+            <div class="d-flex flex-column-fluid">
+                <div class="container">
+                    <div class="card card-custom">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                Détails de la Notification de Rage Humaine
+                                <span class="d-block text-muted pt-2 font-size-sm">Informations complètes</span>
+                            </h3>
+                            <div class="card-toolbar">
+                                <a href="{% url 'rage_notification_update' notification.pk %}" class="btn btn-warning">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <a href="{% url 'rage_notification_delete' notification.pk %}" class="btn btn-danger ml-3">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                                <a href="{% url 'notification_rage_liste' %}" class="btn btn-secondary ml-3">
+                                    🔙 Retour
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                              <!-- Section Patient -->
+                            <h3 class="text-primary">🧑‍⚕️ Informations du Patient</h3>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nom :</strong> {{ notification.client.nom }}</p>
+                                    <p><strong>Prénoms :</strong> {{ notification.client.prenoms }}</p>
+                                    <p><strong>Contact :</strong> {{ notification.client.contact }}</p>
+                                    <p><strong>Date de naissance :</strong> {{ notification.client.date_naissance }}</p>
+                                    <p><strong>Âge :</strong> {{ notification.client.calculate_age }} ans</p>
+                                    <p><strong>Sexe :</strong> {{ notification.client.get_sexe_display }}</p>
+                                    <p><strong>Niveau d'étude :</strong> {{ notification.client.get_niveau_etude_display }}</p>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <p><strong>Commune de résidence :</strong> {{ notification.client.residence_commune }}</p>
+                                    <p><strong>Quartier :</strong> {{ notification.client.quartier }}</p>
+                                    <p><strong>Village :</strong> {{ notification.client.village }}</p>
+                                    <p><strong>Propriétaire d'un animal :</strong> {{ notification.client.proprietaire_animal|yesno:"Oui,Non" }}</p>
+                                    <p><strong>Statut :</strong> {{ notification.client.get_status_display }}</p>
+                                    <p><strong>Cause de décès (si applicable) :</strong> {{ notification.client.cause_deces }}</p>
+                                </div>
+                            </div>
+                                <hr>
+                            <div class="row">
+                                <!-- Colonne Gauche -->
+                                <div class="col-md-6">
+                                    <h5 class="text-primary">📅 Informations Générales</h5>
+                                    <p><strong>Date de notification :</strong> {{ notification.date_notification }}</p>
+                                    <p><strong>Hôpital :</strong> {{ notification.hopital }}</p>
+                                    <p><strong>Agent déclarant :</strong> {{ notification.agent_declarant }}</p>
+                                    <p><strong>Adresse :</strong> {{ notification.adresse }}</p>
+                                    <p><strong>Téléphone :</strong> {{ notification.telephone }}</p>
+                                    <p><strong>Email :</strong> {{ notification.email }}</p>
+
+                                    <h5 class="text-primary mt-4">⚠️ Exposition</h5>
+                                    <p><strong>Date de l'exposition :</strong> {{ notification.date_exposition }}</p>
+                                    <p><strong>Lieu de l'exposition :</strong> {{ notification.lieu_exposition }}</p>
+                                    <p><strong>Pays :</strong> {{ notification.pays }}</p>
+                                    <p><strong>Nature de l'exposition :</strong> {{ notification.nature_exposition }}</p>
+                                    <p><strong>Catégorie de la lésion :</strong> {{ notification.categorie_lesion }}</p>
+                                </div>
+
+                                <!-- Colonne Droite -->
+                                <div class="col-md-6">
+                                    <h5 class="text-primary">🐾 Animal</h5>
+                                    <p><strong>Animal responsable :</strong> {{ notification.animal_responsable }}</p>
+                                    <p><strong>Animal suspecté de rage :</strong> {{ notification.animal_suspect_rage }}</p>
+                                    <p><strong>Évolution de l'animal :</strong> {{ notification.devenir_animal }}</p>
+
+                                    <h5 class="text-primary mt-4">💉 Prise en Charge</h5>
+                                    <p><strong>Soins locaux :</strong> {{ notification.soins_locaux|yesno:"Oui,Non" }}</p>
+                                    <p><strong>Désinfection :</strong> {{ notification.desinfection|yesno:"Oui,Non" }}</p>
+                                    <p><strong>Produit de désinfection :</strong> {{ notification.produit_desinfection }}</p>
+                                    <p><strong>Vaccination antirabique :</strong> {{ notification.vaccination_antirabique|yesno:"Oui,Non" }}</p>
+                                    <p><strong>Date de début de vaccination :</strong> {{ notification.date_debut_vaccination }}</p>
+                                    <p><strong>Protocole utilisé :</strong> {{ notification.protocole_vaccination }}</p>
+
+                                    <h5 class="text-primary mt-4">📊 Évolution du Patient</h5>
+                                    <p><strong>Évolution :</strong> {{ notification.evolution }}</p>
+                                    <p><strong>Date de décès (si applicable) :</strong> {{ notification.date_deces }}</p>
+                                </div>
+                            </div>
+
+
+
+
+                        </div>
+
+                        <div class="card-footer text-right">
+                            <a href="{% url 'notification_rage_liste' %}" class="btn btn-secondary">
+                                🔙 Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% include 'layout/footer.html' %}
+    </div>
+{% endblock %}

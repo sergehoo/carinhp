@@ -1,10 +1,177 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossier Post-Exposition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .headtable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .headtable, th, td {
+            text-align: center;
+        }
+
+        th, td {
+            padding: 2px;
+        }
+
+        .section {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .corps {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .info {
+            width: 48%;
+            padding: 2px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+            box-sizing: border-box;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .valeur {
+            font-weight: bold;
+            color: #ff0000;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
 
+<!-- ✅ ENTÊTE DU DOCUMENT -->
+<table class="headtable" style="border: 1px solid black;">
+    <tr>
+        <td rowspan="4">
+            <img alt="Logo" src="{{ inhplogo }}" class="logo-default max-h-30px">
+            <strong>
+                <br>BPV 14 Abidjan
+                <br>TEL : 27-21-25-92-54
+                <br>FAX : 27-21-24-69-81
+                <br>Email : inhp@inhp.ci
+                <br>Web : inhp@inhp.com
+            </strong>
+        </td>
+        <td rowspan="2"><strong>PROCESSUS VACCINATION <br>Sous-processus : CENTRE ANTIRABIQUE</strong></td>
+        <td rowspan="4">
+            <img alt="Logo" src="{{ mshplogo }}" class="max-h-20px">
+        </td>
+        <td><strong>Référence :</strong> EN11-R02-CAR</td>
+    </tr>
+    <tr>
+        <td><strong>Création :</strong> 29 Décembre 2022</td>
+    </tr>
+    <tr>
+        <td rowspan="2"><strong>DOSSIER DE VACCINATION POST-EXPOSITION</strong></td>
+        <td><strong>Pages :</strong> 1 sur 2</td>
+    </tr>
+    <tr>
+        <td><strong>Version :</strong> 01</td>
+    </tr>
+</table>
+
+<!-- ✅ INFORMATIONS DU CENTRE -->
+<table style="width: 100%; font-weight: bold; border-collapse: collapse; border: white;">
+    <tr>
+        <td style="width: 50%;">Service antirabique : {{ centre_nom }}</td>
+        <td style="width: 25%; text-align: center;">Date : {{ date_creation }}</td>
+        <td style="width: 25%; text-align: right;">Numéro : {{ numero }}</td>
+    </tr>
+</table>
+
+<!-- ✅ IDENTIFICATION DU CLIENT -->
+<div class="section">I. Identification du Patient</div>
+<div class="corps">
+    <div class="info"><span class="label">Nom :</span> <span class="valeur">{{ client.nom }}</span></div>
+    <div class="info"><span class="label">Prénoms :</span> <span class="valeur">{{ client.prenoms }}</span></div>
+    <div class="info"><span class="label">Sexe :</span> <span class="valeur">{{ client.sexe }}</span></div>
+    <div class="info"><span class="label">Âge :</span> <span class="valeur">{{ client.calculate_age }} ans / né le : {{ client.date_naissance }}</span></div>
+    <div class="info"><span class="label">Contact :</span> <span class="valeur">{{ client.contact }}</span></div>
+    <div class="info"><span class="label">Profession :</span> <span class="valeur">{{ client.profession }}</span></div>
+</div>
+
+<hr>
+
+<!-- ✅ DETAILS DE L'EXPOSITION -->
+<div class="section">II. Détails de l'exposition</div>
+<div class="corps">
+    <div class="info"><span class="label">Date d'exposition :</span> <span class="valeur">{{ postexposition.date_exposition }}</span></div>
+    <div class="info"><span class="label">Lieu :</span> <span class="valeur">{{ postexposition.lieu_exposition }}</span></div>
+    <div class="info"><span class="label">Commune :</span> <span class="valeur">{{ postexposition.exposition_commune.nom }}</span></div>
+    <div class="info"><span class="label">Quartier :</span> <span class="valeur">{{ postexposition.exposition_quartier }}</span></div>
+</div>
+
+<!-- ✅ CIRCONSTANCES -->
+<div class="section">III. Circonstances</div>
+<div class="corps">
+    <div class="info"><span class="label">Type :</span> <span class="valeur">{{ postexposition.get_circonstance_display }}</span></div>
+    <div class="info"><span class="label">Professionnel :</span> <span class="valeur">{{ postexposition.type_professionnel }}</span></div>
+</div>
+
+<!-- ✅ GRAVITÉ & SUIVI -->
+<div class="section">IV. Gravité et Surveillance</div>
+<div class="corps">
+    <div class="info"><span class="label">Gravité OMS :</span> <span class="valeur">{{ postexposition.get_gravite_oms_display }}</span></div>
+    <div class="info"><span class="label">Surveillance vétérinaire :</span> <span class="valeur">{{ postexposition.surveillance_veterinaire|yesno:"Oui,Non" }}</span></div>
+</div>
+
+<hr>
+
+<!-- ✅ VACCINATIONS -->
+<div class="section">V. Vaccination Antirabique</div>
+{% if vaccinations %}
+<table style="width: 100%; border: 1px solid black;">
+    <thead>
+        <tr>
+            <th>Date Prévue</th>
+            <th>Date Effective</th>
+            <th>Vaccin</th>
+            <th>Dose (ml)</th>
+            <th>Voie</th>
+            <th>Lieu</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vaccination in vaccinations %}
+        <tr>
+            <td>{{ vaccination.date_prevue|date:"d/m/Y" }}</td>
+            <td>{{ vaccination.date_effective|default:"Non renseignée" }}</td>
+            <td>{{ vaccination.vaccin.nom }}</td>
+            <td>{{ vaccination.dose_ml }}</td>
+            <td>{{ vaccination.get_voie_injection_display }}</td>
+            <td>{{ vaccination.lieu }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>Aucune vaccination enregistrée.</p>
+{% endif %}
 </body>
 </html>

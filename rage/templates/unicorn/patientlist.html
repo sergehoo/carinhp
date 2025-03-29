@@ -1,0 +1,89 @@
+<!-- templates/patientlist.html -->
+
+<div unicorn:component="patientlist">
+    <h2>Liste des Patients</h2>
+
+    <!-- Filtres de Recherche -->
+    <form method="get">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-3 mb-3">
+                <input class="form-control" type="text" unicorn:model.debounce="search" placeholder="Rechercher un patient...">
+            </div>
+            <div class="col-lg-3">
+                <select class="form-control" unicorn:model="sexe">
+                    <option value="">Tous les genres</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <select class="form-control" unicorn:model="commune">
+                    <option value="">Toutes les Communes</option>
+                    <option value="Cocody">Cocody</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <select class="form-control" unicorn:model="status">
+                    <option value="">Tous les statuts</option>
+                    <option value="Actif">Actif</option>
+                    <option value="Inactif">Inactif</option>
+                </select>
+            </div>
+            <div class="col-lg-12 text-right mt-3 mb-10">
+                <button class="btn btn-success" unicorn:click="filter_patients">Chercher</button>
+                <button class="btn btn-danger" unicorn:click="reset_filters">Réinitialiser</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tableau des Patients -->
+    <table class="table table-bordered mt-3">
+        <thead class="thead-light">
+            <tr>
+                <th>Code Patient</th>
+                <th>Nom</th>
+                <th>Prénoms</th>
+                <th>Téléphone</th>
+                <th>Sexe</th>
+                <th>Commune</th>
+                <th>Statut</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr>
+                <td>{{ patient.code_patient }}</td>
+                <td>{{ patient.nom }}</td>
+                <td>{{ patient.prenoms }}</td>
+                <td>
+
+                    {{ patient.contact.as_national }}
+
+                </td>
+                <td>{{ patient.sexe }}</td>
+                <td>{{ patient.residence_commune.name }}</td>
+                <td>{{ patient.status }}</td>
+                <td>
+                    <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-primary btn-icon btn-xs"><em class="fas fa-eye"></em></a>
+                    <a href="" class="btn btn-secondary btn-icon btn-xs ml-2 mr-2"><em class="fas fa-edit"></em></a>
+                    <a href="" class="btn btn-danger btn-icon btn-xs"><em class="fas fa-trash"></em></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">Aucun patient trouvé</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="mt-3 text-center">
+        <button class="btn btn-primary" unicorn:click="prev_page" {% if page == 1 %}disabled{% endif %}>Précédent</button>
+        <span>Page {{ page }} sur {{ total_pages }}</span>
+        <button class="btn btn-primary" unicorn:click="next_page" {% if page == total_pages %}disabled{% endif %}>Suivant</button>
+    </div>
+</div>

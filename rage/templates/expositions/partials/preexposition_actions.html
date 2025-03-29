@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+<a href="{% url 'preexposition_detail' record.pk %}" class="btn btn-icon btn-info btn-xs"><i class="fa fa-eye"></i></a>
+<a href="{% url 'preexposition_edit' record.pk %}" class="btn btn-icon  btn-warning btn-xs"><i class="fa fa-edit"></i></a>
+<a href="{% url 'preexposition_delete' record.pk %}" class="btn btn-icon  btn-danger btn-xs"><i class="fa fa-trash"></i></a>
+<a href="{% url 'fichepreexpoPDF' record.pk %}" class="btn btn-icon  btn-dark btn-xs"> <i class="fa fa-file-pdf"></i></a>

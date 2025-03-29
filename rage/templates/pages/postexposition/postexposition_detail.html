@@ -1,0 +1,658 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <!-- content @s -->
+            <div class="nk-content" style="background-color: #f8f9fa;">
+                <div class="container-fluid">
+                    <div class="nk-content-inner">
+                        <div class="nk-content-body">
+                            <div class="nk-block">
+                                <div class="card card-bordered">
+                                    <div class="card-inner">
+                                        <!-- En-tête -->
+                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                            <div>
+                                                <h4 class="nk-block-title">Dossier Post-Exposition #{{ postexposition.id }}</h4>
+                                                <p class="text-soft">Créé le {{ postexposition.created_at|date:"d/m/Y" }} par {{ postexposition.created_by.get_full_name }}</p>
+                                            </div>
+                                            <div>
+                                                <a href="" class="btn btn-sm btn-outline-primary">
+                                                    <em class="icon ni ni-edit"></em> Modifier
+                                                </a>
+                                                <a href="{% url 'postexposition_list' %}" class="btn btn-sm btn-outline-secondary">
+                                                    <em class="icon ni ni-list"></em> Retour à la liste
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <!-- Onglets -->
+                                        <ul class="nav nav-tabs nav-tabs-mb-icon nav-tabs-card">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" data-toggle="tab" href="#exposition">
+                                                    <em class="icon ni ni-clipboard mr-1"></em> Exposition
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#animal">
+                                                    <em class="icon ni ni-paw mr-1"></em> Animal
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#medical">
+                                                    <em class="icon ni ni-medical mr-1"></em> Dossier Médical
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" data-toggle="tab" href="#prise-charge">
+                                                    <em class="icon ni ni-first-aid mr-1"></em> Prise en charge
+                                                </a>
+                                            </li>
+                                        </ul>
+
+                                        <!-- Contenu des onglets -->
+                                        <div class="tab-content mt-4">
+                                            <!-- Onglet Exposition -->
+                                            <div class="tab-pane active" id="exposition">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Détails de l'exposition</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date d'exposition:</strong>
+                                                                        {{ postexposition.date_exposition|date:"d/m/Y"|default:"Non précisé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Lieu d'exposition:</strong>
+                                                                        {{ postexposition.lieu_exposition|default:"Non précisé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Commune:</strong>
+                                                                        {{ postexposition.exposition_commune|default:"Non précisé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Quartier:</strong>
+                                                                        {{ postexposition.exposition_quartier|default:"Non précisé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Circonstance:</strong>
+                                                                        {{ postexposition.circonstance|default:"Non précisé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Type d'exposition:</strong>
+                                                                        <div class="d-flex flex-wrap mt-2">
+                                                                            {% if postexposition.morsure %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Morsure</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.griffure %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Griffure</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.lechage_saine %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Léchage peau saine</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.lechage_lesee %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Léchage peau lésée</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.contactanimalpositif %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Contact animal positif</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.contactpatientpositif %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Contact patient positif</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.autre %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Autre: {{ postexposition.autre_nature_exposition }}</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Siège de l'exposition</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Sièges touchés:</strong>
+                                                                        <div class="d-flex flex-wrap mt-2">
+                                                                            {% if postexposition.tete %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Tête</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.cou %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Cou</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.membre_superieur %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Membre supérieur: {{ postexposition.preciser_membre_sup|default:"" }}</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.tronc %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Tronc: {{ postexposition.preciser_tronc|default:"" }}</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.organes_genitaux_externes %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Organes génitaux externes</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.membre_inferieur %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Membre inférieur: {{ postexposition.preciser_membre_inf|default:"" }}</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Saignement immédiat:</strong>
+                                                                        {{ postexposition.saignement_immediat|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Vêtements présents:</strong>
+                                                                        {{ postexposition.vetements_presents|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Vêtements déchirés:</strong>
+                                                                        {{ postexposition.vetements_dechires|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Nombre de lésions:</strong>
+                                                                        {{ postexposition.nbrlesions|default:"Non précisé" }}
+                                                                    </li>
+                                                                    {% if postexposition.siege_exposition %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Description complète:</strong>
+                                                                        <p>{{ postexposition.siege_exposition }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Patient</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="d-flex align-items-center mb-3">
+                                                                    <div class="user-avatar bg-primary mr-3">
+                                                                        <span>{{ postexposition.client.nom|first }}{{ postexposition.client.prenoms|first }}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h5>{{ postexposition.client.nom_complet }}</h5>
+                                                                        <p class="text-soft mb-0">Code: {{ postexposition.client.code_patient }}</p>
+                                                                        <p class="text-soft">Tél: {{ postexposition.client.telephone1 }}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <a href="{% url 'patient_detail' postexposition.client.id %}" class="btn btn-sm btn-outline-primary">
+                                                                    Voir dossier complet
+                                                                </a>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="card card-bordered mt-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Gravité et surveillance</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Classification OMS:</strong>
+                                                                        {{ postexposition.gravite_oms|default:"Non classé" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Surveillance vétérinaire:</strong>
+                                                                        {{ postexposition.surveillance_veterinaire|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.certificat %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Certificat:</strong>
+                                                                        {{ postexposition.certificat }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.piece_jointe %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Pièce jointe:</strong>
+                                                                        <a href="{{ postexposition.piece_jointe.url }}" target="_blank">Voir le document</a>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.date_etablissement %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date établissement:</strong>
+                                                                        {{ postexposition.date_etablissement|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.Date_depot_car %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date dépôt CAR:</strong>
+                                                                        {{ postexposition.Date_depot_car|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.Decision_de_poursuite_tar %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Décision poursuite TAR:</strong>
+                                                                        {{ postexposition.Decision_de_poursuite_tar }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.Decision_d_arrete_tar %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Décision arrêt TAR:</strong>
+                                                                        {{ postexposition.Decision_d_arrete_tar }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Onglet Animal -->
+                                            <div class="tab-pane" id="animal">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Animal agresseur</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Espèce:</strong>
+                                                                        {{ postexposition.espece }}
+                                                                        {% if postexposition.autre_animal %}
+                                                                        ({{ postexposition.autre_animal }})
+                                                                        {% endif %}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Statut:</strong>
+                                                                        <div class="d-flex flex-wrap mt-2">
+                                                                            {% if postexposition.domestic %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Domestique</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.inconnu %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Inconnu</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.errant %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Errant</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.disparu %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Disparu</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.mort %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Mort</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.abatu %}
+                                                                            <span class="badge badge-primary mr-2 mb-2">Abattu</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Vaccination:</strong>
+                                                                        <div class="d-flex flex-wrap mt-2">
+                                                                            {% if postexposition.correctement_vaccine %}
+                                                                            <span class="badge badge-success mr-2 mb-2">Correctement vacciné</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.non_vaccine %}
+                                                                            <span class="badge badge-danger mr-2 mb-2">Non vacciné</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.nonajours %}
+                                                                            <span class="badge badge-warning mr-2 mb-2">Non à jour</span>
+                                                                            {% endif %}
+                                                                            {% if postexposition.vacinconnu %}
+                                                                            <span class="badge badge-secondary mr-2 mb-2">Vaccin inconnu</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </li>
+                                                                    {% if postexposition.date_derniere_vaccination %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date dernière vaccination:</strong>
+                                                                        {{ postexposition.date_derniere_vaccination|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Diagnostic animal</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Prélèvement animal:</strong>
+                                                                        {{ postexposition.prelevement_animal|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.diagnostic_laboratoire %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Diagnostic laboratoire:</strong>
+                                                                        {{ postexposition.diagnostic_laboratoire }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.date_diagnostic %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date diagnostic:</strong>
+                                                                        {{ postexposition.date_diagnostic|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Propriétaire</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Connaît propriétaire:</strong>
+                                                                        {{ postexposition.connais_proprio|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.nom_proprietaire %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Nom propriétaire:</strong>
+                                                                        {{ postexposition.nom_proprietaire }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.contact_proprietaire %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Contact propriétaire:</strong>
+                                                                        {{ postexposition.contact_proprietaire }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.info_proprietaire %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Info propriétaire:</strong>
+                                                                        {{ postexposition.info_proprietaire }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.retour_info_proprietaire %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Retour info propriétaire:</strong>
+                                                                        {{ postexposition.retour_info_proprietaire }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Avis:</strong>
+                                                                        {{ postexposition.avis|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Convocation:</strong>
+                                                                        {{ postexposition.convocation|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Prophylaxie:</strong>
+                                                                        {{ postexposition.prophylaxie|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Onglet Dossier Médical -->
+                                            <div class="tab-pane" id="medical">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Antécédents médicaux</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    {% if postexposition.antecedents_medicaux %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Antécédents:</strong>
+                                                                        <p>{{ postexposition.antecedents_medicaux }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Problème coagulation:</strong>
+                                                                        {{ postexposition.probleme_coagulation|yesno:"Oui,Non" }}
+                                                                        {% if postexposition.details_problemes %}
+                                                                        ({{ postexposition.details_problemes }})
+                                                                        {% endif %}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Immunodépression:</strong>
+                                                                        {{ postexposition.immunodepression|yesno:"Oui,Non" }}
+                                                                        {% if postexposition.details_immo %}
+                                                                        ({{ postexposition.details_immo }})
+                                                                        {% endif %}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Grossesse:</strong>
+                                                                        {{ postexposition.grossesse|yesno:"Oui,Non" }}
+                                                                        {% if postexposition.details_grosesse %}
+                                                                        ({{ postexposition.details_grosesse }})
+                                                                        {% endif %}
+                                                                    </li>
+                                                                    {% if postexposition.allergies %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Allergies:</strong>
+                                                                        <p>{{ postexposition.allergies }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.traitements_en_cours %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Traitements en cours:</strong>
+                                                                        <p>{{ postexposition.traitements_en_cours }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Antécédents vaccinaux</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    {% if postexposition.vat_dernier_injection %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Dernière injection VAR:</strong>
+                                                                        {{ postexposition.vat_dernier_injection|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.vat_rappel %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Rappel VAR:</strong>
+                                                                        {{ postexposition.vat_rappel|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.vat_lot %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Lot VAR:</strong>
+                                                                        {{ postexposition.vat_lot }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Vaccin antirabique:</strong>
+                                                                        {{ postexposition.vaccin_antirabique|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.carnet_vaccinal %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Carnet vaccinal:</strong>
+                                                                        <p>{{ postexposition.carnet_vaccinal }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Onglet Prise en charge -->
+                                            <div class="tab-pane" id="prise-charge">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Traitement initial</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item">
+                                                                        <strong>Lavage plaies:</strong>
+                                                                        {{ postexposition.lavage_plaies|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Désinfection plaies:</strong>
+                                                                        {{ postexposition.desinfection_plaies|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.delai_apres_exposition %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Délai après exposition:</strong>
+                                                                        {{ postexposition.delai_apres_exposition }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.produits_utilises %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Produits utilisés:</strong>
+                                                                        {{ postexposition.produits_utilises }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Sutures:</strong>
+                                                                        {{ postexposition.sutures|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Sérum antitétanique:</strong>
+                                                                        {{ postexposition.serum_antitetanique|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    <li class="list-group-item">
+                                                                        <strong>Antibiotiques:</strong>
+                                                                        {{ postexposition.antibiotiques|yesno:"Oui,Non" }}
+                                                                        {% if postexposition.details_antibiotiques %}
+                                                                        <p>{{ postexposition.details_antibiotiques }}</p>
+                                                                        {% endif %}
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <div class="card card-bordered mb-4">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Vaccination Antirabique</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    {% if postexposition.delai_traitement %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Délai traitement:</strong>
+                                                                        {{ postexposition.delai_traitement }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.immunoglobulines %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Immunoglobulines:</strong>
+                                                                        {{ postexposition.immunoglobulines }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.details_vaccination %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Détails vaccination:</strong>
+                                                                        <p>{{ postexposition.details_vaccination }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Sérologie:</strong>
+                                                                        {{ postexposition.serologie|yesno:"Oui,Non" }}
+                                                                        {% if postexposition.details_serologie %}
+                                                                        <p>{{ postexposition.details_serologie }}</p>
+                                                                        {% endif %}
+                                                                    </li>
+                                                                    {% if postexposition.protocole_vaccination %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Protocole:</strong>
+                                                                        {{ postexposition.protocole_vaccination.nom }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="card card-bordered">
+                                                            <div class="card-header bg-light">
+                                                                <h5 class="card-title">Issue de la prise en charge</h5>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <ul class="list-group list-group-flush">
+                                                                    {% if postexposition.issue %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Issue:</strong>
+                                                                        {{ postexposition.issue }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Observance:</strong>
+                                                                        {{ postexposition.observance|yesno:"Oui,Non" }}
+                                                                    </li>
+                                                                    {% if postexposition.evolution_patient %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Évolution patient:</strong>
+                                                                        {{ postexposition.evolution_patient }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.cause_deces %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Cause décès:</strong>
+                                                                        <p>{{ postexposition.cause_deces }}</p>
+                                                                    </li>
+                                                                    {% endif %}
+                                                                    {% if postexposition.date_deces %}
+                                                                    <li class="list-group-item">
+                                                                        <strong>Date décès:</strong>
+                                                                        {{ postexposition.date_deces|date:"d/m/Y" }}
+                                                                    </li>
+                                                                    {% endif %}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- content @e -->
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <!--begin::Footer-->
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        {% include 'layout/footer.html' %}
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}

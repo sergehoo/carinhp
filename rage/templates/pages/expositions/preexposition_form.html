@@ -1,0 +1,424 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load unicorn %}
+{% load django_tables2 %}
+
+
+{% block content %}
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <div class="d-flex flex-column-fluid">
+                <!--begin::Container-->
+                <div class=" container ">
+                    <!--begin::Card-->
+                    <div class="card card-custom">
+                        <!--begin::Header-->
+                        <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                            <div class="card-title">
+                                <h3 class="card-label">
+                                     Formulaire de Pré-exposition
+                                    <span class="d-block text-muted pt-2 font-size-sm">Informations sur l'exposition</span>
+                                </h3>
+                            </div>
+
+                        </div>
+                        <!--end::Header-->
+
+                        <!--begin::Body-->
+
+                        <div class="card-body">
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+  <form method="post" class="needs-validation"
+        x-data="{
+        patientMineur: false,
+        proprietaireAnimal: false,
+        aimeAnimaux: false,
+        autre: false,
+        diffCanal: false,
+        connaitProtocoleVar: false,
+        }">
+        {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="row">
+
+        <!-- Identification du Patient -->
+        <div class="col-12">
+        <h2>I. Identification du client</h2></div>
+        <div class="col-md-6 form-group">
+            <label>Nom </label>
+            {{ form.nom }}
+
+        </div>
+        <div class="col-md-6 form-group">
+            <label>Prénoms </label>
+            {{ form.prenoms }}
+
+        </div>
+        <div class="col-md-6 form-group">
+            <label>Date de Naissance </label>
+            {{ form.date_naissance }}
+        </div>
+        <div class="col-md-6 form-group">
+            <label>Sexe </label>
+            {{ form.sexe }}
+
+        </div>
+        <div class="col-md-6 form-group">
+            <label>Contact </label>
+            {{ form.contact }}
+        </div>
+
+
+        <div  x-data="{
+    search: '',
+    options: [],
+    async fetchOptions() {
+        if (this.search.length > 1) {
+            const response = await fetch('/api/communes?query=' + this.search);
+            this.options = await response.json();
+        } else {
+            this.options = [];
+        }
+    }
+}" class="col-md-6 form-group position-relative">
+                                        <label for="commune">Commune</label>
+                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
+                                               class="form-control" placeholder="Rechercher une commune..."
+                                               autocomplete="off">
+
+                                        <!-- Liste déroulante améliorée -->
+                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
+                                             x-show="options.length" x-on:click.away="options = []">
+                                            <ul class="list-group shadow bg-white w-100">
+                                                <template x-for="option in options" :key="option.id">
+                                                    <li class="list-group-item list-group-item-action"
+                                                        x-text="option.name"
+                                                        x-on:click.prevent="search = option.name; options = []">
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+
+
+      <div class=" col-md-6 form-group">
+            <label>Quartier </label>
+            {{ form.quartier }}
+        </div>
+
+      <div class=" col-md-6 form-group">
+            <label>Village </label>
+            {{ form.village }}
+        </div>
+
+        <div class=" col-md-6 form-group">
+            <label>Niveau d'étude </label>
+            {{ form.niveau_etude }}
+        </div>
+
+        <div class=" col-md-3 form-group" x-data="{ checked: false }">
+            <label>le Patient est-il mineur ? (moin de 15 ans )</label>
+            <div class="col-12">
+            <span class="switch  switch-lg switch-icon">
+                <label>
+                    <input type="checkbox" name="patient_mineur" x-model="patientMineur">
+                    <span></span>
+
+                </label>
+            </span></div>
+        </div>
+        <div class=" col-md-3 form-group" x-data="{ checked: false }">
+            <label>le Patient est-il propriétaire d'un animal</label>
+            <div class="col-12">
+            <span class="switch  switch-lg switch-icon">
+                <label>
+                    <input type="checkbox" name="proprietaire_animal" x-model="proprietaireAnimal">
+                    <span></span>
+
+                </label>
+            </span></div>
+        </div>
+    </div>
+
+<div class="row" x-show="patientMineur" x-transition>
+<div class="col-3">
+    <div class="form-group">
+            <label>nom & prenom de Accompagnateur</label>
+            {{ form.accompagnateur }}
+        </div>
+    </div>
+    <div class="col-2">
+    <div class="form-group" >
+            <label> Contact</label>
+            {{ form.accompagnateur_contact }}
+        </div>
+            </div>
+    <div class="col-3">
+    <div class="form-group" >
+            <label>Adresse</label>
+            {{ form.accompagnateur_adresse }}
+        </div>
+            </div>
+    <div class="col-2">
+    <div class="form-group">
+            <label>Lien avec le Patient</label>
+            {{ form.accompagnateur_nature }}
+        </div>
+            </div>
+    <div class="col-2">
+    <div class="form-group">
+            <label>Niveau d'etude</label>
+            {{ form.accompagnateur_niveau_etude }}
+        </div>
+        </div>
+</div>
+
+  <div class="row" x-show="proprietaireAnimal" x-transition>
+  <div class="col-3">
+    <div class="form-group">
+            <label>Type d'animal</label>
+            {{ form.typeanimal }}
+        </div>
+    </div>
+
+</div>
+
+
+        <!-- Section Motif de Vaccination -->
+        <h2 class="mt-4">II. Motif de vaccination</h2>
+       <div class="row">
+
+        {% for field in form %}
+            {% if field.name in "voyage mise_a_jour protection_rage chien_voisin chiens_errants" %}
+
+                <div class="form-group" x-data="{ checked: false }">
+
+                    <label class="col-12 col-form-label">{{ field.label }}</label>
+                    <div class="col-12">
+                        <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                        <span class="switch switch-lg switch-icon">
+                            <label>
+                                   <input type="checkbox" name="{{ field.name }}" x-model="checked" >
+                                <span></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+       {% for field in form %}
+            {% if field.name in "autre" %}
+
+                <div class="form-group" x-data="{ checked: false }">
+
+                    <label class="col-12 col-form-label">{{ field.label }}</label>
+                    <div class="col-12">
+                        <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                        <span class="switch switch-lg switch-icon">
+                            <label>
+                                   <input type="checkbox" name="{{ field.name }}" x-model="checked" @change="autre = checked">
+                                <span></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+
+       <div class="col-12" x-show="autre" x-transition>
+    <div class="form-group">
+            <label>Preciser le motif</label>
+            {{ form.autre_motif }}
+        </div>
+        </div>
+</div>
+        <!-- Section Canaux d'Information -->
+
+        <h2 class="mt-4">III. Canaux d’information vaccination antirabique du client sur la rage</h2>
+      <div class="row">
+          {% for field in form %}
+              {% if field.name in "tele radio sensibilisation proche presse passage_car " %}
+                  <div class="form-group" x-data="{ checked: false }">
+                      <label class="col-12 col-form-label">{{ field.label }}</label>
+                      <div class="col-12">
+                          <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                          <span class="switch switch-lg switch-icon">
+                            <label>
+                                {{ field }}
+                                <input type="checkbox" name="{{ field.name }}" x-model="checked">
+
+                                <span></span>
+                            </label>
+                        </span>
+                      </div>
+                  </div>
+              {% endif %}
+          {% endfor %}
+          <div class="col-12" x-show="diffCanal" x-transition>
+              <div class="form-group">
+                  <label>Preciser le motif</label>
+                  {{ form.canal_infos }}
+              </div>
+          </div>
+
+    {% for field in form %}
+            {% if field.name in "diff_canal" %}
+                <div class="form-group" x-data="{ checked: false }">
+                    <label class="col-12 col-form-label">Autre Canal</label>
+                    <div class="col-12">
+ <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                        <span class="switch switch-lg switch-icon">
+                            <label>
+                                {{ field }}
+         <input type="checkbox" name="{{ field.name }}" x-model="checked" @change="diffCanal = checked ">
+
+                                <span></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+   </div>
+  <div class="col-12" >
+    <div class="form-group" x-show="diffCanal" x-transition>
+            <label>Preciser le Canal d'Information</label>
+            {{ form.canal_infos }}
+        </div>
+        </div>
+
+      <!-- Section Connaissance et Attitude -->
+        <h2 class="mt-4">IV. Connaissance et attitude du client sur la rage</h2>
+         {% for field in form %}
+            {% if field.name in "aime_animaux" %}
+                <div class="form-group" x-data="{ checked: false }">
+                    <label class="col-3 col-form-label">{{ field.label }}</label>
+                    <div class="d-flex align-items-center">
+                        <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                        <span class="switch switch-lg switch-icon">
+                            <label>
+                                <input type="checkbox" name="{{ field.name }}" x-model="checked" @change="aimeAnimaux = checked">
+                                <span></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+      <div class="form-group" x-show="aimeAnimaux" x-transition>
+            <label>Type d'animal aimé</label>
+            {{ form.type_animal_aime }}
+        </div>
+  <div class="form-group">
+            <label>Quelle est la Conduite à tenir face à un animal mordeur ? </label>
+            {{ form.conduite_animal_mordeur }}
+
+        </div>
+
+  {% for field in form %}
+            {% if field.name in "connait_protocole_var" %}
+                <div class="form-group" x-data="{ checked: false }">
+                    <label class="col-6 col-form-label">Connaissez vous le protocole de vaccination Anti-Rabique du Chien ?</label>
+                    <div class="d-flex align-items-center">
+                        <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
+                        <span class="switch switch-lg switch-icon">
+                            <label>
+                                <input type="checkbox" name="{{ field.name }}" x-model="checked" @change="connaitProtocoleVar = checked">
+                                <span></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+      <div class="form-group" x-show="connaitProtocoleVar" x-transition>
+            <label>Dernier Vaccin Effectué par l'animal</label>
+            {{ form.dernier_var_animal_type }}
+        </div>
+
+   <div class="form-group" x-show="connaitProtocoleVar" x-transition>
+            <label>La date du dernier Vaccin Effectué par l'animal</label>
+            {{ form.dernier_var_animal_date }}
+        </div>
+<div class="row">
+     <div class="col-6 form-group" >
+            <label>Mesures pour l’élimination de la rage</label>
+            {{ form.mesures_elimination_rage }}
+        </div>
+
+   <div class="col-6 form-group" >
+            <label>Appréciation du coût de la Vaccination Anti-Rabique</label>
+            {{ form.appreciation_cout_var }}
+        </div>
+</div>
+      <!-- Section Suivi Vaccinal -->
+{#        <h2 class="mt-4">Suivi Vaccinal</h2>#}
+{#        <div class="form-group">#}
+{#            <label>Date prévue</label>#}
+{#            {{ form.date_prevue }}#}
+{#        </div>#}
+{##}
+{#        <div class="form-group">#}
+{#            <label>Lot</label>#}
+{#            {{ form.lot }}#}
+{#        </div>#}
+{##}
+{#        <div class="form-group">#}
+{#            <label>Observance vaccinale</label>#}
+{#            <span class="switch">#}
+{#                <label>#}
+{#                    {{ form.observance_vaccinale }}#}
+{#                    <span></span>#}
+{#                </label>#}
+{#            </span>#}
+{#        </div>#}
+
+      <button type="submit" class="btn btn-primary mt-4">Soumettre et envoyer en vaccination</button>
+    </form>
+
+
+                        </div>
+
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Card-->
+                </div>
+                <!--end::Container-->
+            </div>
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+
+        <!--begin::Footer-->
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        {% include 'layout/footer.html' %}
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}
