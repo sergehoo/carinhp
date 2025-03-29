@@ -43,8 +43,8 @@ services:
     restart: always
     ports:
       - 2502:8080
-    networks:
-      - rage_default
+#    networks:
+#      - rage_default
 
 networks:
   rage_default:
