@@ -30,7 +30,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 2502:8080
+      - 2058:8080
     networks:
       - rage_default
 
