@@ -27,8 +27,8 @@ SECRET_KEY = 'django-insecure-qv1=6*7#!&8gajb4@-zrh+xulqk(386vapjdcu8w$jrk)bo!9q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
 # Application definition
 LOGGING = {
     'version': 1,
@@ -62,8 +62,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'rest_framework',
-
-
     'leaflet',
     'djgeojson',
     'tinymce',
@@ -132,7 +130,7 @@ WSGI_APPLICATION = 'rage_INHP.wsgi.application'
 #         'ENGINE': 'django.contrib.gis.db.backends.postgis',
 #         'NAME': 'rage2',
 #         'USER': 'postgres',
-#         'PASSWORD': 'weddingLIFE18',
+#         'PASSWORD': '09090908',
 #         'HOST': 'localhost',
 #         'PORT': '5433',
 #     }
