@@ -26,18 +26,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  nginx:
-    image: nginx:latest
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/etc/nginx/certs
-    networks:
-      - rage_default
-
   adminer:
     image: adminer
     restart: always
