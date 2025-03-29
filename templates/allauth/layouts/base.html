@@ -1,0 +1,188 @@
+{% load static %}
+
+
+<html lang="fr-FR" class="js">
+
+<head>
+    <title>SMIT | KENEYA- Hospital Ressources Management</title>
+    <meta charset="utf-8">
+    <meta name="author" content="AfriqConsulting">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SMIT | KENEYA, Systeme de Gestion des Services des Maladies Infestueuses et Tropicals">
+    <!-- Fav Icon  -->
+    <link rel="shortcut icon" href="{% static 'images/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/dashlite.css' %}">
+    <link id="skin-default" rel="stylesheet" href="{% static 'assets/css/theme.css' %}">
+</head>
+
+<body class="nk-body bg-white npc-general pg-auth">
+    <div class="nk-app-root">
+        <!-- main @s -->
+        <div class="nk-main ">
+            <!-- wrap @s -->
+            <div class="nk-wrap nk-wrap-nosidebar">
+                <!-- content @s -->
+                <div class="nk-content ">
+                    <div class="nk-block nk-block-middle nk-auth-body  wide-xs">
+                        <div class="brand-logo pb-4 text-center">
+                            <a href="{% url 'home' %}" class="logo-link">
+                                <img class="logo-light logo-img logo-img-lg" src="{% static 'images/logokeneya260.png' %}" srcset="{% static 'images/logokeneya260.png' %}" alt="logo">
+                                <img class="logo-dark logo-img logo-img-lg" src="{% static 'images/logokeneya260.png' %}" srcset="{% static 'images/logokeneya260.png' %}" alt="logo-dark">
+                            </a>
+                        </div>
+                        <div class="card card-bordered">
+                            <div class="card-inner card-inner-lg">
+                                {% block content %}
+
+                                 
+
+                                {% endblock %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <!-- wrap @e -->
+            </div>
+            <!-- content @e -->
+        </div>
+        <!-- main @e -->
+    </div>
+    <!-- app-root @e -->
+    <!-- JavaScript -->
+    <script src="{% static 'assets/js/bundle.js' %}"></script>
+    <script src="{% static 'assets/js/scripts.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+    // Ajouter les classes CSS existantes
+    $('input').addClass('form-control');
+    $('button').addClass('btn btn-primary');
+    $('.nav li:first').addClass('active');
+
+    // Ajouter un bouton d'affichage/mise à jour pour les champs de mot de passe
+    $('input[type="password"]').each(function () {
+        // Vérifier si le bouton n'a pas déjà été ajouté
+        if (!$(this).next('.toggle-password').length) {
+            $(this).wrap('<div class="input-group"></div>'); // Ajout d'une div conteneur
+            $(this).after(`
+                <button type="button" class="btn btn-outline-secondary toggle-password">
+<em class="icon ni ni-eye"></em>
+                </button>
+            `);
+        }
+    });
+
+    // Ajouter la logique de bascule pour afficher/masquer le mot de passe
+    $(document).on('click', '.toggle-password', function () {
+        const passwordField = $(this).prev('input');
+        const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
+        passwordField.attr('type', type);
+
+        // Changer l'icône en fonction de l'état
+        const icon = $(this).find('i');
+        if (type === 'text') {
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    // Gestion des sections et animations (existant dans votre script)
+    var showSection = function (section, isAnimate) {
+        var direction = section.replace(/#/, ''),
+            reqSection = $('.section').filter('[data-section="' + direction + '"]'),
+            reqSectionPos = reqSection.offset().top - 0;
+
+        if (isAnimate) {
+            $('body, html').animate({
+                scrollTop: reqSectionPos
+            }, 800);
+        } else {
+            $('body, html').scrollTop(reqSectionPos);
+        }
+    };
+
+    var checkSection = function () {
+        $('.section').each(function () {
+            var $this = $(this),
+                topEdge = $this.offset().top - 80,
+                bottomEdge = topEdge + $this.height(),
+                wScroll = $(window).scrollTop();
+            if (topEdge < wScroll && bottomEdge > wScroll) {
+                var currentId = $this.data('section'),
+                    reqLink = $('a').filter('[href*=\\#' + currentId + ']');
+                reqLink.closest('li').addClass('active').siblings().removeClass('active');
+            }
+        });
+    };
+
+    $('.main-menu, .responsive-menu, .scroll-to-section').on('click', 'a', function (e) {
+        e.preventDefault();
+        showSection($(this).attr('href'), true);
+    });
+
+    $(window).scroll(function () {
+        checkSection();
+    });
+});
+</script>
+
+{#    <script>#}
+{#        //according to loftblog tut#}
+{#        $('input').addClass('form-control')#}
+{#        $('button').addClass('btn btn-primary')#}
+{#        $('.nav li:first').addClass('active');#}
+{##}
+{#        var showSection = function showSection(section, isAnimate) {#}
+{#          var#}
+{#          direction = section.replace(/#/, ''),#}
+{#          reqSection = $('.section').filter('[data-section="' + direction + '"]'),#}
+{#          reqSectionPos = reqSection.offset().top - 0;#}
+{##}
+{#          if (isAnimate) {#}
+{#            $('body, html').animate({#}
+{#              scrollTop: reqSectionPos },#}
+{#            800);#}
+{#          } else {#}
+{#            $('body, html').scrollTop(reqSectionPos);#}
+{#          }#}
+{##}
+{#        };#}
+{##}
+{#        var checkSection = function checkSection() {#}
+{#          $('.section').each(function () {#}
+{#            var#}
+{#            $this = $(this),#}
+{#            topEdge = $this.offset().top - 80,#}
+{#            bottomEdge = topEdge + $this.height(),#}
+{#            wScroll = $(window).scrollTop();#}
+{#            if (topEdge < wScroll && bottomEdge > wScroll) {#}
+{#              var#}
+{#              currentId = $this.data('section'),#}
+{#              reqLink = $('a').filter('[href*=\\#' + currentId + ']');#}
+{#              reqLink.closest('li').addClass('active').#}
+{#              siblings().removeClass('active');#}
+{#            }#}
+{#          });#}
+{#        };#}
+{##}
+{#        $('.main-menu, .responsive-menu, .scroll-to-section').on('click', 'a', function (e) {#}
+{#          e.preventDefault();#}
+{#          showSection($(this).attr('href'), true);#}
+{#        });#}
+{##}
+{#        $(window).scroll(function () {#}
+{#          checkSection();#}
+{#        });#}
+{#    </script>#}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+</body>
+</html>
+
+
+
