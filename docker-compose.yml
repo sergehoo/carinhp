@@ -48,7 +48,7 @@ services:
 
 networks:
   rage_default:
-    external: true
+#    external: true
 
 volumes:
   pgdata:
