@@ -46,8 +46,8 @@ services:
 #    networks:
 #      - rage_default
 
-networks:
-  rage_default:
+#networks:
+#  rage_default:
 #    external: true
 
 volumes:
