@@ -25,9 +25,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-qv1=6*7#!&8gajb4@-zrh+xulqk(386vapjdcu8w$jrk)bo!9q'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
+
+# Sécurité HTTPS
+# SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ['true', '1']
+# SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() in ['true', '1']
+# CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'True').lower() in ['true', '1']
+
+# SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True').lower() in ['true', '1']
+# SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'True').lower() in ['true', '1']
+# X_FRAME_OPTIONS = os.environ.get('X_FRAME_OPTIONS', 'DENY')
+# SECURE_BROWSER_XSS_FILTER = os.environ.get('SECURE_BROWSER_XSS_FILTER', 'True').lower() in ['true', '1']
+# SECURE_CONTENT_TYPE_NOSNIFF = os.environ.get('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() in ['true', '1']
+
+# Logging
+# LOG_FILE = os.environ.get('LOG_FILE', os.path.join(BASE_DIR, 'static/logs/django_errors.log'))
+# LOG_LEVEL = os.environ.get('LOG_LEVEL', 'ERROR')
+
 # Application definition
 LOGGING = {
     'version': 1,
