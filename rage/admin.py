@@ -19,6 +19,8 @@ admin.site.site_title = 'INHP CAR  Super Admin Pannel'
 admin.site.site_url = 'http://carinhp.com/'
 admin.site.index_title = 'INHP CAR '
 admin.empty_value_display = '**Empty**'
+
+
 # 🔹 Définition des ressources pour l'import/export
 class CommuneResource(resources.ModelResource):
     class Meta:
@@ -134,7 +136,8 @@ class EmployeeUserAdmin(UserAdmin):
         (None, {
             'classes': ('wide',),
             'fields': (
-            'username', 'password1', 'password2', 'civilite', 'email', 'contact', 'fonction', 'roleemployee', 'centre'),
+                'username', 'password1', 'password2', 'civilite', 'email', 'contact', 'fonction', 'roleemployee',
+                'centre'),
         }),
     )
 

@@ -296,4 +296,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-MPI_API_KEY = "a0ha3iNvhGC2qFDkcYXIODx0w6qhv3pZo9nyou2n"
+MPI_API_KEY = os.environ.get('MPI_API_KEY', default='key').split(',')
