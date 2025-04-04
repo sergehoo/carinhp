@@ -14,7 +14,11 @@ from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSani
 from rage_INHP.resources import RageHumaineNotificationResource
 from rage_INHP.services import synchroniser_avec_mpi
 
-
+admin.site.site_header = 'INHP CAR BACK-END CONTROLER'
+admin.site.site_title = 'INHP CAR  Super Admin Pannel'
+admin.site.site_url = 'http://carinhp.com/'
+admin.site.index_title = 'INHP CAR '
+admin.empty_value_display = '**Empty**'
 # 🔹 Définition des ressources pour l'import/export
 class CommuneResource(resources.ModelResource):
     class Meta:
@@ -31,7 +35,7 @@ class DistrictSanitaireResource(resources.ModelResource):
 class HealthRegionResource(resources.ModelResource):
     class Meta:
         model = HealthRegion
-        fields = ('id', 'name', 'poles__name')
+        fields = ('id', 'name', 'poles')
 
 
 # 🔹 Ajout du module ImportExportModelAdmin
