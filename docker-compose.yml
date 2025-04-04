@@ -25,19 +25,19 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - rage_default
+#    networks:
+#      - rage_default
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 2058:8080
-    networks:
-      - rage_default
+#    networks:
+#      - rage_default
 
-networks:
-  rage_default:
+#networks:
+#  rage_default:
 
 volumes:
   pgdata:
