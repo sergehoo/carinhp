@@ -1,362 +1,581 @@
 {% extends 'layout/centre-base.html' %}
 {% load static %}
 
-
-
 {% block content %}
-    <!--begin::Wrapper-->
-    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-        <!--begin::Content-->
-        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
-            <!--begin::Subheader-->
-            {% include 'layout/header-title.html' %}
-            <!--end::Subheader-->
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Subheader-->
+        <div class="subheader py-2 py-lg-4 subheader-solid" id="kt_subheader">
+            <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap flex-sm-nowrap">
+                <!--begin::Info-->
+                <div class="d-flex align-items-center flex-wrap mr-2">
+                    <!--begin::Page Title-->
+                    <h5 class="text-dark font-weight-bold mt-2 mb-2 mr-5">
+                        <i class="fas fa-syringe text-primary mr-2"></i>
+                        Fiche Pré-Exposition #{{ preexposition.codeexpo }}
+                    </h5>
+                    <!--end::Page Title-->
+                </div>
+                <!--end::Info-->
+                <!--begin::Toolbar-->
+                <div class="d-flex align-items-center">
+                    <a href="" class="btn btn-light-primary font-weight-bold btn-sm mr-2">
+                        <i class="fas fa-list mr-1"></i> Retour à la liste
+                    </a>
+                    {% if request.user.is_authenticated %}
+                    <a href="" class="btn btn-primary font-weight-bold btn-sm">
+                        <i class="fas fa-edit mr-1"></i> Modifier
+                    </a>
+                    {% endif %}
+                </div>
+                <!--end::Toolbar-->
+            </div>
+        </div>
+        <!--end::Subheader-->
 
-            <!--begin::Entry-->
-            <!-- content @s -->
-        <div class="nk-content" style="background-color: #f8f9fa;">
-            <div class="container-fluid">
-                <div class="nk-content-inner">
-                    <div class="nk-content-body">
-                        <div class="nk-block">
-                            <div class="card card-bordered">
-                                <div class="card-inner">
-                                    <!-- En-tête -->
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <div>
-                                            <h4 class="nk-block-title">Dossier Pré-Exposition #{{ preexposition.codeexpo }}</h4>
-                                            <p class="text-soft">Créé le {{ preexposition.created_at|date:"d/m/Y" }} par {{ preexposition.created_by.get_full_name }}</p>
-                                        </div>
-                                        <div>
-                                            <a href="" class="btn btn-sm btn-outline-primary">
-                                                <em class="icon ni ni-edit"></em> Modifier
-                                            </a>
-                                            <a href="{% url 'preexposition_list' %}" class="btn btn-sm btn-outline-secondary">
-                                                <em class="icon ni ni-list"></em> Retour à la liste
-                                            </a>
+        <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!--begin::Card-->
+                <div class="card card-custom gutter-b">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>
+                                Détails de la Pré-Exposition
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!--begin::Patient Info-->
+                        <div class="mb-10">
+                            <div class="d-flex align-items-center mb-5">
+                                <div class="symbol symbol-50 symbol-light mr-5">
+                                    <span class="symbol-label bg-primary-o-10 font-size-h3 font-weight-boldest">
+                                        {{ preexposition.client.nom|first }}{{ preexposition.client.prenoms|first }}
+                                    </span>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="text-dark font-weight-bold font-size-h4 mb-1">
+                                        {{ preexposition.client.nom }} {{ preexposition.client.prenoms }}
+                                    </span>
+                                    <span class="text-muted font-weight-bold">
+                                        <i class="fas fa-id-card mr-2"></i> {{ preexposition.client.code_patient }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-phone mr-2"></i> {{ preexposition.client.contact_formatte }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-birthday-cake mr-2"></i> {{ preexposition.client.date_naissance|date:"d/m/Y" }} ({{ preexposition.client.calculate_age }} ans)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::Patient Info-->
+
+                        <!--begin::Tabs-->
+                        <div class="mb-10">
+                            <ul class="nav nav-tabs nav-tabs-line" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-toggle="tab" href="#motif">
+                                        <i class="fas fa-clipboard-list mr-2"></i>Motif de Vaccination
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#info_vaccination">
+                                        <i class="fas fa-info-circle mr-2"></i>Informations Vaccination
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#connaissance">
+                                        <i class="fas fa-brain mr-2"></i>Connaissances & Attitudes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#protocole">
+                                        <i class="fas fa-calendar-check mr-2"></i>Protocole Vaccinal
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#historique">
+                                        <i class="fas fa-history mr-2"></i>Historique
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <!--end::Tabs-->
+
+                        <!--begin::Tab Content-->
+                        <div class="tab-content">
+                            <!--begin::Motif Tab-->
+                            <div class="tab-pane fade show active" id="motif" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Code Exposition</th>
+                                                        <td>{{ preexposition.codeexpo }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Voyage</th>
+                                                        <td>
+                                                            {% if preexposition.voyage %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Mise à jour</th>
+                                                        <td>
+                                                            {% if preexposition.mise_a_jour %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Protection rage</th>
+                                                        <td>
+                                                            {% if preexposition.protection_rage %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
-
-                                    <!-- Onglets -->
-                                    <ul class="nav nav-tabs nav-tabs-mb-icon nav-tabs-card">
-                                        <li class="nav-item">
-                                            <a class="nav-link active" data-toggle="tab" href="#motif">
-                                                <em class="icon ni ni-clipboard mr-1"></em> Motif
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href="#information">
-                                                <em class="icon ni ni-info mr-1"></em> Information
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href="#connaissance">
-                                                <em class="icon ni ni-brain mr-1"></em> Connaissance
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" data-toggle="tab" href="#protocole">
-                                                <em class="icon ni ni-syringe mr-1"></em> Protocole
-                                            </a>
-                                        </li>
-                                    </ul>
-
-                                    <!-- Contenu des onglets -->
-                                    <div class="tab-content mt-4">
-                                        <!-- Onglet Motif -->
-                                        <div class="tab-pane active" id="motif">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="card card-bordered mb-4">
-                                                        <div class="card-header bg-light">
-                                                            <h5 class="card-title">Motif de la consultation</h5>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <ul class="list-group list-group-flush">
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Voyage
-                                                                    <span class="badge badge-{% if preexposition.voyage %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.voyage|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Mise à jour vaccinale
-                                                                    <span class="badge badge-{% if preexposition.mise_a_jour %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.mise_a_jour|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Protection contre la rage
-                                                                    <span class="badge badge-{% if preexposition.protection_rage %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.protection_rage|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Chiens errants dans le voisinage
-                                                                    <span class="badge badge-{% if preexposition.chiens_errants %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.chiens_errants|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                {% if preexposition.autre %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Autre motif</h6>
-                                                                    <p>{{ preexposition.autre_motif }}</p>
-                                                                </li>
-                                                                {% endif %}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="card card-bordered">
-                                                        <div class="card-header bg-light">
-                                                            <h5 class="card-title">Patient</h5>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <div class="d-flex align-items-center mb-3">
-                                                                <div class="user-avatar bg-primary mr-3">
-                                                                    <span>{{ preexposition.client.nom|first }}{{ preexposition.client.prenoms|first }}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <h5>{{ preexposition.client.nom_complet }}</h5>
-                                                                    <p class="text-soft mb-0">Code: {{ preexposition.client.code_patient }}</p>
-                                                                    <p class="text-soft">Tél: {{ preexposition.client.telephone1 }}</p>
-                                                                </div>
-                                                            </div>
-                                                            <a href="{% url 'patient_detail' preexposition.client.id %}" class="btn btn-sm btn-outline-primary">
-                                                                Voir dossier complet
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Onglet Information -->
-                                        <div class="tab-pane" id="information">
-                                            <div class="card card-bordered">
-                                                <div class="card-header bg-light">
-                                                    <h5 class="card-title">Source d'information</h5>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <ul class="list-group list-group-flush">
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Télévision
-                                                                    <span class="badge badge-{% if preexposition.tele %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.tele|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Radio
-                                                                    <span class="badge badge-{% if preexposition.radio %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.radio|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Sensibilisation
-                                                                    <span class="badge badge-{% if preexposition.sensibilisation %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.sensibilisation|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <ul class="list-group list-group-flush">
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Proche
-                                                                    <span class="badge badge-{% if preexposition.proche %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.proche|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Presse
-                                                                    <span class="badge badge-{% if preexposition.presse %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.presse|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                {% if preexposition.canal_infos %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Autre canal</h6>
-                                                                    <p>{{ preexposition.canal_infos }}</p>
-                                                                </li>
-                                                                {% endif %}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Onglet Connaissance -->
-                                        <div class="tab-pane" id="connaissance">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="card card-bordered mb-4">
-                                                        <div class="card-header bg-light">
-                                                            <h5 class="card-title">Connaissance et attitudes</h5>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <ul class="list-group list-group-flush">
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Aime les animaux
-                                                                    <span class="badge badge-{% if preexposition.aime_animaux %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.aime_animaux|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                                {% if preexposition.aime_animaux %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Type d'animal préféré</h6>
-                                                                    <p>{{ preexposition.type_animal_aime }}</p>
-                                                                </li>
-                                                                {% endif %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Conduite face à un animal mordeur</h6>
-                                                                    <p>{{ preexposition.conduite_animal_mordeur }}</p>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    Connaît le protocole VAR
-                                                                    <span class="badge badge-{% if preexposition.connait_protocole_var %}success{% else %}light{% endif %}">
-                                                                        {{ preexposition.connait_protocole_var|yesno:"Oui,Non" }}
-                                                                    </span>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="card card-bordered">
-                                                        <div class="card-header bg-light">
-                                                            <h5 class="card-title">Historique et perception</h5>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <ul class="list-group list-group-flush">
-                                                                {% if preexposition.dernier_var_animal_date %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Dernier VAR effectué</h6>
-                                                                    <p>{{ preexposition.dernier_var_animal_type }} le {{ preexposition.dernier_var_animal_date|date:"d/m/Y" }}</p>
-                                                                </li>
-                                                                {% endif %}
-                                                                <li class="list-group-item">
-                                                                    <h6>Mesures pour éliminer la rage</h6>
-                                                                    <p>{{ preexposition.mesures_elimination_rage }}</p>
-                                                                </li>
-                                                                <li class="list-group-item">
-                                                                    <h6>Appréciation du coût VAR</h6>
-                                                                    <p>{{ preexposition.appreciation_cout_var }}</p>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Onglet Protocole -->
-                                        <div class="tab-pane" id="protocole">
-                                            <div class="card card-bordered">
-                                                <div class="card-header bg-light">
-                                                    <h5 class="card-title">Protocole de vaccination</h5>
-                                                </div>
-                                                <div class="card-body">
-                                                    {% if preexposition.protocole_vaccination %}
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <h6>Protocole sélectionné</h6>
-                                                            <div class="alert alert-light">
-                                                                <h5>{{ preexposition.protocole_vaccination.nom }}</h5>
-                                                                <p>{{ preexposition.protocole_vaccination.description }}</p>
-                                                                <p class="mb-0">
-                                                                    <strong>Doses :</strong> {{ preexposition.protocole_vaccination.doses_requises }}
-                                                                    <span class="mx-2">|</span>
-                                                                    <strong>Intervalle :</strong> {{ preexposition.protocole_vaccination.intervalle_jours }} jours
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <h6>Statut du protocole</h6>
-                                                            <div class="alert alert-{% if preexposition.fin_protocole %}success{% else %}warning{% endif %}">
-                                                                <div class="d-flex align-items-center">
-                                                                    <em class="icon ni ni-{% if preexposition.fin_protocole %}check-circle{% else %}clock{% endif %} mr-2" style="font-size: 1.5rem;"></em>
-                                                                    <div>
-                                                                        <h5 class="mb-0">Protocole {% if preexposition.fin_protocole %}terminé{% else %}en cours{% endif %}</h5>
-                                                                        {% if not preexposition.fin_protocole %}
-                                                                        <p class="mb-0">Prochaine dose recommandée : {{ preexposition.get_prochaine_dose|date:"d/m/Y" }}</p>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <h6 class="mt-4">Historique des vaccinations</h6>
-                                                    {% with vaccinations=preexposition.vaccination_set.all %}
-                                                    {% if vaccinations %}
-                                                    <div class="table-responsive">
-                                                        <table class="table table-striped">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Date</th>
-                                                                    <th>Vaccin</th>
-                                                                    <th>Dose</th>
-                                                                    <th>Centre</th>
-                                                                    <th>Lot</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {% for vacc in vaccinations %}
-                                                                <tr>
-                                                                    <td>{{ vacc.date_vaccination|date:"d/m/Y" }}</td>
-                                                                    <td>{{ vacc.vaccin.nom }}</td>
-                                                                    <td>{{ vacc.dose }}/{{ vacc.vaccin.doses_requises }}</td>
-                                                                    <td>{{ vacc.centre.nom }}</td>
-                                                                    <td>{{ vacc.lot.numero_lot|default:"-" }}</td>
-                                                                </tr>
-                                                                {% endfor %}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    {% else %}
-                                                    <div class="alert alert-light text-center">
-                                                        <em class="icon ni ni-info text-soft" style="font-size: 2rem;"></em>
-                                                        <h5 class="mt-3">Aucune vaccination enregistrée</h5>
-                                                        <p>Le protocole vaccinal n'a pas encore commencé.</p>
-                                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Chien voisin</th>
+                                                        <td>
+                                                            {% if preexposition.chien_voisin %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Chiens errants</th>
+                                                        <td>
+                                                            {% if preexposition.chiens_errants %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Autre motif</th>
+                                                        <td>
+                                                            {% if preexposition.autre %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% if preexposition.autre %}
+                                                    <tr>
+                                                        <th class="bg-light-primary">Détail autre motif</th>
+                                                        <td>{{ preexposition.autre_motif|default:"-" }}</td>
+                                                    </tr>
                                                     {% endif %}
-                                                    {% endwith %}
-                                                    {% else %}
-                                                    <div class="alert alert-light text-center">
-                                                        <em class="icon ni ni-info text-soft" style="font-size: 2rem;"></em>
-                                                        <h5 class="mt-3">Aucun protocole sélectionné</h5>
-                                                        <p>Veuillez sélectionner un protocole vaccinal pour ce patient.</p>
-                                                        <a href="" class="btn btn-primary">
-                                                            <em class="icon ni ni-plus"></em> Sélectionner un protocole
-                                                        </a>
-                                                    </div>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            <!--end::Motif Tab-->
+
+                            <!--begin::Info Vaccination Tab-->
+                            <div class="tab-pane fade" id="info_vaccination" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-info">Télévision</th>
+                                                        <td>
+                                                            {% if preexposition.tele %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Radio</th>
+                                                        <td>
+                                                            {% if preexposition.radio %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Sensibilisation</th>
+                                                        <td>
+                                                            {% if preexposition.sensibilisation %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-info">Proche</th>
+                                                        <td>
+                                                            {% if preexposition.proche %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Presse</th>
+                                                        <td>
+                                                            {% if preexposition.presse %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Passage car</th>
+                                                        <td>
+                                                            {% if preexposition.passage_car %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Diffusion canal</th>
+                                                        <td>
+                                                            {% if preexposition.diff_canal %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% if preexposition.diff_canal %}
+                                                    <tr>
+                                                        <th class="bg-light-info">Canal informations</th>
+                                                        <td>{{ preexposition.canal_infos|default:"-" }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Info Vaccination Tab-->
+
+                            <!--begin::Connaissance Tab-->
+                            <div class="tab-pane fade" id="connaissance" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-success">Aime les animaux</th>
+                                                        <td>
+                                                            {% if preexposition.aime_animaux %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% if preexposition.aime_animaux %}
+                                                    <tr>
+                                                        <th class="bg-light-success">Type animal aimé</th>
+                                                        <td>{{ preexposition.type_animal_aime|default:"-" }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    <tr>
+                                                        <th class="bg-light-success">Conduite animal mordeur</th>
+                                                        <td>{{ preexposition.conduite_animal_mordeur|default:"-" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-success">Connaît protocole VAR</th>
+                                                        <td>
+                                                            {% if preexposition.connait_protocole_var %}
+                                                            <span class="label label-inline label-success">Oui</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    {% if preexposition.connait_protocole_var %}
+                                                    <tr>
+                                                        <th class="w-50 bg-light-success">Dernier VAR animal type</th>
+                                                        <td>{{ preexposition.dernier_var_animal_type|default:"-" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-success">Dernier VAR animal date</th>
+                                                        <td>{{ preexposition.dernier_var_animal_date|date:"d/m/Y"|default:"-" }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    <tr>
+                                                        <th class="bg-light-success">Mesures élimination rage</th>
+                                                        <td>{{ preexposition.mesures_elimination_rage|default:"-" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-success">Appréciation coût VAR</th>
+                                                        <td>{{ preexposition.appreciation_cout_var|default:"-" }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Connaissance Tab-->
+
+                            <!--begin::Protocole Tab-->
+                            <div class="tab-pane fade" id="protocole" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-25 bg-light-warning">Protocole vaccination</th>
+                                                        <td>
+                                                            {% if preexposition.protocole_vaccination %}
+                                                            <span class="label label-inline label-primary">
+                                                                {{ preexposition.protocole_vaccination.nom }}
+                                                            </span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-danger">Non défini</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-warning">Statut protocole</th>
+                                                        <td>
+                                                            {% if preexposition.fin_protocole %}
+                                                            <span class="label label-inline label-success">Terminé</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-warning">En cours</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {% if preexposition.protocole_vaccination %}
+                                        <div class="mt-5">
+                                            <h4 class="text-dark mb-5">
+                                                <i class="fas fa-calendar-alt text-warning mr-2"></i>
+                                                Dates de vaccination
+                                            </h4>
+                                            <div class="timeline timeline-3">
+                                                <div class="timeline-items">
+                                                    {% for vaccin in preexposition.protocole_vaccination.vaccins.all %}
+                                                    <div class="timeline-item">
+                                                        <div class="timeline-media">
+                                                            <i class="fas fa-syringe text-{% if forloop.first %}primary{% else %}warning{% endif %}"></i>
+                                                        </div>
+                                                        <div class="timeline-content">
+                                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                                <div class="mr-2">
+                                                                    <span class="font-weight-bold text-dark">
+                                                                        Vaccin {{ forloop.counter }} - {{ vaccin.nom }}
+                                                                    </span>
+                                                                    <span class="text-muted ml-2">
+                                                                        (Jour {{ vaccin.jour_administration }})
+                                                                    </span>
+                                                                </div>
+                                                                <span class="label label-light-{% if forloop.first %}primary{% else %}warning{% endif %} font-weight-bold">
+                                                                    {{ vaccin.dose }} dose(s)
+                                                                </span>
+                                                            </div>
+                                                            <p class="p-0 m-0">{{ vaccin.description }}</p>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Protocole Tab-->
+
+                            <!--begin::Historique Tab-->
+                            <div class="tab-pane fade" id="historique" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-danger">Créé par</th>
+                                                        <td>{{ preexposition.created_by.get_full_name|default:"-" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-danger">Date création</th>
+                                                        <td>{{ preexposition.created_at|date:"d/m/Y H:i" }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-danger">Dernière modification</th>
+                                                        <td>
+                                                            {% with last_history=preexposition.history.first %}
+                                                                {{ last_history.history_date|date:"d/m/Y H:i"|default:"-" }}
+                                                            {% endwith %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-danger">Modifié par</th>
+                                                        <td>
+                                                            {% with last_history=preexposition.history.first %}
+                                                                {{ last_history.history_user.get_full_name|default:"-" }}
+                                                            {% endwith %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5">
+                                    <h4 class="text-dark mb-5">
+                                        <i class="fas fa-history text-danger mr-2"></i>
+                                        Historique des modifications
+                                    </h4>
+                                    <div class="timeline timeline-3">
+                                        <div class="timeline-items">
+                                            {% for record in preexposition.history.all %}
+                                            <div class="timeline-item">
+                                                <div class="timeline-media">
+                                                    <i class="fas fa-edit text-{% if forloop.first %}danger{% else %}secondary{% endif %}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                                        <div class="mr-2">
+                                                            <span class="font-weight-bold text-dark">
+                                                                Version #{{ forloop.revcounter }}
+                                                            </span>
+                                                            <span class="text-muted ml-2">
+                                                                {{ record.history_date|date:"d/m/Y H:i" }}
+                                                            </span>
+                                                        </div>
+                                                        <span class="label label-light-{% if forloop.first %}danger{% else %}secondary{% endif %} font-weight-bold">
+                                                            {% if forloop.first %}Actuel{% else %}Ancien{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p class="p-0 m-0">
+                                                        Modifié par: <strong>{{ record.history_user.get_full_name|default:"Système" }}</strong>
+                                                    </p>
+                                                    {% if record.history_change_reason %}
+                                                    <p class="p-0 m-0">
+                                                        Raison: {{ record.history_change_reason }}
+                                                    </p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Historique Tab-->
+                        </div>
+                        <!--end::Tab Content-->
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="text-muted font-weight-bold">
+                                    <i class="fas fa-calendar-check mr-2"></i>
+                                    Dernière mise à jour:
+                                    {% with last_history=preexposition.history.first %}
+                                        {{ last_history.history_date|timesince }}
+                                    {% endwith %}
+                                </span>
+                            </div>
+                            <div>
+                                <a href="{% url 'preexposition_list' %}" class="btn btn-light-primary font-weight-bold">
+                                    <i class="fas fa-arrow-left mr-2"></i> Retour
+                                </a>
+                                {% if request.user.is_authenticated %}
+                                <a href="" class="btn btn-primary font-weight-bold ml-2">
+                                    <i class="fas fa-edit mr-2"></i> Modifier
+                                </a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!--end::Card-->
             </div>
         </div>
-        <!-- content @e -->
-            <!--end::Entry-->
-        </div>
-        <!--end::Content-->
-
-        <!--begin::Footer-->
-        <!--doc: add "bg-white" class to have footer with solod background color-->
-        {% include 'layout/footer.html' %}
-        <!--end::Footer-->
+        <!--end::Entry-->
     </div>
-    <!--end::Wrapper-->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialisation des composants
+    document.addEventListener("DOMContentLoaded", function() {
+        // Active le premier tab
+        $('[data-toggle="tab"]').first().tab('show');
+
+        // Animation des éléments
+        $('.animate__animated').each(function(i) {
+            $(this).delay(i * 100).queue(function() {
+                $(this).addClass('animate__fadeIn').dequeue();
+            });
+        });
+    });
+</script>
 {% endblock %}

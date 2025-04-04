@@ -6,7 +6,7 @@ from django.forms import inlineformset_factory
 from django.utils.safestring import mark_safe
 
 from rage.models import Patient, situation_matrimoniales_choices, Sexe_choices, Goupe_sanguin_choices, Commune, \
-    ProtocoleVaccination, Symptom, Echantillon, Vaccination, StockVaccin, Caisse, Preexposition, PostExposition, \
+    ProtocoleVaccination, Symptom, Echantillon, Vaccination, Vaccins, Caisse, Preexposition, PostExposition, \
     nbr_lesions_CHOICES, DistrictSanitaire, RageHumaineNotification, ESPECE_CHOICES, MAPI
 
 mesure_CHOICES = [('Abattage des chiens', 'Abattage des chiens'),
@@ -189,7 +189,7 @@ class ClientForm(forms.ModelForm):
             'niveau_etude': forms.TextInput(attrs={'class': 'form-control'}),
             # 'commune': forms.Select(attrs={'class': 'form-control'}),
             # 'centre_ar': forms.Select(attrs={'class': 'form-control'}),
-            'residence_commune': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -396,7 +396,7 @@ class ClientPreExpositionForm(forms.ModelForm):
 
     class Meta:
         model = Patient
-        exclude = ['status', 'gueris', 'decede', 'cause_deces', 'date_deces', 'commune', 'centre_ar', 'created_by']
+        exclude = ['status', 'gueris', 'decede', 'cause_deces', 'date_deces', 'centre_ar', 'created_by']
         widgets = {
             'nom': forms.TextInput(attrs={'class': 'form-control'}),
             'prenoms': forms.TextInput(attrs={'class': 'form-control'}),
@@ -407,7 +407,7 @@ class ClientPreExpositionForm(forms.ModelForm):
             'niveau_etude': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'village': forms.TextInput(attrs={'class': 'form-control'}),
-            'residence_commune': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -427,7 +427,7 @@ class ClientPreExpositionForm(forms.ModelForm):
         self.fields['contact'].required = True
         self.fields['date_naissance'].required = True
         self.fields['sexe'].required = True
-        self.fields['residence_commune'].required = True
+        self.fields['commune'].required = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -604,7 +604,7 @@ class PostExpositionForm(forms.ModelForm):
         self.fields['contact'].required = True
         self.fields['date_naissance'].required = True
         self.fields['sexe'].required = True
-        self.fields['residence_commune'].required = True
+        self.fields['commune'].required = True
 
 
 class RageHumaineNotificationForm(forms.ModelForm):
@@ -669,7 +669,7 @@ class ClientPostExpositionForm(forms.ModelForm):
             'sexe': forms.Select(attrs={'class': 'form-control'}),
             'secteur_activite': forms.TextInput(attrs={'class': 'form-control'}),
             'niveau_etude': forms.Select(attrs={'class': 'form-control'}),
-            'residence_commune': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'village': forms.TextInput(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -852,7 +852,7 @@ class PatientRageNotificationForm(forms.ModelForm):
             'sexe': forms.Select(attrs={'class': 'form-control'}),
             'secteur_activite': forms.TextInput(attrs={'class': 'form-control'}),
             'niveau_etude': forms.Select(attrs={'class': 'form-control'}),
-            'residence_commune': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'village': forms.TextInput(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -944,28 +944,27 @@ class EchantillonForm(forms.ModelForm):
 class VaccinationForm(forms.ModelForm):
     class Meta:
         model = Vaccination
-        fields = ['date_effective', 'dose_ml', 'vaccin', 'voie_injection']
+        fields = ['vaccin', 'lot', 'voie_injection', 'dose_ml', 'date_effective']
         widgets = {
-            'date_effective': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'dose_ml': forms.NumberInput(attrs={'class': 'form-control'}),
-            'vaccin': forms.Select(attrs={'class': 'form-control'}),
+            'vaccin': forms.Select(attrs={'class': 'form-control', 'id': 'vaccin-select'}),
+            'lot': forms.Select(attrs={'class': 'form-control', 'id': 'lot-select'}),
             'voie_injection': forms.Select(attrs={'class': 'form-control'}),
-            # 'lieu': forms.TextInput(attrs={'class': 'form-control'}),
-            # 'reactions': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'dose_ml': forms.NumberInput(attrs={'class': 'form-control'}),
+            'date_effective': forms.DateInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
         }
 
 
-class StockVaccinForm(forms.ModelForm):
+class VaccinsForm(forms.ModelForm):
     class Meta:
-        model = StockVaccin
-        fields = ['nom', 'lot', 'quantite', 'unite', 'date_expiration', 'fournisseur']
+        model = Vaccins
+        fields = ['nom', 'unite']
         widgets = {
             'nom': forms.TextInput(attrs={'class': 'form-control'}),
-            'lot': forms.TextInput(attrs={'class': 'form-control'}),
-            'quantite': forms.NumberInput(attrs={'class': 'form-control'}),
+            # 'lot': forms.TextInput(attrs={'class': 'form-control'}),
+            # 'quantite': forms.NumberInput(attrs={'class': 'form-control'}),
             'unite': forms.Select(attrs={'class': 'form-control'}),
-            'date_expiration': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'fournisseur': forms.TextInput(attrs={'class': 'form-control'}),
+            # 'date_expiration': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            # 'fournisseur': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 

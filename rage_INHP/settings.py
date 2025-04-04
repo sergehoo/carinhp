@@ -25,9 +25,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-qv1=6*7#!&8gajb4@-zrh+xulqk(386vapjdcu8w$jrk)bo!9q'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ['true', '1', 'yes']
+# DEBUG = os.environ.get('DEBUG', 'False').lower() in ['true', '1', 'yes']
+DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
 
 # Sécurité HTTPS
 # SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ['true', '1']
@@ -87,12 +89,13 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'django.contrib.staticfiles',
-    "rage",
+    'rage',
     "phonenumber_field",
     'django_tables2',
     'django_filters',
     'crispy_forms',
     'crispy_bootstrap5',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -141,28 +144,28 @@ WSGI_APPLICATION = 'rage_INHP.wsgi.application'
 # }
 
 # local one
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-#         'NAME': 'rage2',
-#         'USER': 'postgres',
-#         'PASSWORD': '09090908',
-#         'HOST': 'localhost',
-#         'PORT': '5433',
-#     }
-# }
-
-#prod
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Correct engine for GIS support
-        'NAME': os.environ.get('DATABASE_NAME'),
-        'USER': os.environ.get('DATABASE_USER'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
-        'HOST': os.environ.get('DATABASE_HOST'),
-        'PORT': os.environ.get('DATABASE_PORT'),
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'rage',
+        'USER': 'postgres',
+        'PASSWORD': 'weddingLIFE18',
+        'HOST': 'localhost',
+        'PORT': '5433',
     }
 }
+
+#prod
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.contrib.gis.db.backends.postgis',  # Correct engine for GIS support
+#         'NAME': os.environ.get('DATABASE_NAME'),
+#         'USER': os.environ.get('DATABASE_USER'),
+#         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+#         'HOST': os.environ.get('DATABASE_HOST'),
+#         'PORT': os.environ.get('DATABASE_PORT'),
+#     }
+# }
 DBBACKUP_STORAGE = 'django.rage_INHP.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'dbbackup/')}
 # Password validation
@@ -175,11 +178,11 @@ SESSION_COOKIE_AGE = 30 * 60  # 30 minutes
 
 # SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 # Configurer pour que la session expire uniquement après inactivité
-SESSION_SAVE_EVERY_REQUEST = True  # La session  sera prolongée à chaque requête
+SESSION_SAVE_EVERY_REQUEST = True  # La session sera prolongée à chaque requête
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', '/opt/homebrew/opt/gdal/lib/libgdal.dylib')
-# GEOS_LIBRARY_PATH = os.getenv('GEOS_LIBRARY_PATH', '/opt/homebrew/opt/geos/lib/libgeos_c.dylib')
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', '/opt/homebrew/opt/gdal/lib/libgdal.dylib')
+GEOS_LIBRARY_PATH = os.getenv('GEOS_LIBRARY_PATH', '/opt/homebrew/opt/geos/lib/libgeos_c.dylib')
 
 LANGUAGES = [
     ('fr', 'Français'),
@@ -292,3 +295,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+MPI_API_KEY = "a0ha3iNvhGC2qFDkcYXIODx0w6qhv3pZo9nyou2n"

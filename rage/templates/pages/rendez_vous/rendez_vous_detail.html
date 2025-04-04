@@ -1,0 +1,555 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            <div class="subheader py-2 py-lg-4 subheader-solid" id="kt_subheader">
+                <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap flex-sm-nowrap">
+                    <!--begin::Info-->
+                    <div class="d-flex align-items-center flex-wrap mr-2">
+                        <!--begin::Page Title-->
+                        <h5 class="text-dark font-weight-bold mt-2 mb-2 mr-5">
+                            <i class="fas fa-calendar-check text-primary mr-2"></i>
+                            Détails du Rendez-vous #{{ details_rdv.id }}
+                        </h5>
+                        <!--end::Page Title-->
+                    </div>
+                    <!--end::Info-->
+                    <!--begin::Toolbar-->
+                    <div class="d-flex align-items-center">
+                        <a href="{% url 'vaccin-rdv-list' %}"
+                           class="btn btn-light-primary font-weight-bold btn-sm mr-2">
+                            <i class="fas fa-list mr-1"></i> Retour à la liste
+                        </a>
+                        {% if request.user.is_authenticated %}
+                            <a href=""
+                               class="btn btn-primary font-weight-bold btn-sm">
+                                <i class="fas fa-edit mr-1"></i> Modifier
+                            </a>
+                        {% endif %}
+                    </div>
+                    <!--end::Toolbar-->
+                </div>
+            </div>
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <div class="d-flex flex-column-fluid">
+                <div class="container">
+                    <!--begin::Card-->
+                    <div class="card card-custom gutter-b">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <h3 class="card-label">
+                                    <i class="fas fa-info-circle text-primary mr-2"></i>
+                                    Informations du Rendez-vous
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!--begin::Patient Info-->
+                            <div class="mb-10">
+                                <div class="d-flex align-items-center mb-5">
+                                    <div class="symbol symbol-50 symbol-light mr-5">
+                                    <span class="symbol-label bg-primary-o-10 font-size-h3 font-weight-boldest">
+                                        {{ details_rdv.patient.nom|first }}{{ details_rdv.patient.prenoms|first }}
+                                    </span>
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                    <span class="text-dark font-weight-bold font-size-h4 mb-1">
+                                        {{ details_rdv.patient.nom }} {{ details_rdv.patient.prenoms }}
+                                    </span>
+                                        <span class="text-muted font-weight-bold">
+                                        <i class="fas fa-id-card mr-2"></i> {{ details_rdv.patient.code_patient }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-phone mr-2"></i> {{ details_rdv.patient.contact_formatte }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-birthday-cake mr-2"></i> {{ details_rdv.patient.date_naissance|date:"d/m/Y" }} ({{ details_rdv.patient.calculate_age }} ans)
+                                    </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Patient Info-->
+
+                            <!--begin::Tabs-->
+                            <div class="mb-10">
+                                <ul class="nav nav-tabs nav-tabs-line" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-toggle="tab" href="#details_rdv">
+                                            <i class="fas fa-calendar-alt mr-2"></i>Détails RDV
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-toggle="tab" href="#protocole">
+                                            <i class="fas fa-syringe mr-2"></i>Protocole
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-toggle="tab" href="#administration">
+                                            <i class="fas fa-check-circle mr-2"></i>Administration
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-toggle="tab" href="#historique">
+                                            <i class="fas fa-history mr-2"></i>Historique
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!--end::Tabs-->
+
+                            <!--begin::Tab Content-->
+                            <div class="tab-content">
+                                <!--begin::Details RDV Tab-->
+                                <div class="tab-pane fade show active" id="details_rdv" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered">
+                                                    <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Date du rendez-vous</th>
+                                                        <td>
+                                                            {{ details_rdv.date_rendez_vous|date:"l d F Y" }}
+                                                            <span class="label label-inline label-{% if details_rdv.statut_rdv == 'Passé' %}danger{% elif details_rdv.statut_rdv == 'Aujourdhui' %}success{% else %}warning{% endif %} ml-2">
+                                                                {{ details_rdv.statut_rdv }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class=" bg-light-primary">Type d'exposition</th>
+                                                        <td>
+                                                            {% if details_rdv.preexposition %}
+                                                                <span class="label label-inline label-primary">Pré-exposition</span>
+                                                            {% elif details_rdv.postexposition %}
+                                                                <span class="label label-inline label-danger">Post-exposition</span>
+                                                            {% else %}
+                                                                <span class="label label-inline label-dark">Non spécifié</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Code exposition</th>
+                                                        <td>
+                                                            {% if details_rdv.preexposition %}
+                                                                {{ details_rdv.preexposition.codeexpo }}
+                                                            {% elif details_rdv.postexposition %}
+                                                                {{ details_rdv.postexposition.codeexpo }}
+                                                            {% else %}
+                                                                -
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered">
+                                                    <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Dose numéro</th>
+                                                        <td>
+                                                            <span class="font-weight-boldest text-primary">{{ details_rdv.dose_numero }}</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Statut vaccination</th>
+                                                        <td>
+                                                            {% if details_rdv.est_effectue %}
+                                                                <span class="label label-inline label-success">Effectué</span>
+                                                            {% else %}
+                                                                <span class="label label-inline label-warning">En attente</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Créé par</th>
+                                                        <td>{{ details_rdv.created_by.get_full_name|default:"-" }}</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!--begin::Alert-->
+                                    <div class="alert alert-custom alert-light-{% if details_rdv.statut_rdv == 'Passé' and not details_rdv.est_effectue %}danger{% elif details_rdv.statut_rdv == 'Aujourd\'hui' %}warning{% else %}primary{% endif %} mt-5">
+                                    <div class=" alert-icon
+                                    ">
+                                    <i class="fas fa-{% if details_rdv.statut_rdv == 'Passé' and not details_rdv.est_effectue %}exclamation-triangle{% elif details_rdv.statut_rdv == 'Aujourd\'hui' %}bell{% else %}info-circle{% endif %}"></i>
+                                    </div>
+                                    <div class=" alert-text">
+                                    {% if details_rdv.statut_rdv == 'Passé' and not details_rdv.est_effectue %}
+                                        <strong>Attention !</strong> Ce rendez-vous est passé mais la vaccination n'a
+                                        pas été marquée comme effectuée.
+                                    {% elif details_rdv.statut_rdv == 'Aujourd\'hui' %}
+                                        <strong>Aujourd'hui !</strong> Ce rendez-vous est prévu pour aujourd'hui.
+                                    {% elif details_rdv.statut_rdv == 'À venir' %}
+                                        <strong>À venir.</strong> Prochain rendez-vous pour ce patient.
+                                    {% else %}
+                                        <strong>Vaccination effectuée.</strong> Ce rendez-vous a été complété.
+                                    {% endif %}
+                                </div>
+                                {% if details_rdv.statut_rdv == 'Aujourd\'hui' or details_rdv.statut_rdv == 'Passé' and not details_rdv.est_effectue %}
+                                    <div class="alert-actions ml-5">
+                                        <button type="button"
+                                                class="btn btn-{% if details_rdv.statut_rdv == 'Passé' and not details_rdv.est_effectue %}danger{% else %}warning{% endif %} font-weight-bold"
+                                                data-toggle="modal" data-target="#vaccinationModal">
+                                            <i class="fas fa-syringe mr-2"></i>Enregistrer vaccination
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!--end::Alert-->
+                        </div>
+                        <!--end::Details RDV Tab-->
+
+                        <!--begin::Protocole Tab-->
+                        <div class="tab-pane fade" id="protocole" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <tbody>
+                                            <tr>
+                                                <th class="w-50 bg-light-info">Protocole</th>
+                                                <td>
+                                                    <span class="font-weight-boldest">{{ details_rdv.protocole.nom }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-light-info">Nombre de doses</th>
+                                                <td>{{ details_rdv.protocole.nombre_doses }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-light-info">Description</th>
+                                                <td>{{ details_rdv.protocole.description|default:"-" }}</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <tbody>
+                                            <tr>
+                                                <th class="w-50 bg-light-info">Dose actuelle</th>
+                                                <td>
+                                                            <span class="label label-inline label-primary font-weight-boldest">
+                                                                Dose {{ details_rdv.dose_numero }}/{{ details_rdv.protocole.nombre_doses }}
+                                                            </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-light-info">Prochaine dose</th>
+                                                <td>
+                                                    {% if details_rdv.dose_numero < details_rdv.protocole.nombre_doses %}
+                                                        {% with next_dose=details_rdv.dose_numero|add:1 %}
+                                                            Dose {{ next_dose }} -
+                                                            {% for vaccin in details_rdv.protocole.vaccins.all %}
+                                                                {% if vaccin.jour_administration == next_dose %}
+                                                                    {{ vaccin.nom }}
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        <span class="text-muted">Dernière dose du protocole</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5">
+                                <h4 class="text-dark mb-5">
+                                    <i class="fas fa-calendar-alt text-info mr-2"></i>
+                                    Calendrier complet du protocole
+                                </h4>
+                                <div class="timeline timeline-3">
+                                    <div class="timeline-items">
+                                        {% for vaccin in details_rdv.protocole.vaccins.all %}
+                                            <div class="timeline-item {% if vaccin.jour_administration == details_rdv.dose_numero %}current-dose{% endif %}">
+                                                <div class="timeline-media">
+                                                    <i class="fas fa-syringe text-{% if vaccin.jour_administration < details_rdv.dose_numero %}success{% elif vaccin.jour_administration == details_rdv.dose_numero %}primary{% else %}warning{% endif %}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                                        <div class="mr-2">
+                                                            <span class="font-weight-bold text-dark">
+                                                                Dose {{ vaccin.jour_administration }} - {{ vaccin.nom }}
+                                                            </span>
+                                                            {% if vaccin.jour_administration == details_rdv.dose_numero %}
+                                                                <span class="label label-inline label-primary ml-2">Dose actuelle</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        <span class="label label-light-{% if vaccin.jour_administration < details_rdv.dose_numero %}success{% elif vaccin.jour_administration == details_rdv.dose_numero %}primary{% else %}warning{% endif %} font-weight-bold">
+                                                            {{ vaccin.dose }} dose(s)
+                                                        </span>
+                                                    </div>
+                                                    <p class="p-0 m-0">{{ vaccin.description }}</p>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::Protocole Tab-->
+
+                        <!--begin::Administration Tab-->
+                        <div class="tab-pane fade" id="administration" role="tabpanel">
+                            {% if details_rdv.est_effectue %}
+                                <div class="alert alert-success">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="alert-text">
+                                        <h4 class="alert-heading">Vaccination effectuée</h4>
+                                        <p>Cette dose a été administrée avec succès.</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <div class="alert-text">
+                                        <h4 class="alert-heading">Vaccination en attente</h4>
+                                        <p>Cette dose n'a pas encore été administrée.</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!--begin::Form-->
+                            <form method="post" action="">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label>Date d'administration</label>
+                                    <input type="date" class="form-control" name="date_administration"
+                                           value="{% now 'Y-m-d' %}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Observations</label>
+                                    <textarea class="form-control" name="observations" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Lot vaccin</label>
+                                    <input type="text" class="form-control" name="lot_vaccin">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save mr-2"></i>Enregistrer l'administration
+                                </button>
+                            </form>
+                            <!--end::Form-->
+                        </div>
+                        <!--end::Administration Tab-->
+
+                        <!--begin::Historique Tab-->
+                        <div class="tab-pane fade" id="historique" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <tbody>
+                                            <tr>
+                                                <th class="w-50 bg-light-danger">Créé par</th>
+                                                <td>{{ details_rdv.created_by.get_full_name|default:"-" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-light-danger">Date création</th>
+                                                <td>{{ details_rdv.created_at|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <tbody>
+                                            <tr>
+                                                <th class="w-50 bg-light-danger">Dernière modification</th>
+                                                <td>
+                                                    {% with last_history=details_rdv.history.first %}
+                                                        {{ last_history.history_date|date:"d/m/Y H:i"|default:"-" }}
+                                                    {% endwith %}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="bg-light-danger">Modifié par</th>
+                                                <td>
+                                                    {% with last_history=details_rdv.history.first %}
+                                                        {{ last_history.history_user.get_full_name|default:"-" }}
+                                                    {% endwith %}
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5">
+                                <h4 class="text-dark mb-5">
+                                    <i class="fas fa-history text-danger mr-2"></i>
+                                    Historique des modifications
+                                </h4>
+                                <div class="timeline timeline-3">
+                                    <div class="timeline-items">
+                                        {% for record in details_rdv.history.all %}
+                                            <div class="timeline-item">
+                                                <div class="timeline-media">
+                                                    <i class="fas fa-edit text-{% if forloop.first %}danger{% else %}secondary{% endif %}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                                        <div class="mr-2">
+                                                            <span class="font-weight-bold text-dark">
+                                                                Version #{{ forloop.revcounter }}
+                                                            </span>
+                                                            <span class="text-muted ml-2">
+                                                                {{ record.history_date|date:"d/m/Y H:i" }}
+                                                            </span>
+                                                        </div>
+                                                        <span class="label label-light-{% if forloop.first %}danger{% else %}secondary{% endif %} font-weight-bold">
+                                                            {% if forloop.first %}Actuel{% else %}Ancien{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p class="p-0 m-0">
+                                                        Modifié par:
+                                                        <strong>{{ record.history_user.get_full_name|default:"Système" }}</strong>
+                                                    </p>
+                                                    {% if record.history_change_reason %}
+                                                        <p class="p-0 m-0">
+                                                            Raison: {{ record.history_change_reason }}
+                                                        </p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::Historique Tab-->
+                    </div>
+                    <!--end::Tab Content-->
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                                <span class="text-muted font-weight-bold">
+                                    <i class="fas fa-calendar-check mr-2"></i>
+                                    Dernière mise à jour:
+                                    {% with last_history=details_rdv.history.first %}
+                                        {{ last_history.history_date|timesince }}
+                                    {% endwith %}
+                                </span>
+                        </div>
+                        <div>
+                            <a href="{% url 'vaccin-rdv-list' %}" class="btn btn-light-primary font-weight-bold">
+                                <i class="fas fa-arrow-left mr-2"></i> Retour
+                            </a>
+                            {% if request.user.is_authenticated %}
+                                <a href=""
+                                   class="btn btn-primary font-weight-bold ml-2">
+                                    <i class="fas fa-edit mr-2"></i> Modifier
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--end::Card-->
+        </div>
+    </div>
+    <!--end::Entry-->
+    </div>
+    </div>
+
+    <!--begin::Modal-->
+    <div class="modal fade" id="vaccinationModal" tabindex="-1" role="dialog" aria-labelledby="vaccinationModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vaccinationModalLabel">
+                        <i class="fas fa-syringe text-primary mr-2"></i>
+                        Enregistrer l'administration du vaccin
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="post" action="">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Date d'administration *</label>
+                            <input type="date" class="form-control" name="date_administration" required
+                                   value="{% now 'Y-m-d' %}">
+                        </div>
+                        <div class="form-group">
+                            <label>Lot vaccin *</label>
+                            <input type="text" class="form-control" name="lot_vaccin" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Observations</label>
+                            <textarea class="form-control" name="observations" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary font-weight-bold">
+                            <i class="fas fa-save mr-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!--end::Modal-->
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Initialisation des composants
+        document.addEventListener("DOMContentLoaded", function () {
+            // Active le premier tab
+            $('[data-toggle="tab"]').first().tab('show');
+
+            // Animation des éléments
+            $('.animate__animated').each(function (i) {
+                $(this).delay(i * 100).queue(function () {
+                    $(this).addClass('animate__fadeIn').dequeue();
+                });
+            });
+
+            // Gestion du statut du rendez-vous
+            function updateRdvStatus() {
+                const today = new Date();
+                const rdvDate = new Date('{{ details_rdv.date_rendez_vous|date:"Y-m-d" }}');
+
+                if (rdvDate.toDateString() === today.toDateString()) {
+                    $('.rdv-status').text("Aujourd'hui").removeClass('text-warning text-danger').addClass('text-success');
+                } else if (rdvDate < today) {
+                    $('.rdv-status').text("Passé").removeClass('text-warning text-success').addClass('text-danger');
+                } else {
+                    $('.rdv-status').text("À venir").removeClass('text-success text-danger').addClass('text-warning');
+                }
+            }
+
+            updateRdvStatus();
+        });
+    </script>
+{% endblock %}

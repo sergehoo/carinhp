@@ -118,9 +118,11 @@
                                         <th>Dose</th>
                                         <th>Date Effective</th>
                                         <th>Protocole</th>
+                                        <th>N° Visite</th>
                                         <th>Voie</th>
                                         <th>Observation</th>
                                         <th>MAPI</th>
+                                        <th>Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -132,10 +134,13 @@
                                                 </a>
                                             </td>
                                             <td>{{ v.vaccin.nom }}</td>
-                                            <td>{{ v.vaccin.lot }}</td>
-                                            <td>{{ v.vaccin.dose }}</td>
+                                            <td>{{ v.lot }}</td>
+                                            <td> {% if v.nombre_dose %}{{ v.nombre_dose }} dose(s) {% else %} Aucune dose enregistree {% endif %} </td>
                                             <td>{{ v.date_effective }}</td>
                                             <td>{{ v.protocole.nom }}</td>
+                                            <td>
+  {{ v.dose_numero }}<sup>{% if v.dose_numero == 1 %}ère{% else %}ème{% endif %}</sup> Visite
+</td>
                                             <td>{{ v.get_voie_injection_display }}</td>
                                             <td>
                                                 {% if v.date_effective %}
@@ -178,6 +183,13 @@
         <span class="text-muted">Aucun</span>
     {% endif %}
                                             </td>
+                                        <td>
+                                            <a href="{% url 'vaccination_detail' v.pk %}" class="btn btn-primary btn-icon btn-xs"> <em class="fa fa-list-alt"></em></a>
+{#                                            <a href="" class="btn btn-info btn-icon btn-xs ml-2"> <em class="fa fa-file-pdf"></em> </a>#}
+<a href="{% url 'attestation_vaccination' v.id %}" class="btn btn-info btn-icon btn-xs ml-2" target="_blank">
+    <em class="fa fa-file-pdf"></em>
+</a>
+                                        </td>
                                         </tr>
                                     {% empty %}
                                         <tr>
@@ -233,6 +245,7 @@
             <!--doc: add "bg-white" class to have footer with solod background color-->
             {% include 'layout/footer.html' %}
             <!--end::Footer-->
+        </div>
         </div>
         <!--end::Wrapper-->
 

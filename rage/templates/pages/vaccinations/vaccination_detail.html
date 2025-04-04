@@ -1,0 +1,632 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Subheader-->
+        <div class="subheader py-2 py-lg-4 subheader-solid" id="kt_subheader">
+            <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap flex-sm-nowrap">
+                <!--begin::Info-->
+                <div class="d-flex align-items-center flex-wrap mr-2">
+                    <!--begin::Page Title-->
+                    <h5 class="text-dark font-weight-bold mt-2 mb-2 mr-5">
+                        <i class="fas fa-syringe text-primary mr-2"></i>
+                        Fiche Vaccination #{{ vaccination.id }}
+                    </h5>
+                    <!--end::Page Title-->
+                </div>
+                <!--end::Info-->
+                <!--begin::Toolbar-->
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'vaccination_list' %}" class="btn btn-light-primary font-weight-bold btn-sm mr-2">
+                        <i class="fas fa-list mr-1"></i> Retour à la liste
+                    </a>
+                    {% if request.user.is_authenticated %}
+                    <a href="{% url 'vaccination_update' vaccination.pk %}" class="btn btn-primary font-weight-bold btn-sm">
+                        <i class="fas fa-edit mr-1"></i> Modifier
+                    </a>
+                    {% endif %}
+                </div>
+                <!--end::Toolbar-->
+            </div>
+        </div>
+        <!--end::Subheader-->
+
+        <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!--begin::Card-->
+                <div class="card card-custom gutter-b">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>
+                                Détails de la Vaccination
+                            </h3>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!--begin::Patient Info-->
+                        <div class="mb-10">
+                            <div class="d-flex align-items-center mb-5">
+                                <div class="symbol symbol-50 symbol-light mr-5">
+                                    <span class="symbol-label bg-primary-o-10 font-size-h3 font-weight-boldest">
+                                        {{ vaccination.patient.nom|first }}{{ vaccination.patient.prenoms|first }}
+                                    </span>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="text-dark font-weight-bold font-size-h4 mb-1">
+                                        {{ vaccination.patient.nom }} {{ vaccination.patient.prenoms }}
+                                    </span>
+                                    <span class="text-muted font-weight-bold">
+                                        <i class="fas fa-id-card mr-2"></i> {{ vaccination.patient.code_patient }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-phone mr-2"></i> {{ vaccination.patient.contact_formatte }}
+                                        <span class="mx-3">|</span>
+                                        <i class="fas fa-birthday-cake mr-2"></i> {{ vaccination.patient.date_naissance|date:"d/m/Y" }} ({{ vaccination.patient.calculate_age }} ans)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::Patient Info-->
+
+                        <!--begin::Tabs-->
+                        <div class="mb-10">
+                            <ul class="nav nav-tabs nav-tabs-line" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-toggle="tab" href="#details_vaccin">
+                                        <i class="fas fa-syringe mr-2"></i>Détails Vaccin
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#observation">
+                                        <i class="fas fa-clock mr-2"></i>Observation
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#mapi">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i>MAPI
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#historique">
+                                        <i class="fas fa-history mr-2"></i>Historique
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <!--end::Tabs-->
+
+                        <!--begin::Tab Content-->
+                        <div class="tab-content">
+                            <!--begin::Details Vaccin Tab-->
+                            <div class="tab-pane fade show active" id="details_vaccin" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Date prévue</th>
+                                                        <td>{{ vaccination.date_prevue|date:"l d F Y" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Date effective</th>
+                                                        <td>
+                                                            {% if vaccination.date_effective %}
+                                                                {{ vaccination.date_effective|date:"l d F Y H:i" }}
+                                                                <span class="label label-inline label-{% if vaccination.date_effective.date == vaccination.date_prevue %}success{% else %}warning{% endif %} ml-2">
+                                                                    {% if vaccination.date_effective.date == vaccination.date_prevue %}À l'heure{% else %}Décalée{% endif %}
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="text-muted">Non administré</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Protocole</th>
+                                                        <td>
+                                                            <span class="font-weight-boldest">{{ vaccination.protocole.nom }}</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Dose</th>
+                                                        <td>
+                                                            <span class="label label-inline label-primary font-weight-boldest">
+                                                                Dose {{ vaccination.dose_numero }}/{{ vaccination.nombre_dose }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-primary">Vaccin</th>
+                                                        <td>
+                                                            {% if vaccination.vaccin %}
+                                                                {{ vaccination.vaccin.nom }} (Lot: {{ vaccination.lot }})
+                                                            {% else %}
+                                                                <span class="text-muted">Non spécifié</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Volume administré</th>
+                                                        <td>{{ vaccination.dose_ml }} ml</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Voie d'injection</th>
+                                                        <td>{{ vaccination.get_voie_injection_display }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-primary">Lieu</th>
+                                                        <td>{{ vaccination.lieu }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if vaccination.date_effective and vaccination.date_effective.date != vaccination.date_prevue %}
+                                <div class="alert alert-warning mt-5">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="alert-text">
+                                        <strong>Attention :</strong> Cette vaccination a été administrée à une date différente de celle prévue.
+                                        Les rendez-vous suivants ont été automatiquement recalculés.
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <!--end::Details Vaccin Tab-->
+
+                            <!--begin::Observation Tab-->
+                            <div class="tab-pane fade" id="observation" role="tabpanel">
+                                {% if vaccination.observation %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-info">Heure début</th>
+                                                        <td>{{ vaccination.observation.heure_debut|date:"H:i" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Heure fin</th>
+                                                        <td>{{ vaccination.observation.heure_fin|date:"H:i" }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-info">Statut</th>
+                                                        <td>
+                                                            {% if vaccination.observation.est_terminee %}
+                                                            <span class="label label-inline label-success">Terminée</span>
+                                                            {% else %}
+                                                            <span class="label label-inline label-warning">En cours</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-info">Temps restant</th>
+                                                        <td>
+                                                            {% if not vaccination.observation.est_terminee %}
+                                                                {{ vaccination.observation.temps_restant|time:"H:i" }} minutes
+                                                            {% else %}
+                                                                <span class="text-muted">Observation terminée</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5">
+                                    <h4 class="text-dark mb-5">
+                                        <i class="fas fa-clipboard-check text-info mr-2"></i>
+                                        Suivi de l'observation
+                                    </h4>
+                                    <div class="d-flex align-items-center justify-content-around text-center">
+                                        <div class="d-flex flex-column">
+                                            <span class="font-size-h1 font-weight-boldest text-info">
+                                                {% if vaccination.observation.est_terminee %}
+                                                <i class="fas fa-check-circle"></i>
+                                                {% else %}
+                                                <i class="fas fa-user-clock"></i>
+                                                {% endif %}
+                                            </span>
+                                            <span class="font-weight-bold text-muted mt-2">Statut</span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-size-h1 font-weight-boldest text-info">
+                                                {{ vaccination.observation.heure_debut|date:"H:i" }}
+                                            </span>
+                                            <span class="font-weight-bold text-muted mt-2">Début</span>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <span class="font-size-h1 font-weight-boldest text-info">
+                                                {{ vaccination.observation.heure_fin|date:"H:i" }}
+                                            </span>
+                                            <span class="font-weight-bold text-muted mt-2">Fin</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-custom alert-light-danger">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-exclamation-circle text-danger"></i>
+                                    </div>
+                                    <div class="alert-text">
+                                        Aucune observation post-vaccinale n'a été enregistrée pour cette vaccination.
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <!--end::Observation Tab-->
+
+                            <!--begin::MAPI Tab-->
+                            <div class="tab-pane fade" id="mapi" role="tabpanel">
+                                {% if vaccination.mapi.all %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="bg-light-danger">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Symptômes</th>
+                                                <th>Gravité</th>
+                                                <th>Évolution</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for mapi in vaccination.mapi.all %}
+                                            <tr>
+                                                <td>{{ mapi.date_apparition|date:"d/m/Y H:i" }}</td>
+                                                <td>{{ mapi.description|truncatewords:10 }}</td>
+                                                <td>
+                                                    <span class="label label-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
+                                                        {{ mapi.get_gravite_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="label label-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
+                                                        {{ mapi.get_evolution_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="#" class="btn btn-icon btn-light btn-hover-primary btn-sm" data-toggle="modal" data-target="#mapiModal{{ mapi.id }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-custom alert-light-primary">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-info-circle text-primary"></i>
+                                    </div>
+                                    <div class="alert-text">
+                                        Aucune MAPI (Maladie Post Injection) n'a été signalée pour cette vaccination.
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <div class="mt-5">
+                                    <button type="button" class="btn btn-primary font-weight-bold" data-toggle="modal" data-target="#newMapiModal">
+                                        <i class="fas fa-plus mr-2"></i>Signaler une MAPI
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::MAPI Tab-->
+
+                            <!--begin::Historique Tab-->
+                            <div class="tab-pane fade" id="historique" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-danger">Créé par</th>
+                                                        <td>{{ vaccination.created_by.get_full_name|default:"-" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-danger">Date création</th>
+                                                        <td>{{ vaccination.created_at|date:"d/m/Y H:i" }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="w-50 bg-light-danger">Dernière modification</th>
+                                                        <td>
+                                                            {% with last_history=vaccination.history.first %}
+                                                                {{ last_history.history_date|date:"d/m/Y H:i"|default:"-" }}
+                                                            {% endwith %}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="bg-light-danger">Modifié par</th>
+                                                        <td>
+                                                            {% with last_history=vaccination.history.first %}
+                                                                {{ last_history.history_user.get_full_name|default:"-" }}
+                                                            {% endwith %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5">
+                                    <h4 class="text-dark mb-5">
+                                        <i class="fas fa-history text-danger mr-2"></i>
+                                        Historique des modifications
+                                    </h4>
+                                    <div class="timeline timeline-3">
+                                        <div class="timeline-items">
+                                            {% for record in vaccination.history.all %}
+                                            <div class="timeline-item">
+                                                <div class="timeline-media">
+                                                    <i class="fas fa-edit text-{% if forloop.first %}danger{% else %}secondary{% endif %}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                                        <div class="mr-2">
+                                                            <span class="font-weight-bold text-dark">
+                                                                Version #{{ forloop.revcounter }}
+                                                            </span>
+                                                            <span class="text-muted ml-2">
+                                                                {{ record.history_date|date:"d/m/Y H:i" }}
+                                                            </span>
+                                                        </div>
+                                                        <span class="label label-light-{% if forloop.first %}danger{% else %}secondary{% endif %} font-weight-bold">
+                                                            {% if forloop.first %}Actuel{% else %}Ancien{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p class="p-0 m-0">
+                                                        Modifié par: <strong>{{ record.history_user.get_full_name|default:"Système" }}</strong>
+                                                    </p>
+                                                    {% if record.history_change_reason %}
+                                                    <p class="p-0 m-0">
+                                                        Raison: {{ record.history_change_reason }}
+                                                    </p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end::Historique Tab-->
+                        </div>
+                        <!--end::Tab Content-->
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <span class="text-muted font-weight-bold">
+                                    <i class="fas fa-calendar-check mr-2"></i>
+                                    Dernière mise à jour:
+                                    {% with last_history=vaccination.history.first %}
+                                        {{ last_history.history_date|timesince }}
+                                    {% endwith %}
+                                </span>
+                            </div>
+                            <div>
+                                <a href="{% url 'vaccination_list' %}" class="btn btn-light-primary font-weight-bold">
+                                    <i class="fas fa-arrow-left mr-2"></i> Retour
+                                </a>
+                                {% if request.user.is_authenticated %}
+                                <a href="{% url 'vaccination_update' vaccination.pk %}" class="btn btn-primary font-weight-bold ml-2">
+                                    <i class="fas fa-edit mr-2"></i> Modifier
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end::Card-->
+            </div>
+        </div>
+        <!--end::Entry-->
+    </div>
+</div>
+
+<!--begin::New MAPI Modal-->
+<div class="modal fade" id="newMapiModal" tabindex="-1" role="dialog" aria-labelledby="newMapiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newMapiModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger mr-2"></i>
+                    Signaler une MAPI
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Date d'apparition *</label>
+                        <input type="datetime-local" class="form-control" name="date_apparition" required value="{% now 'Y-m-d\TH:i' %}">
+                    </div>
+                    <div class="form-group">
+                        <label>Description des symptômes *</label>
+                        <textarea class="form-control" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Gravité *</label>
+                                <select class="form-control" name="gravite" required>
+                                    <option value="léger">Léger</option>
+                                    <option value="modéré">Modéré</option>
+                                    <option value="sévère">Sévère</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Évolution *</label>
+                                <select class="form-control" name="evolution" required>
+                                    <option value="en observation">En observation</option>
+                                    <option value="guéri">Guéri</option>
+                                    <option value="complications">Complications</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Traitement administré</label>
+                        <textarea class="form-control" name="traitement_administre" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger font-weight-bold">
+                        <i class="fas fa-save mr-2"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!--end::New MAPI Modal-->
+
+<!--begin::MAPI Detail Modals-->
+{% for mapi in vaccination.mapi.all %}
+<div class="modal fade" id="mapiModal{{ mapi.id }}" tabindex="-1" role="dialog" aria-labelledby="mapiModalLabel{{ mapi.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapiModalLabel{{ mapi.id }}">
+                    <i class="fas fa-exclamation-triangle text-danger mr-2"></i>
+                    Détails MAPI #{{ mapi.id }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th class="w-50 bg-light-danger">Date d'apparition</th>
+                                        <td>{{ mapi.date_apparition|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light-danger">Gravité</th>
+                                        <td>
+                                            <span class="label label-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
+                                                {{ mapi.get_gravite_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th class="w-50 bg-light-danger">Évolution</th>
+                                        <td>
+                                            <span class="label label-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
+                                                {{ mapi.get_evolution_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light-danger">Signalé par</th>
+                                        <td>{{ mapi.created_by.get_full_name|default:"-" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <h5 class="text-dark mb-3">Description des symptômes</h5>
+                    <div class="bg-light-danger p-5 rounded">
+                        {{ mapi.description|linebreaks }}
+                    </div>
+                </div>
+
+                {% if mapi.traitement_administre %}
+                <div class="mt-5">
+                    <h5 class="text-dark mb-3">Traitement administré</h5>
+                    <div class="bg-light-success p-5 rounded">
+                        {{ mapi.traitement_administre|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Fermer</button>
+                {% if request.user.is_authenticated %}
+                <a href="#" class="btn btn-primary font-weight-bold ml-2">
+                    <i class="fas fa-edit mr-2"></i> Modifier
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+<!--end::MAPI Detail Modals-->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialisation des composants
+    document.addEventListener("DOMContentLoaded", function() {
+        // Active le premier tab
+        $('[data-toggle="tab"]').first().tab('show');
+
+        // Animation des éléments
+        $('.animate__animated').each(function(i) {
+            $(this).delay(i * 100).queue(function() {
+                $(this).addClass('animate__fadeIn').dequeue();
+            });
+        });
+    });
+</script>
+{% endblock %}

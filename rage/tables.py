@@ -69,11 +69,13 @@ class RendezVousTable(tables.Table):
     patient = tables.Column(verbose_name="Patient", accessor="patient.nom")
     protocole = tables.Column(verbose_name="Protocole", accessor="protocole")
 
-    dose_numero = tables.Column(verbose_name="Dose #")
+    # dose_numero = tables.Column(verbose_name="Numeros RDV #")
+    ordre_rdv = tables.Column(verbose_name="N° Visite")
+
     est_effectue = tables.Column(verbose_name="Statut", accessor="est_effectue")
     statut_rdv = tables.Column(verbose_name="État", empty_values=())
     exposition = tables.Column(verbose_name="Exposition", empty_values=(), orderable=False)
-    observation_timer = tables.Column(verbose_name="Observation mapi", empty_values=(), orderable=False)
+    # observation_timer = tables.Column(verbose_name="Observation mapi", empty_values=(), orderable=False)
 
     actions = tables.TemplateColumn(
         template_name="rendez_vous/partials/rendez_vous_actions.html",
@@ -86,11 +88,15 @@ class RendezVousTable(tables.Table):
         """ Affiche Nom + Prénom du patient """
         return f"{record.patient.nom} {record.patient.prenoms}"
 
-    def render_dose_numero(self, value):
-        """ Affiche le numéro de dose avec un suffixe en exposant """
-        if value == 1:
-            return format_html(f"{value}<sup>ère</sup> dose")  # 1ère
-        return format_html(f"{value}<sup>ème</sup> dose")  # 2ème, 3ème, etc.
+    # def render_dose_numero(self, value):
+    #     """ Affiche le numéro de dose avec un suffixe en exposant """
+    #     if value == 1:
+    #         return format_html(f"{value}<sup>ère</sup> dose")  # 1ère
+    #     return format_html(f"{value}<sup>ème</sup> dose")  # 2ème, 3ème, etc.
+
+    def render_ordre_rdv(self, value):
+        suffixe = "ère" if value == 1 else "ème"
+        return format_html(f"{value}<sup>{suffixe}</sup> Visite")
 
     def render_est_effectue(self, value):
         if value:
@@ -189,6 +195,7 @@ class RendezVousTable(tables.Table):
                 }};
             }}
         </script>
+        
         """
         return mark_safe(html)
 
@@ -196,8 +203,7 @@ class RendezVousTable(tables.Table):
         model = RendezVousVaccination
         template_name = "django_tables2/bootstrap5.html"
         fields = (
-            "date_rendez_vous", "patient", "protocole", "dose_numero", "est_effectue", "statut_rdv",
-            "observation_timer",
+            "date_rendez_vous", "patient", "protocole", "ordre_rdv", "est_effectue", "statut_rdv",
             "exposition")
 
 

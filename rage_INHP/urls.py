@@ -16,7 +16,8 @@ from rage.views import CADashborad, DistrictDashborad, RegionDashborad, National
     PreExpositionDeleteView, PostExpositionListView, PostExpositionCreateView, PostExpositionDetailView, \
     PostExpositionUpdateView, PostExpositionDeleteView, fichePreExpoPDF, get_communes, RageNotificationCreateView, \
     patients_geojson, fichePostExpoPDF, RageHumaineNotificationListView, RageHumaineNotificationDetailView, \
-    RageHumaineNotificationUpdateView, RageHumaineNotificationDeleteView, ajouter_mapi
+    RageHumaineNotificationUpdateView, RageHumaineNotificationDeleteView, ajouter_mapi, synchroniser_patients_mpi, \
+    attestation_vaccination, lots_par_vaccin
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
@@ -30,6 +31,7 @@ urlpatterns = [
                   path('National/', NationalDashborad.as_view(), name='national'),
                   path('unicorn/', views.message, name='unicorn'),
                   path('unicorn/', include('django_unicorn.urls', namespace='django_unicorn')),
+                  path('synchroniser-mpi/', synchroniser_patients_mpi, name='synchroniser_patients_mpi'),
 
                   #------------------------------------ URL des actions
                   path('declaration/', DeclarationTemplate.as_view(), name='declaration_new'),
@@ -90,8 +92,10 @@ urlpatterns = [
 
                   path('mapi/ajouter/<int:vaccination_id>/', ajouter_mapi, name='ajouter_mapi'),
 
+                  path('api/lots/', lots_par_vaccin, name='lots_par_vaccin'),
                   path('vacciner/<int:rendez_vous_id>/', vacciner, name='vacciner'),
-
+                  path('vaccination/<int:vaccination_id>/attestation/', attestation_vaccination,
+                       name='attestation_vaccination'),
                   path('vaccinations/', VaccinationListView.as_view(), name='vaccination_list'),
                   path('vaccinations/<int:pk>/', VaccinationDetailView.as_view(), name='vaccination_detail'),
                   path('vaccinations/<int:pk>/update/', VaccinationUpdateView.as_view(), name='vaccination_update'),

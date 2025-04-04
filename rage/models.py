@@ -3,6 +3,7 @@ import string
 import uuid
 import datetime as dt
 from django.conf import settings
+# from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -16,6 +17,7 @@ from simple_history.models import HistoricalRecords
 from tinymce.models import HTMLField
 from datetime import datetime, date
 
+from rage_INHP.services import synchroniser_avec_mpi
 from rage_INHP.utils.phone import nettoyer_numero, formater_numero_local
 
 # Create your models here.
@@ -104,6 +106,9 @@ nbr_lesions_CHOICES = [
 ]
 
 
+# User = get_user_model()
+
+
 class EmployeeUser(AbstractUser):
     ROLE_CHOICES = [
         ('National', 'National'),
@@ -124,7 +129,7 @@ class EmployeeUser(AbstractUser):
     email = models.CharField(max_length=100, blank=True, null=True)
     fonction = models.CharField(max_length=255, blank=True, null=True)
     roleemployee = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CentreAntirabique')
-    centre = models.ForeignKey('CentreAntirabique', on_delete=models.CASCADE)
+    centre = models.ForeignKey('CentreAntirabique', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.username} - {self.roleemployee}"
@@ -259,6 +264,7 @@ class Patient(models.Model):
         ('Propriétaire animal ', 'Propriétaire animal ')
     ]
     code_patient = models.CharField(max_length=225, blank=True, unique=True, editable=False)
+    mpi_upi = models.UUIDField(null=True, blank=True, unique=True)
     nom = models.CharField(max_length=225)
     prenoms = models.CharField(max_length=225)
     contact = models.CharField(max_length=20)
@@ -266,7 +272,7 @@ class Patient(models.Model):
     sexe = models.CharField(max_length=10, choices=Sexe_choices, )
     secteur_activite = models.CharField(max_length=200, null=True, blank=True)
     niveau_etude = models.CharField(choices=NIVEAU_ETUDE_CHOICES, max_length=500, null=True, blank=True)
-    residence_commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
+    commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
     quartier = models.CharField(max_length=255, blank=True, null=True)
     village = models.CharField(max_length=255, blank=True, null=True)
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
@@ -310,6 +316,13 @@ class Patient(models.Model):
             letters = ''.join(random.choices(string.ascii_uppercase, k=4))
             # Combiner les chiffres et les lettres pour former le code_patient
             self.code_patient = digits + letters
+
+        # 🔁 Synchronisation MPI
+        if not self.mpi_upi:  # seulement si pas encore synchronisé
+            try:
+                self.mpi_upi = synchroniser_avec_mpi(self)
+            except Exception as e:
+                print(f"⚠️ Erreur MPI: {e}")
 
         super(Patient, self).save(*args, **kwargs)
 
@@ -731,7 +744,7 @@ class ProtocoleVaccination(models.Model):
     nombre_doses = models.IntegerField(help_text="Nombre total de doses", null=True, blank=True)
     nbr_dose_par_rdv = models.IntegerField(help_text="Nombre de dose par", null=True, blank=True)
     technique = models.ForeignKey(Technique, on_delete=models.SET_NULL, null=True, blank=True)
-    volume_doses = models.DecimalField(decimal_places=2, max_digits=2, help_text="le volume par dose en ml", null=True,
+    volume_doses = models.DecimalField(decimal_places=2, max_digits=5, help_text="le volume par dose en ml", null=True,
                                        blank=True)
 
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.CASCADE, null=False, blank=False)
@@ -796,6 +809,7 @@ class RendezVousVaccination(models.Model):
     protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, related_name="protocole_rendez_vous")
     date_rendez_vous = models.DateField(help_text="Date prévue du rendez-vous")
     dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole")
+    ordre_rdv = models.IntegerField(help_text="Numéro d’ordre du RDV pour ce patient", null=True, blank=True)
     est_effectue = models.BooleanField(default=False, help_text="Le vaccin a-t-il été administré ?")
     statut_rdv = models.CharField(
         choices=[('Passé', 'Passé'), ('Aujourd\'hui', 'Aujourd\'hui'), ('À venir', 'À venir')],
@@ -814,7 +828,7 @@ class RendezVousVaccination(models.Model):
         return f"Rendez-vous {self.dose_numero} - {self.patient.nom} ({self.date_rendez_vous})"
 
 
-class StockVaccin(models.Model):
+class Vaccins(models.Model):
     UNITE_CHOICES = [
         ('ml', 'Millilitres'),
         ('dose', 'Doses'),
@@ -822,12 +836,8 @@ class StockVaccin(models.Model):
     ]
 
     nom = models.CharField(max_length=255, help_text="Nom du vaccin")
-    lot = models.CharField(max_length=50, unique=True, help_text="Numéro du lot")
-    quantite = models.PositiveIntegerField(help_text="Quantité en stock")
     nbr_dose = models.PositiveIntegerField(help_text="Nombre de dose recquis", null=True, blank=True)
     unite = models.CharField(max_length=10, choices=UNITE_CHOICES, help_text="Unité de mesure")
-    date_expiration = models.DateField(help_text="Date d'expiration du vaccin")
-    fournisseur = models.CharField(max_length=255, null=True, blank=True, help_text="Nom du fournisseur")
     prix = models.PositiveIntegerField(help_text="Quantité en stock", null=True, blank=True)
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
                                    help_text="Ajouté par")
@@ -838,13 +848,31 @@ class StockVaccin(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = "Stock de Vaccin"
-        verbose_name_plural = "Stocks de Vaccins"
+        verbose_name = "Vaccin"
+        verbose_name_plural = "Vaccins"
+
+    def __str__(self):
+        # Vérifie si `date_expiration` n'est pas `None` avant de la formater
+        return f"{self.nom}"
+
+
+class LotVaccin(models.Model):
+    numero_lot = models.CharField(max_length=100, unique=True, db_index=True)
+    vaccin = models.ForeignKey(Vaccins, on_delete=models.CASCADE, related_name='lotsvaccin')
+    date_fabrication = models.DateField(null=True, blank=True)
+    date_expiration = models.DateField(null=True, blank=True)
+    quantite_initiale = models.PositiveIntegerField()
+    quantite_disponible = models.PositiveIntegerField()
+    centre = models.ForeignKey(CentreAntirabique, on_delete=models.CASCADE, related_name='lots_centre')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True, help_text="Ajouté par")
 
     def __str__(self):
         # Vérifie si `date_expiration` n'est pas `None` avant de la formater
         date_formatee = self.date_expiration.strftime('%d-%m-%Y') if self.date_expiration else "Non défini"
-        return f"{self.nom} - Lot {self.lot} - Expire le {date_formatee}"
+        return f"{self.numero_lot}-{self.vaccin} - Expire le {date_formatee}"
 
 
 class Facture(models.Model):
@@ -928,16 +956,15 @@ class Caisse(models.Model):
 class Vaccination(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     date_prevue = models.DateField()
-    date_effective = models.DateField(null=True, blank=True)
+    date_effective = models.DateTimeField(null=True, blank=True)
     dose_ml = models.FloatField()
     dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole")
     nombre_dose = models.IntegerField()
-    vaccin = models.ForeignKey(StockVaccin, on_delete=models.CASCADE, null=True, blank=True)
+    vaccin = models.ForeignKey(Vaccins, on_delete=models.CASCADE, null=True, blank=True)
+    lot = models.ForeignKey(LotVaccin, on_delete=models.SET_NULL, null=True, blank=True)
     voie_injection = models.CharField(max_length=5, choices=[('ID', 'Intradermique')])
     protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, max_length=255)
     lieu = models.CharField(max_length=255)
-    reactions = models.TextField(blank=True, null=True)
-
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=now)
 

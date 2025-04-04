@@ -1,5 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.gis.admin import OSMGeoAdmin
+from django.db import transaction
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin, ExportMixin
 from leaflet.admin import LeafletGeoAdmin
@@ -7,9 +9,10 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSanitaire, CentreAntirabique, Commune, \
     EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
-    PreleveMode, Epidemie, RendezVousVaccination, Echantillon, StockVaccin, Facture, Caisse, TypeProtocole, \
-    Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI
+    PreleveMode, Epidemie, RendezVousVaccination, Echantillon, Vaccins, Facture, Caisse, TypeProtocole, \
+    Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin
 from rage_INHP.resources import RageHumaineNotificationResource
+from rage_INHP.services import synchroniser_avec_mpi
 
 
 # 🔹 Définition des ressources pour l'import/export
@@ -39,6 +42,7 @@ class CommuneAdmin(ImportExportModelAdmin, LeafletGeoAdmin):
     search_fields = ('name', 'district__nom')
     list_filter = ('district',)
     ordering = ('name',)
+    autocomplete_fields = ['district']
 
     # Personnalisation de Leaflet pour afficher les cartes correctement
     settings_overrides = {
@@ -103,10 +107,61 @@ class HealthRegionAdmin(ImportExportModelAdmin):
 
 
 # Register your models here.
-class EmployeeUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'roleemployee', 'email', 'contact', 'fonction')
-    search_fields = ('username', 'email', 'contact')
-    list_filter = ('roleemployee',)
+@admin.register(EmployeeUser)
+class EmployeeUserAdmin(UserAdmin):
+    model = EmployeeUser
+    list_display = ('username', 'civilite', 'email', 'fonction', 'roleemployee', 'centre', 'is_active')
+    list_filter = ('roleemployee', 'centre', 'civilite', 'is_active', 'is_staff', 'is_superuser')
+    search_fields = ('username', 'email', 'fonction', 'centre__nom')  # adapte selon ton modèle CentreAntirabique
+    ordering = ('username',)
+
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Informations personnelles', {
+            'fields': ('civilite', 'email', 'contact', 'fonction', 'roleemployee', 'centre')
+        }),
+        ('Permissions', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        ('Dates importantes', {'fields': ('last_login', 'date_joined')}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': (
+            'username', 'password1', 'password2', 'civilite', 'email', 'contact', 'fonction', 'roleemployee', 'centre'),
+        }),
+    )
+
+
+def synchroniser_patients_mpi(modeladmin, request, queryset):
+    patients_synchronises = 0
+    erreurs = []
+
+    for patient in queryset.filter(mpi_upi__isnull=True):
+        try:
+            with transaction.atomic():
+                mpi_upi = synchroniser_avec_mpi(patient)
+                if mpi_upi:
+                    if Patient.objects.filter(mpi_upi=mpi_upi).exists():
+                        erreurs.append(f"⚠️ Doublon UPI {mpi_upi} ({patient})")
+                        continue
+                    patient.mpi_upi = mpi_upi
+                    patient.save(update_fields=['mpi_upi'])
+                    patients_synchronises += 1
+        except Exception as e:
+            erreurs.append(f"❌ Erreur {patient}: {e}")
+
+    if patients_synchronises:
+        messages.success(request, f"✅ {patients_synchronises} patients synchronisés avec succès.")
+
+    if erreurs:
+        for erreur in erreurs:
+            messages.warning(request, erreur)
+
+
+synchroniser_patients_mpi.short_description = "🔄 Synchroniser patients sélectionnés avec MPI"
 
 
 @admin.register(Patient)
@@ -114,9 +169,9 @@ class PatientAdmin(admin.ModelAdmin):
     list_display = (
         'code_patient', 'nom', 'prenoms',
         'contact', 'accompagnateur_contact',
-        'calculate_age', 'status', 'gueris', 'decede', 'created_at'
+        'calculate_age', 'mpi_upi', 'status', 'gueris', 'decede', 'created_at'
     )
-    list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'residence_commune', 'created_at')
+    list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'commune', 'created_at')
     search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateur_contact')
     readonly_fields = ('code_patient', 'calculate_age', 'created_at')
     fieldsets = (
@@ -130,7 +185,7 @@ class PatientAdmin(admin.ModelAdmin):
         ("Informations complémentaires", {
             'fields': (
                 'secteur_activite', 'niveau_etude',
-                'residence_commune', 'quartier', 'village',
+                'commune', 'quartier', 'village',
                 'centre_ar',
                 'proprietaire_animal', 'typeanimal', 'autretypeanimal'
             )
@@ -154,6 +209,7 @@ class PatientAdmin(admin.ModelAdmin):
             'fields': ('code_patient', 'created_by', 'created_at'),
         }),
     )
+    actions = [synchroniser_patients_mpi]
 
     def has_add_permission(self, request):
         return True
@@ -174,10 +230,10 @@ class EpidemieAdmin(admin.ModelAdmin):
     list_filter = ('date_debut', 'date_fin')
 
 
-admin.site.register(EmployeeUser, EmployeeUserAdmin)
+# admin.site.register(EmployeeUser, EmployeeUserAdmin)
 
 # admin.site.register(CentreAntirabique)
-admin.site.register(EmployeeProfile)
+# admin.site.register(EmployeeProfile)
 # admin.site.register(Patient, PatientAdmin)
 admin.site.register(Animal)
 admin.site.register(DossierMedical)
@@ -222,12 +278,29 @@ class EchantillonAdmin(admin.ModelAdmin):
     list_filter = ('resultat', 'maladie')
 
 
-@admin.register(StockVaccin)
-class StockVaccinAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'lot', 'quantite', 'unite', 'date_expiration', 'fournisseur', 'created_by', 'created_at')
-    search_fields = ('nom', 'lot', 'fournisseur')
-    list_filter = ('unite', 'date_expiration', 'fournisseur')
+@admin.register(Vaccins)
+class VaccinsAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'unite', 'created_by', 'created_at')
+    search_fields = ['nom']
+    list_filter = ['unite']
     ordering = ('-created_at',)
+
+
+@admin.register(LotVaccin)
+class LotVaccinAdmin(admin.ModelAdmin):
+    list_display = (
+        'numero_lot',
+        'vaccin',
+        'centre',
+        'date_fabrication',
+        'date_expiration',
+        'quantite_initiale',
+        'quantite_disponible',
+    )
+    list_filter = ('vaccin', 'centre', 'date_expiration')
+    search_fields = ('numero_lot', 'vaccin__nom')
+    date_hierarchy = 'date_expiration'
+    ordering = ('-date_expiration',)
 
 
 @admin.register(Facture)

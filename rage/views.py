@@ -1,8 +1,12 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from io import BytesIO
+from venv import logger
 
+import requests
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -26,7 +30,7 @@ from xhtml2pdf import pisa
 
 from rage.models import HealthRegion, PolesRegionaux, Patient, ProtocoleVaccination, Vaccination, Animal, \
     RendezVousVaccination, Facture, Preexposition, PostExposition, Commune, RageHumaineNotification, CentreAntirabique, \
-    DistrictSanitaire
+    DistrictSanitaire, LotVaccin
 from rage.tables import RendezVousTable, FactureTable, PreExpositionTable, PostExpositionTable, \
     RageHumaineNotificationTable
 from rage_INHP.decorators import role_required
@@ -36,6 +40,7 @@ from rage_INHP.forms import PatientForm, EchantillonForm, SymptomForm, \
     VaccinationForm, PaiementForm, ClientForm, PreExpositionForm, PostExpositionForm, ClientPreExpositionForm, \
     ClientPostExpositionForm, PatientRageNotificationForm, RageHumaineNotificationForm, PreExpositionUpdateForm, \
     MAPIForm
+from rage_INHP.services import synchroniser_avec_mpi
 
 
 @login_required
@@ -109,6 +114,31 @@ def patients_geojson(request):
             data["features"].append(feature)
 
     return JsonResponse(data, safe=False)  # Désactiver la protection de JsonResponse pour listes/objets JSON
+
+
+#
+@staff_member_required  # 🔐 Sécurité : réservé au personnel connecté à l'admin Django
+def synchroniser_patients_mpi(request):
+    patients_sans_upi = Patient.objects.filter(mpi_upi__isnull=True)
+
+    résultats = []
+    for patient in patients_sans_upi:
+        try:
+            with transaction.atomic():
+                mpi_upi = synchroniser_avec_mpi(patient)
+                if mpi_upi:
+                    if Patient.objects.filter(mpi_upi=mpi_upi).exists():
+                        résultats.append(f"⚠️ Doublon UPI {mpi_upi} pour {patient}")
+                        continue
+                    patient.mpi_upi = mpi_upi
+                    patient.save(update_fields=['mpi_upi'])
+                    résultats.append(f"✅ {patient} synchronisé (UPI: {mpi_upi})")
+                else:
+                    résultats.append(f"⚠️ Pas d'UPI retourné pour {patient}")
+        except Exception as e:
+            résultats.append(f"❌ Erreur pour {patient}: {e}")
+
+    return JsonResponse({"résultats": résultats})
 
 
 class CADashborad(LoginRequiredMixin, TemplateView):
@@ -424,7 +454,7 @@ class NationalDashborad(TemplateView):
 
 #------------------------------ Donnees des patients ----------------------------------------------------------
 
-class PatientListView(LoginRequiredMixin,TemplateView):
+class PatientListView(LoginRequiredMixin, TemplateView):
     template_name = 'pages/patients/patient_list.html'
 
     def get_context_data(self, **kwargs):
@@ -456,7 +486,7 @@ class PatientListView(LoginRequiredMixin,TemplateView):
         return context
 
 
-class PatientCreateView(LoginRequiredMixin,CreateView):
+class PatientCreateView(LoginRequiredMixin, CreateView):
     model = Patient
     form_class = PatientForm
     template_name = 'pages/patients/patient_form.html'  # Template pour afficher le formulaire
@@ -474,13 +504,13 @@ class PatientCreateView(LoginRequiredMixin,CreateView):
         return super().form_invalid(form)
 
 
-class PatientDetailView(LoginRequiredMixin,DetailView):
+class PatientDetailView(LoginRequiredMixin, DetailView):
     model = Patient
     template_name = 'pages/patients/dossier_patient.html'
     context_object_name = 'patientdossier'
 
 
-class PatientUpdateView(LoginRequiredMixin,UpdateView):
+class PatientUpdateView(LoginRequiredMixin, UpdateView):
     model = Patient
     template_name = 'patients/patient_form.html'
     fields = '__all__'  # Remplace par les champs nécessaires
@@ -663,13 +693,127 @@ class PreExpositionCreateView(View):
         form = ClientPreExpositionForm()
         return render(request, self.template_name, {"form": form})
 
+    # def post(self, request):
+    #     form = ClientPreExpositionForm(request.POST)
+    #
+    #     if form.is_valid():
+    #         with transaction.atomic():
+    #             # Sauvegarde du patient
+    #             patient = form.save(commit=False)
+    #             patient.created_by = request.user
+    #             if hasattr(request.user, 'centre'):
+    #                 patient.centre_ar = request.user.centre
+    #             patient.save()
+    #
+    #             # Sauvegarde des données de pré-exposition
+    #             preexposition = Preexposition.objects.create(
+    #                 client=patient,
+    #                 voyage=form.cleaned_data['voyage'],
+    #                 mise_a_jour=form.cleaned_data['mise_a_jour'],
+    #                 protection_rage=form.cleaned_data['protection_rage'],
+    #                 chien_voisin=form.cleaned_data['chien_voisin'],
+    #                 chiens_errants=form.cleaned_data['chiens_errants'],
+    #                 autre=form.cleaned_data['autre'],
+    #                 autre_motif=form.cleaned_data['autre_motif'],
+    #                 tele=form.cleaned_data['tele'],
+    #                 radio=form.cleaned_data['radio'],
+    #                 sensibilisation=form.cleaned_data['sensibilisation'],
+    #                 proche=form.cleaned_data['proche'],
+    #                 presse=form.cleaned_data['presse'],
+    #                 passage_car=form.cleaned_data['passage_car'],
+    #                 diff_canal=form.cleaned_data['diff_canal'],
+    #                 canal_infos=form.cleaned_data['canal_infos'],
+    #                 aime_animaux=form.cleaned_data['aime_animaux'],
+    #                 type_animal_aime=form.cleaned_data['type_animal_aime'],
+    #                 connait_protocole_var=form.cleaned_data['connait_protocole_var'],
+    #                 dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
+    #                 dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
+    #                 mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
+    #                 appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
+    #                 created_by=request.user,
+    #             )
+    #
+    #             # Récupérer le protocole choisi ou prendre "IPC" par défaut
+    #             protocole = form.cleaned_data.get('protocole_vaccination')
+    #             if not protocole:
+    #                 protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
+    #
+    #             if protocole:
+    #                 # Définition des intervalles entre les visites
+    #                 intervals = [
+    #                     protocole.intervale_visite1_2,
+    #                     protocole.intervale_visite2_3,
+    #                     protocole.intervale_visite3_4,
+    #                     protocole.intervale_visite4_5
+    #                 ]
+    #
+    #                 # Transformation des intervalles en entiers
+    #                 try:
+    #                     intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals]
+    #                 except ValueError:
+    #                     intervals = [None] * 4  # Gérer les erreurs de conversion
+    #
+    #                 # Définition des paramètres du protocole
+    #                 date_rdv = now().date()  # Premier rendez-vous = aujourd'hui
+    #                 doses_restantes = protocole.nombre_doses
+    #                 visites_restantes = protocole.nombre_visite
+    #                 dose_numero = 1
+    #                 duree_max = timedelta(days=protocole.duree) if protocole.duree else None  # Durée max du protocole
+    #                 date_fin_max = date_rdv + duree_max if duree_max else None  # Date limite des rendez-vous
+    #
+    #                 # Création des rendez-vous en respectant les règles
+    #                 for i in range(visites_restantes):
+    #                     if doses_restantes <= 0:
+    #                         break  # Stop si toutes les doses ont été administrées
+    #
+    #                     # Vérifier si la date du rendez-vous dépasse la durée maximale
+    #                     if date_fin_max and date_rdv > date_fin_max:
+    #                         break  # Ne pas créer de rendez-vous après la durée max
+    #
+    #                     # Calcul des doses pour ce rendez-vous
+    #                     doses_pour_ce_rdv = min(doses_restantes, protocole.nbr_dose_par_rdv or 1)
+    #
+    #                     # Création du rendez-vous
+    #                     RendezVousVaccination.objects.create(
+    #                         patient=patient,
+    #                         preexposition=preexposition,
+    #                         protocole=protocole,
+    #                         date_rendez_vous=date_rdv,
+    #                         dose_numero=dose_numero,
+    #                         est_effectue=False,
+    #                         created_by=request.user
+    #                     )
+    #
+    #                     # Mise à jour des doses et de la prochaine date
+    #                     doses_restantes -= doses_pour_ce_rdv
+    #                     dose_numero += doses_pour_ce_rdv
+    #
+    #                     if i < len(intervals) and intervals[i]:
+    #                         date_rdv += timedelta(days=intervals[i])
+    #
+    #             messages.success(request,
+    #                              "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
+    #             return redirect(reverse("preexposition_list"))
+    #
+    #     # Gestion des erreurs du formulaire
+    #     error_messages = [
+    #         f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
+    #         for field, errors in form.errors.items()]
+    #     error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
+    #
+    #     messages.error(request, error_text)
+    #     return render(request, self.template_name, {"form": form})
     def post(self, request):
         form = ClientPreExpositionForm(request.POST)
 
         if form.is_valid():
             with transaction.atomic():
                 # Sauvegarde du patient
-                patient = form.save()
+                patient = form.save(commit=False)
+                patient.created_by = request.user
+                if hasattr(request.user, 'centre'):
+                    patient.centre_ar = request.user.centre
+                patient.save()
 
                 # Sauvegarde des données de pré-exposition
                 preexposition = Preexposition.objects.create(
@@ -699,69 +843,63 @@ class PreExpositionCreateView(View):
                     created_by=request.user,
                 )
 
-                # Récupérer le protocole choisi ou prendre "IPC" par défaut
                 protocole = form.cleaned_data.get('protocole_vaccination')
                 if not protocole:
                     protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
 
-                if protocole:
-                    # Définition des intervalles entre les visites
-                    intervals = [
+                if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
+                    intervals_raw = [
                         protocole.intervale_visite1_2,
                         protocole.intervale_visite2_3,
                         protocole.intervale_visite3_4,
                         protocole.intervale_visite4_5
                     ]
 
-                    # Transformation des intervalles en entiers
                     try:
-                        intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals]
+                        intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
                     except ValueError:
-                        intervals = [None] * 4  # Gérer les erreurs de conversion
+                        intervals = [None] * 4
 
-                    # Définition des paramètres du protocole
-                    date_rdv = now().date()  # Premier rendez-vous = aujourd'hui
-                    doses_restantes = protocole.nombre_doses
-                    visites_restantes = protocole.nombre_visite
+                    date_rdv = now().date()
                     dose_numero = 1
-                    duree_max = timedelta(days=protocole.duree) if protocole.duree else None  # Durée max du protocole
-                    date_fin_max = date_rdv + duree_max if duree_max else None  # Date limite des rendez-vous
+                    doses_restantes = protocole.nombre_doses
+                    visites_max = protocole.nombre_visite
+                    dose_par_rdv = protocole.nbr_dose_par_rdv or 1
+                    duree_max = timedelta(days=protocole.duree) if protocole.duree else None
+                    date_limite = date_rdv + duree_max if duree_max else None
 
-                    # Création des rendez-vous en respectant les règles
-                    for i in range(visites_restantes):
-                        if doses_restantes <= 0:
-                            break  # Stop si toutes les doses ont été administrées
+                    visites_creees = 0
+                    interval_index = 0
 
-                        # Vérifier si la date du rendez-vous dépasse la durée maximale
-                        if date_fin_max and date_rdv > date_fin_max:
-                            break  # Ne pas créer de rendez-vous après la durée max
+                    while doses_restantes > 0 and visites_creees < visites_max:
+                        if date_limite and date_rdv > date_limite:
+                            break
 
-                        # Calcul des doses pour ce rendez-vous
-                        doses_pour_ce_rdv = min(doses_restantes, protocole.nbr_dose_par_rdv or 1)
+                        doses_a_admin = min(dose_par_rdv, doses_restantes)
 
-                        # Création du rendez-vous
                         RendezVousVaccination.objects.create(
                             patient=patient,
                             preexposition=preexposition,
                             protocole=protocole,
                             date_rendez_vous=date_rdv,
                             dose_numero=dose_numero,
+                            ordre_rdv=visites_creees + 1,
                             est_effectue=False,
                             created_by=request.user
                         )
 
-                        # Mise à jour des doses et de la prochaine date
-                        doses_restantes -= doses_pour_ce_rdv
-                        dose_numero += doses_pour_ce_rdv
+                        dose_numero += doses_a_admin
+                        doses_restantes -= doses_a_admin
+                        visites_creees += 1
 
-                        if i < len(intervals) and intervals[i]:
-                            date_rdv += timedelta(days=intervals[i])
+                        if interval_index < len(intervals) and intervals[interval_index]:
+                            date_rdv += timedelta(days=intervals[interval_index])
+                        interval_index += 1
 
                 messages.success(request,
                                  "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
                 return redirect(reverse("preexposition_list"))
 
-        # Gestion des erreurs du formulaire
         error_messages = [
             f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
             for field, errors in form.errors.items()]
@@ -769,6 +907,7 @@ class PreExpositionCreateView(View):
 
         messages.error(request, error_text)
         return render(request, self.template_name, {"form": form})
+
 
 @login_required
 def fichePreExpoPDF(request, pk):
@@ -816,6 +955,7 @@ def fichePreExpoPDF(request, pk):
         return HttpResponse('Erreur lors de la génération du PDF', status=500)
 
     return response
+
 
 @login_required
 def fichePostExpoPDF(request, pk):
@@ -865,6 +1005,7 @@ def fichePostExpoPDF(request, pk):
 
     return response
 
+
 @login_required
 def ajouter_mapi(request, vaccination_id):
     vaccination = get_object_or_404(Vaccination, id=vaccination_id)
@@ -885,19 +1026,19 @@ def ajouter_mapi(request, vaccination_id):
 
 
 # Pre-Expositions
-class PreExpositionListView(LoginRequiredMixin,SingleTableView):
+class PreExpositionListView(LoginRequiredMixin, SingleTableView):
     model = Preexposition
     table_class = PreExpositionTable
     template_name = "pages/expositions/preexposition_list.html"
 
 
-class PreExpositionDetailView(LoginRequiredMixin,DetailView):
+class PreExpositionDetailView(LoginRequiredMixin, DetailView):
     model = Preexposition
     template_name = "pages/expositions/preexposition_detail.html"
     context_object_name = "preexposition"
 
 
-class PreExpositionUpdateView(LoginRequiredMixin,UpdateView):
+class PreExpositionUpdateView(LoginRequiredMixin, UpdateView):
     model = Preexposition
     # form_class = PreExpositionForm
     form_class = PreExpositionUpdateForm
@@ -1306,34 +1447,129 @@ def ajouter_symptome(request):
 #         form = EchantillonForm()
 #
 #     return render(request, 'echantillons/ajouter_echantillon.html', {'form': form, 'exposition': exposition})
+@login_required
+def lots_par_vaccin(request):
+    vaccin_id = request.GET.get('vaccin_id')
 
+    if not vaccin_id:
+        return JsonResponse({'error': 'ID de vaccin manquant.'}, status=400)
+
+    try:
+        lots = LotVaccin.objects.filter(
+            vaccin_id=vaccin_id,
+            quantite_disponible__gt=0
+        ).order_by('date_expiration').select_related('vaccin')
+
+        data = [
+            {
+                'id': lot.id,
+                'numero': lot.numero_lot,
+                'date_expiration': lot.date_expiration.isoformat() if lot.date_expiration else None,
+                'stock_restant': lot.quantite_disponible,
+                'vaccin_nom': lot.vaccin.nom if lot.vaccin else ''
+            }
+            for lot in lots
+        ]
+
+        return JsonResponse(data, safe=False)
+
+    except Exception as e:
+        logger.error(f"Erreur dans lots_par_vaccin: {str(e)}")
+        return JsonResponse({'error': 'Une erreur est survenue.'}, status=500)
 
 @login_required
 def vacciner(request, rendez_vous_id):
     rendez_vous = get_object_or_404(RendezVousVaccination, id=rendez_vous_id)
 
+    if not request.user.has_perm('vaccination.add_vaccination'):
+        return JsonResponse({'error': 'Permission refusée.'}, status=403)
+
     if request.method == 'POST':
         form = VaccinationForm(request.POST)
         if form.is_valid():
-            vaccination = form.save(commit=False)
-            vaccination.patient = rendez_vous.patient
-            vaccination.protocole = rendez_vous.protocole
-            vaccination.date_prevue = rendez_vous.date_rendez_vous
-            vaccination.created_by = request.user  # Enregistre l'utilisateur qui a validé la vaccination
-            vaccination.save()
+            try:
+                with transaction.atomic():
+                    vaccination = form.save(commit=False)
+                    vaccination.patient = rendez_vous.patient
+                    vaccination.protocole = rendez_vous.protocole
+                    vaccination.date_prevue = rendez_vous.date_rendez_vous
+                    vaccination.dose_numero = rendez_vous.ordre_rdv
+                    vaccination.nombre_dose = rendez_vous.protocole.nbr_dose_par_rdv or 1
+                    vaccination.created_by = request.user
+                    vaccination.save()
 
-            # Mise à jour du champ `est_effectue`
-            rendez_vous.est_effectue = True
-            rendez_vous.save()
+                    # Mise à jour du stock
+                    lot = form.cleaned_data.get('lot')
+                    if lot:
+                        lot.quantite_disponible -= 1
+                        lot.save()
 
-            messages.success(request, "Vaccination enregistrée avec succès.")
-            return redirect('vaccin-rdv-list', )
+                    rendez_vous.est_effectue = True
+                    rendez_vous.save()
+
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': True,
+                            'redirect_url': reverse('vaccin-rdv-list')
+                        })
+
+                    messages.success(request, "Vaccination enregistrée avec succès.")
+                    return redirect('vaccin-rdv-list')
+
+            except Exception as e:
+                logger.error(f"Erreur lors de la vaccination: {str(e)}")
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Erreur lors de la mise à jour de la base de données'
+                    }, status=500)
+
+                messages.error(request, "Une erreur est survenue lors de l'enregistrement.")
+                return redirect('vaccin-rdv-list')
+
         else:
-            messages.error(request, "Erreur lors de l'enregistrement de la vaccination.")
-    else:
-        form = VaccinationForm()
+            errors = form.errors.as_json()
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Formulaire invalide',
+                    'errors': errors
+                }, status=400)
 
-    return redirect('vaccin-rdv-list', )
+            messages.error(request, "Erreur lors de la soumission.")
+            return redirect('vaccin-rdv-list')
+
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+
+
+# @login_required
+# def vacciner(request, rendez_vous_id):
+#     rendez_vous = get_object_or_404(RendezVousVaccination, id=rendez_vous_id)
+#
+#     if request.method == 'POST':
+#         form = VaccinationForm(request.POST)
+#         if form.is_valid():
+#             vaccination = form.save(commit=False)
+#             vaccination.patient = rendez_vous.patient
+#             vaccination.protocole = rendez_vous.protocole
+#             vaccination.date_prevue = rendez_vous.date_rendez_vous
+#             vaccination.dose_numero = rendez_vous.ordre_rdv  # Fix ici
+#             vaccination.nombre_dose = rendez_vous.protocole.nbr_dose_par_rdv or 1
+#             vaccination.created_by = request.user  # Enregistre l'utilisateur qui a validé la vaccination
+#             vaccination.save()
+#
+#             # Mise à jour du champ `est_effectue`
+#             rendez_vous.est_effectue = True
+#             rendez_vous.save()
+#
+#             messages.success(request, "Vaccination enregistrée avec succès.")
+#             return redirect('vaccin-rdv-list')
+#         else:
+#             messages.error(request, "Erreur lors de l'enregistrement de la vaccination.")
+#     else:
+#         form = VaccinationForm()
+#
+#     return redirect('vaccin-rdv-list')
 
 
 @login_required
@@ -1406,7 +1642,7 @@ class FactureListView(SingleTableMixin, FilterView):
 class RendezVousDetailView(DetailView):
     model = RendezVousVaccination
     template_name = 'pages/rendez_vous/rendez_vous_detail.html'
-    context_object_name = 'rdv-vacc-details'
+    context_object_name = 'details_rdv'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1514,8 +1750,38 @@ class ProtocoleVaccinationDeleteView(DeleteView):
 
 
 #----------------------  Vaccinantion ------------------------------------
+@login_required
+def attestation_vaccination(request, vaccination_id):
+    vaccination = get_object_or_404(Vaccination, id=vaccination_id)
 
-class VaccinationListView(LoginRequiredMixin,ListView):
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    p.setFont("Helvetica-Bold", 16)
+    p.drawCentredString(width / 2, height - 100, "ATTESTATION DE VACCINATION")
+
+    p.setFont("Helvetica", 12)
+    p.drawString(100, height - 150, f"Nom du patient : {vaccination.patient.nom} {vaccination.patient.prenoms}")
+    p.drawString(100, height - 170, f"Date de vaccination : {vaccination.date_effective.strftime('%d/%m/%Y')}")
+    p.drawString(100, height - 190, f"Protocole : {vaccination.protocole.nom}")
+    p.drawString(100, height - 210, f"Vaccin : {vaccination.vaccin.nom}")
+    p.drawString(100, height - 230, f"Vaccin : {vaccination.vaccin.nom}")
+    p.drawString(100, height - 250, f"Lot : {vaccination.dose_numero} - Volume : {vaccination.dose_ml} ml")
+    p.drawString(100, height - 280, f"Voie d'injection : {vaccination.get_voie_injection_display()}")
+
+    p.drawString(100, height - 320, f"Fait le : {datetime.now().strftime('%d/%m/%Y')}")
+    p.drawString(100, height - 350, "Signature du responsable : ________________________")
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+
+    return HttpResponse(buffer, content_type='application/pdf')
+
+
+class VaccinationListView(LoginRequiredMixin, ListView):
     model = Vaccination
     template_name = 'pages/vaccinations/vaccination_list.html'
     context_object_name = 'vaccinations'
@@ -1523,9 +1789,9 @@ class VaccinationListView(LoginRequiredMixin,ListView):
     paginate_by = 10
 
 
-class VaccinationDetailView(LoginRequiredMixin,DetailView):
+class VaccinationDetailView(LoginRequiredMixin, DetailView):
     model = Vaccination
-    template_name = 'vaccinations/vaccination_detail.html'
+    template_name = 'pages/vaccinations/vaccination_detail.html'
     context_object_name = 'vaccination'
 
 

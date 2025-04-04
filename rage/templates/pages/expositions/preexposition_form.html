@@ -90,35 +90,31 @@
         </div>
 
 
-        <div  x-data="{
-    search: '',
-    options: [],
-    async fetchOptions() {
-        if (this.search.length > 1) {
-            const response = await fetch('/api/communes?query=' + this.search);
+        <div x-data="{ search: '', selectedId: '', options: [],async fetchOptions() { if (this.search.length > 1) { const response = await fetch('/api/communes?query=' + this.search);
             this.options = await response.json();
         } else {
             this.options = [];
         }
     }
 }" class="col-md-6 form-group position-relative">
-                                        <label for="commune">Commune</label>
-                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
-                                               class="form-control" placeholder="Rechercher une commune..."
-                                               autocomplete="off">
 
-                                        <!-- Liste déroulante améliorée -->
-                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
-                                             x-show="options.length" x-on:click.away="options = []">
-                                            <ul class="list-group shadow bg-white w-100">
-                                                <template x-for="option in options" :key="option.id">
-                                                    <li class="list-group-item list-group-item-action"
-                                                        x-text="option.name"
-                                                        x-on:click.prevent="search = option.name; options = []">
-                                                    </li>
-                                                </template>
-                                            </ul>
-                                        </div>
+            <label for="commune">Commune</label>
+            <input type="hidden" name="commune" x-model="selectedId">
+
+            <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
+                   class="form-control" placeholder="Rechercher une commune..."
+                   autocomplete="on">
+
+            <div class="dropdown w-100 position-absolute" style="z-index: 1000;" x-show="options.length" x-on:click.away="options = []">
+    <ul class="list-group shadow bg-white w-100">
+        <template x-for="option in options" :key="option.id">
+            <li class="list-group-item list-group-item-action"
+                x-text="option.name"
+                x-on:click.prevent="search = option.name; selectedId = option.id; options = []">
+            </li>
+        </template>
+    </ul>
+</div>
                                     </div>
 
 
