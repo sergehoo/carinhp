@@ -25,6 +25,8 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - rage_default
 
   adminer:
     image: adminer
