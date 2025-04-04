@@ -28,8 +28,8 @@ SECRET_KEY = 'django-insecure-qv1=6*7#!&8gajb4@-zrh+xulqk(386vapjdcu8w$jrk)bo!9q
 # DEBUG = os.environ.get('DEBUG', 'False').lower() in ['true', '1', 'yes']
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
 
 # Sécurité HTTPS
 # SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ['true', '1']
