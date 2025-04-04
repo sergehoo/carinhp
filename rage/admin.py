@@ -29,7 +29,7 @@ class CommuneResource(resources.ModelResource):
 class DistrictSanitaireResource(resources.ModelResource):
     class Meta:
         model = DistrictSanitaire
-        fields = ('id', 'nom', 'region__name', 'geom', 'geojson')
+        fields = ('id', 'nom', 'region', 'geom', 'geojson')
 
 
 class HealthRegionResource(resources.ModelResource):
