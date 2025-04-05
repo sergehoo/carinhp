@@ -2,7 +2,7 @@ import os
 
 from .base import *
 
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', default='localhost').split(',')
 
