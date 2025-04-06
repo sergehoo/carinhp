@@ -15,7 +15,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("🚨 Aucune commune trouvée ! Vérifiez que vous avez bien des communes en base."))
             return
 
-        patients_a_mettre_a_jour = Patient.objects.filter(residence_commune__isnull=True)
+        patients_a_mettre_a_jour = Patient.objects.filter(commune__isnull=True)
 
         if not patients_a_mettre_a_jour.exists():
             self.stdout.write(self.style.SUCCESS("✅ Tous les patients ont déjà une commune attribuée."))
@@ -24,7 +24,7 @@ class Command(BaseCommand):
         self.stdout.write(f"🔄 Mise à jour de {patients_a_mettre_a_jour.count()} patients...")
 
         for patient in patients_a_mettre_a_jour:
-            patient.residence_commune = random.choice(communes)
+            patient.commune = random.choice(communes)
             patient.save()
 
         self.stdout.write(self.style.SUCCESS(f"✅ {patients_a_mettre_a_jour.count()} patients mis à jour avec une résidence_commune !"))

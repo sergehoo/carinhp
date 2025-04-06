@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 sexe=random.choice(["M", "F"]),
                 secteur_activite=fake.job(),
                 niveau_etude=random.choice(["Primaire", "Secondaire", "Universitaire", "Aucun"]),
-                residence_commune=random.choice(communes) if communes else None,
+                commune=random.choice(communes) if communes else None,
                 quartier=fake.street_name(),
                 village=fake.city(),
                 centre_ar=None,

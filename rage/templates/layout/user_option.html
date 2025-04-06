@@ -2,9 +2,9 @@
     <!--begin::Header-->
     <div class="offcanvas-header d-flex align-items-center justify-content-between pb-5">
         <h3 class="font-weight-bold m-0">
-            Profil Utilisateur
+            Profil Utilisateur <br>
             <small class="text-muted font-size-sm ml-2">
-                {{ request.user.centre|default:"Système Anti-Rabique" }}
+                {{ request.user.centre|default:"Centre Anti-Rabique" }}
             </small>
         </h3>
         <a href="#" class="btn btn-xs btn-icon btn-light btn-hover-primary" id="kt_quick_user_close">
