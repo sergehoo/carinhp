@@ -9,6 +9,8 @@ services:
       - 1524:8000  # port du server : port de l'application
     volumes:
       - .:/rage-app/
+      - static_volume:/rage-app/staticfiles
+      - media_volume:/rage-app/mediafiles
     env_file:
       - ./.env
     restart: always
