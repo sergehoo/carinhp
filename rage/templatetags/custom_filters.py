@@ -16,3 +16,8 @@ def get_item(dictionary, key):
     if not dictionary or not isinstance(dictionary, dict):
         return 0
     return dictionary.get(key, 0)
+
+
+@register.filter
+def dict_get(d, key):
+    return d.get(key)

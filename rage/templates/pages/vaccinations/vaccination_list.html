@@ -1,252 +1,480 @@
 {% extends 'layout/centre-base.html' %}
 {% load static %}
 {% load unicorn %}
+{% load humanize %}
 
 {% block content %}
-    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
-        <!--begin::Content-->
-        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
-            <!--begin::Subheader-->
-            {% include 'layout/header-title.html' %}
-            <!--end::Subheader-->
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!--begin::Content-->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!--begin::Subheader-->
+        {% include 'layout/header-title.html' with title="Gestion des Vaccinations" subtitle="Suivi des patients vaccinés contre la rage" %}
+        <!--end::Subheader-->
 
-            <!--begin::Entry-->
-            <div class="d-flex flex-column-fluid">
-                <!--begin::Container-->
-                <div class=" container ">
-                    <!--begin::Card-->
-                    <div class="card card-custom">
-                        <!--begin::Header-->
-                        <div class="card-header flex-wrap border-0 pt-6 pb-0">
-                            <div class="card-title">
-                                <h3 class="card-label">
-                                    Gestion des Patients
-                                    <span class="d-block text-muted pt-2 font-size-sm">User management made easy</span>
-                                </h3>
-                            </div>
-                            <div class="card-toolbar">
-                                <!--begin::Dropdown-->
-                                <div class="dropdown dropdown-inline mr-2">
-                                    <button type="button"
-                                            class="btn btn-light-primary font-weight-bolder dropdown-toggle"
-                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		<span class="svg-icon svg-icon-md"><!--begin::Svg Icon | path:assets/media/svg/icons/Design/PenAndRuller.svg--><svg
-                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
-                viewBox="0 0 24 24" version="1.1">
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect x="0" y="0" width="24" height="24"/>
-        <path d="M3,16 L5,16 C5.55228475,16 6,15.5522847 6,15 C6,14.4477153 5.55228475,14 5,14 L3,14 L3,12 L5,12 C5.55228475,12 6,11.5522847 6,11 C6,10.4477153 5.55228475,10 5,10 L3,10 L3,8 L5,8 C5.55228475,8 6,7.55228475 6,7 C6,6.44771525 5.55228475,6 5,6 L3,6 L3,4 C3,3.44771525 3.44771525,3 4,3 L10,3 C10.5522847,3 11,3.44771525 11,4 L11,19 C11,19.5522847 10.5522847,20 10,20 L4,20 C3.44771525,20 3,19.5522847 3,19 L3,16 Z"
-              fill="#000000" opacity="0.3"/>
-        <path d="M16,3 L19,3 C20.1045695,3 21,3.8954305 21,5 L21,15.2485298 C21,15.7329761 20.8241635,16.200956 20.5051534,16.565539 L17.8762883,19.5699562 C17.6944473,19.7777745 17.378566,19.7988332 17.1707477,19.6169922 C17.1540423,19.602375 17.1383289,19.5866616 17.1237117,19.5699562 L14.4948466,16.565539 C14.1758365,16.200956 14,15.7329761 14,15.2485298 L14,5 C14,3.8954305 14.8954305,3 16,3 Z"
-              fill="#000000"/>
-    </g>
-</svg><!--end::Svg Icon--></span> Export
-                                    </button>
-
-                                    <!--begin::Dropdown Menu-->
-                                    <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                                        <!--begin::Navigation-->
-                                        <ul class="navi flex-column navi-hover py-2">
-                                            <li class="navi-header font-weight-bolder text-uppercase font-size-sm text-primary pb-2">
-                                                Choose an option:
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-print"></i></span>
-                                                    <span class="navi-text">Print</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-copy"></i></span>
-                                                    <span class="navi-text">Copy</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-excel-o"></i></span>
-                                                    <span class="navi-text">Excel</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-text-o"></i></span>
-                                                    <span class="navi-text">CSV</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-pdf-o"></i></span>
-                                                    <span class="navi-text">PDF</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                        <!--end::Navigation-->
-                                    </div>
-                                    <!--end::Dropdown Menu-->
+        <!--begin::Entry-->
+        <div class="d-flex flex-column-fluid">
+            <!--begin::Container-->
+            <div class="container">
+                <!--begin::Card-->
+                <div class="card card-custom">
+                    <!--begin::Header-->
+                    <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Registre des Vaccinations
+                                <span class="d-block text-muted pt-2 font-size-sm">Suivi complet des doses administrées</span>
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <!--begin::Export Dropdown-->
+                            <div class="dropdown dropdown-inline mr-2">
+                                <button type="button" class="btn btn-light-primary font-weight-bolder dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="flaticon2-download mr-2"></i>Exporter
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
+                                    <ul class="navi navi-hover py-2">
+                                        <li class="navi-header font-weight-bolder text-uppercase text-primary pb-2">
+                                            Formats disponibles
+                                        </li>
+                                        <li class="navi-item">
+                                            <a href="#" class="navi-link" data-export="pdf">
+                                                <i class="navi-icon flaticon2-file-1"></i>
+                                                <span class="navi-text">PDF</span>
+                                            </a>
+                                        </li>
+                                        <li class="navi-item">
+                                            <a href="#" class="navi-link" data-export="excel">
+                                                <i class="navi-icon flaticon2-document"></i>
+                                                <span class="navi-text">Excel</span>
+                                            </a>
+                                        </li>
+                                        <li class="navi-item">
+                                            <a href="#" class="navi-link" data-export="csv">
+                                                <i class="navi-icon flaticon2-layers"></i>
+                                                <span class="navi-text">CSV</span>
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
-                                <!--end::Dropdown-->
-
-                                <!--begin::Button-->
-                                <a href="{% url 'patient_create' %}" class="btn btn-primary font-weight-bolder">
-	<span class="svg-icon svg-icon-md"><!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg--><svg
-            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
-            viewBox="0 0 24 24" version="1.1">
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect x="0" y="0" width="24" height="24"/>
-        <circle fill="#000000" cx="9" cy="15" r="6"/>
-        <path d="M8.8012943,7.00241953 C9.83837775,5.20768121 11.7781543,4 14,4 C17.3137085,4 20,6.6862915 20,10 C20,12.2218457 18.7923188,14.1616223 16.9975805,15.1987057 C16.9991904,15.1326658 17,15.0664274 17,15 C17,10.581722 13.418278,7 9,7 C8.93357256,7 8.86733422,7.00080962 8.8012943,7.00241953 Z"
-              fill="#000000" opacity="0.3"/>
-    </g>
-</svg><!--end::Svg Icon--></span> Nouveau Patient
-                                </a>
-                                <!--end::Button-->
                             </div>
+                            <!--end::Export Dropdown-->
+
+                            <!--begin::Add Button-->
+                            <a href="{% url 'patient_create' %}" class="btn btn-primary font-weight-bolder">
+                                <i class="flaticon2-add-1 mr-2"></i>Nouveau Patient
+                            </a>
+                            <!--end::Add Button-->
                         </div>
-                        <!--end::Header-->
-
-                        <!--begin::Body-->
-                        <div class="card-body">
-                            <!--begin: Datatable-->
-                            <div class="table-responsive">
-                                <table class="table table-bordered align-middle">
-                                    <thead class="table-dark">
-                                    <tr>
-                                        <th>Patient</th>
-                                        <th>Vaccin</th>
-                                        <th>Lot</th>
-                                        <th>Dose</th>
-                                        <th>Date Effective</th>
-                                        <th>Protocole</th>
-                                        <th>N° Visite</th>
-                                        <th>Voie</th>
-                                        <th>Observation</th>
-                                        <th>MAPI</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for v in vaccinations %}
-                                        <tr>
-                                            <td>
-                                                <a href="" target="_blank">
-                                                    {{ v.patient.nom }} {{ v.patient.prenoms }}
-                                                </a>
-                                            </td>
-                                            <td>{{ v.vaccin.nom }}</td>
-                                            <td>{{ v.lot }}</td>
-                                            <td> {% if v.nombre_dose %}{{ v.nombre_dose }} dose(s) {% else %} Aucune dose enregistree {% endif %} </td>
-                                            <td>{{ v.date_effective }}</td>
-                                            <td>{{ v.protocole.nom }}</td>
-                                            <td>
-  {{ v.dose_numero }}<sup>{% if v.dose_numero == 1 %}ère{% else %}ème{% endif %}</sup> Visite
-</td>
-                                            <td>{{ v.get_voie_injection_display }}</td>
-                                            <td>
-                                                {% if v.date_effective %}
-                                                    <span class="countdown" data-endtime="{{ v.created_at|date:'Y-m-d H:i:s' }}"></span>
-
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                               <button class="btn btn-icon btn-primary btn-xs"  data-toggle="modal" data-target="#addMAPI"><em class="fa fa-plus-circle"></em></button>
-
-                                                <div class="modal fade" id="addMAPI" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdrop" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Modal Title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <i aria-hidden="true" class="ki ki-close"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                ...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary font-weight-bold">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-                                                {% if v.mapi.all %}
-        {% for m in v.mapi.all %}
-            <span class="badge badge-{{ m.gravite }}">
-                {{ m.gravite|title }} – {{ m.date_apparition|date:"d/m/Y H:i" }}
-            </span><br>
-        {% endfor %}
-    {% else %}
-        <span class="text-muted">Aucun</span>
-    {% endif %}
-                                            </td>
-                                        <td>
-                                            <a href="{% url 'vaccination_detail' v.pk %}" class="btn btn-primary btn-icon btn-xs"> <em class="fa fa-list-alt"></em></a>
-{#                                            <a href="" class="btn btn-info btn-icon btn-xs ml-2"> <em class="fa fa-file-pdf"></em> </a>#}
-<a href="{% url 'attestation_vaccination' v.id %}" class="btn btn-info btn-icon btn-xs ml-2" target="_blank">
-    <em class="fa fa-file-pdf"></em>
-</a>
-                                        </td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">
-                                                <div class="text-muted">Aucune vaccination trouvée</div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    const countdownElements = document.querySelectorAll('.countdown');
-
-                                    countdownElements.forEach(el => {
-                                        const startTime = new Date(el.dataset.endtime);
-                                        const endTime = new Date(startTime.getTime() + 15 * 60 * 1000); // Ajout de 15 minutes
-
-                                        function updateCountdown() {
-                                            const now = new Date();
-                                            const diff = Math.max(0, endTime - now); // Temps restant en ms
-
-                                            if (diff <= 0) {
-                                                el.textContent = '✅ Terminé';
-                                                return;
-                                            }
-
-                                            const minutes = Math.floor(diff / 1000 / 60);
-                                            const seconds = Math.floor((diff / 1000) % 60);
-                                            el.textContent = `${minutes}m ${seconds}s`;
-
-                                            setTimeout(updateCountdown, 1000);
-                                        }
-
-                                        updateCountdown();
-                                    });
-                                });
-                            </script>
-
-                            <!--end::Body-->
-                        </div>
-                        <!--end::Card-->
                     </div>
-                    <!--end::Container-->
+                    <!--end::Header-->
+
+                    <!--begin::Body-->
+                    <div class="card-body pt-0">
+                        <!--begin::Table-->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-checkable" id="kt_datatable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th class="min-w-250px">Patient</th>
+                                        <th class="min-w-120px">Vaccin</th>
+                                        <th class="min-w-80px">Lot</th>
+                                        <th class="min-w-100px">Dose</th>
+                                        <th class="min-w-80px">Date</th>
+                                        <th class="min-w-130px">Protocole</th>
+                                        <th class="min-w-70px">Visite</th>
+                                        <th class="min-w-10px">Voie</th>
+                                        <th class="min-w-50px">Obser.</th>
+                                        <th class="min-w-80px">MAPI</th>
+                                        <th class="min-w-120px text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for v in vaccinations %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="symbol symbol-40 symbol-light-primary mr-3">
+                                                    <span class="symbol-label font-size-h6">
+                                                        {{ v.patient.nom|first|upper }}{{ v.patient.prenoms|first|upper }}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <a href="{% url 'patient_detail' v.patient.id %}" class="text-dark-75 font-weight-bolder text-hover-primary">
+                                                        {{ v.patient.nom|upper }} {{ v.patient.prenoms }}
+                                                    </a>
+                                                    <span class="text-muted d-block font-size-sm">{{ v.patient.calculate_age }} ans</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="font-weight-bolder">{{ v.vaccin.nom }}</td>
+                                        <td>{{ v.lot.numero_lot|default:"-" }}</td>
+                                        <td>
+                                            <span class="label label-lg label-light-{{ v.nombre_dose|yesno:'primary,default' }} label-inline">
+                                                {{ v.nombre_dose|default:"0" }} dose(s)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-dark-75 font-weight-bolder d-block">{{ v.date_effective|date:"d/m/Y" }}</span>
+                                            <span class="text-muted">{{ v.date_effective|date:"H:i" }}</span>
+                                        </td>
+                                        <td>{{ v.protocole.nom }}</td>
+                                        <td>
+                                            <span class="font-weight-bolder">
+                                                {{ v.dose_numero|ordinal }}visite
+                                            </span>
+                                        </td>
+                                        <td>{% if v.get_voie_injection_display == 'Intradermique' %}
+                                            <span data-toggle="tooltip" title="{{ v.get_voie_injection_display }}">ID</span>
+                                            {% else %}
+                                            <span data-toggle="tooltip" title="{{ v.get_voie_injection_display }}">autre</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if v.date_effective %}
+                                            <div class="d-flex align-items-center">
+                                                <span class="countdown-badge mr-2"
+                                                      data-endtime="{{ v.date_effective|date:'Y-m-d H:i:s' }}"
+                                                      data-toggle="tooltip"
+                                                      title="Temps restant d'observation">
+                                                </span>
+                                                <span class="text-muted font-size-sm">
+                                                    (15 min)
+                                                </span>
+                                            </div>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if v.mapi.all %}
+                                                {% for m in v.mapi.all %}
+                                                <span class="label label-{{ m.gravite }} label-inline mb-1">
+                                                    {{ m.get_gravite_display }} - {{ m.date_apparition|date:"d/m H:i" }}
+                                                </span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">Aucun</span>
+                                            {% endif %}
+
+                                            <button class="btn btn-icon btn-primary btn-xs mt-1" data-toggle="modal"
+                                                    data-target="#addMAPI-{{ v.id }}"
+                                                    title="Ajouter un MAPI">
+                                                <i class="flaticon2-add"></i>
+                                            </button>
+
+                                            <!-- MAPI Modal -->
+                                            <div class="modal fade" id="addMAPI-{{ v.id }}" tabindex="-1" role="dialog">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Ajouter un effet secondaire</h5>
+                                                            <button type="button" class="close" data-dismiss="modal">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <!-- Formulaire MAPI ici -->
+                                                            <p>Formulaire d'ajout d'effet secondaire pour {{ v.patient.nom }}</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-light-primary" data-dismiss="modal">Annuler</button>
+                                                            <button type="button" class="btn btn-primary">Enregistrer</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center">
+                                                <a href="{% url 'vaccination_detail' v.pk %}"
+                                                   class="btn btn-icon btn-light-primary btn-sm mx-1"
+                                                   title="Détails">
+                                                    <i class="flaticon-eye"></i>
+                                                </a>
+                                                <a href="{% url 'attestation_vaccination' v.id %}"
+                                                   class="btn btn-icon btn-light-info btn-sm mx-1"
+                                                   target="_blank"
+                                                   title="Attestation PDF">
+                                                    <i class="flaticon2-file"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="11" class="text-center py-8">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="flaticon2-search-1 font-size-h1 text-muted mb-4"></i>
+                                                <span class="text-muted font-weight-bold">Aucune vaccination enregistrée</span>
+                                                <a href="{% url 'patient_create' %}" class="btn btn-primary mt-4">
+                                                    <i class="flaticon2-add mr-2"></i>Ajouter un patient
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <!--end::Table-->
+                    </div>
+                    <!--end::Body-->
                 </div>
-                <!--end::Entry-->
+                <!--end::Card-->
             </div>
-            <!--end::Content-->
-
-            <!--begin::Footer-->
-            <!--doc: add "bg-white" class to have footer with solod background color-->
-            {% include 'layout/footer.html' %}
-            <!--end::Footer-->
+            <!--end::Container-->
         </div>
-        </div>
-        <!--end::Wrapper-->
+        <!--end::Entry-->
+    </div>
+    <!--end::Content-->
+<script>
+// Document Ready Handler
+$(document).ready(function() {
+    /**
+     * INITIALISATION DES COMPOSANTS
+     */
 
+    // 1. Tooltips Bootstrap
+    initTooltips();
+
+    // 2. Gestion des exports
+    initExportButtons();
+
+    // 3. Compte à rebours pour l'observation
+    initObservationTimers();
+
+    // 4. DataTable (si disponible)
+    initDataTable();
+
+    // 5. Gestion des modals
+    initModals();
+});
+
+/**
+ * Initialise les tooltips Bootstrap
+ */
+function initTooltips() {
+    $('[data-toggle="tooltip"]').tooltip({
+        trigger: 'hover',
+        placement: 'top',
+        container: 'body'
+    });
+}
+
+/**
+ * Gestion des boutons d'export
+ */
+function initExportButtons() {
+    $(document).on('click', '[data-export]', function(e) {
+        e.preventDefault();
+        const format = $(this).data('export');
+        const patientId = $(this).closest('tr').data('patient-id') || '';
+
+        // Logique d'export
+        switch(format) {
+            case 'pdf':
+                exportToPDF(patientId);
+                break;
+            case 'excel':
+                exportToExcel(patientId);
+                break;
+            case 'csv':
+                exportToCSV(patientId);
+                break;
+            default:
+                console.error('Format d\'export non supporté:', format);
+        }
+    });
+}
+
+/**
+ * Export en PDF
+ */
+function exportToPDF(patientId) {
+    // Implémentation réelle à ajouter
+    const url = `/api/export/pdf/${patientId}`;
+    console.log('Export PDF vers:', url);
+    window.open(url, '_blank');
+}
+
+/**
+ * Export en Excel
+ */
+function exportToExcel(patientId) {
+    // Implémentation réelle à ajouter
+    const url = `/api/export/excel/${patientId}`;
+    console.log('Export Excel vers:', url);
+    window.open(url, '_blank');
+}
+
+/**
+ * Export en CSV
+ */
+function exportToCSV(patientId) {
+    // Implémentation réelle à ajouter
+    const url = `/api/export/csv/${patientId}`;
+    console.log('Export CSV vers:', url);
+    window.open(url, '_blank');
+}
+
+/**
+ * Gestion des timers d'observation
+ */
+function initObservationTimers() {
+    // Premier lancement
+    updateObservationTimers();
+
+    // Mise à jour toutes les secondes
+    setInterval(updateObservationTimers, 1000);
+}
+
+function updateObservationTimers() {
+    $('.countdown-badge').each(function() {
+        const $badge = $(this);
+        const endTime = new Date($badge.data('endtime'));
+        const observationEnd = new Date(endTime.getTime() + 15 * 60 * 1000);
+        const now = new Date();
+        const diff = Math.max(0, observationEnd - now);
+
+        // Formatage du temps restant
+        if (diff <= 0) {
+            $badge.html('<span class="badge badge-success">Terminé</span>');
+            return;
+        }
+
+        const minutes = Math.floor(diff / 1000 / 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        const timeString = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+
+        // Choix de la couleur en fonction du temps restant
+        let badgeClass = 'warning';
+        if (minutes < 1) badgeClass = 'danger';
+        else if (minutes < 5) badgeClass = 'primary';
+
+        $badge.html(`<span class="badge badge-${badgeClass}">${timeString}</span>`);
+    });
+}
+
+/**
+ * Initialisation de DataTable
+ */
+function initDataTable() {
+    if ($.fn.dataTable) {
+        $('#kt_datatable').DataTable({
+            responsive: true,
+            dom: `<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>
+                  <'row'<'col-sm-12'tr>>
+                  <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>`,
+            language: {
+                url: "{% static 'plugins/custom/datatables/French.json' %}"
+            },
+            columnDefs: [
+                { orderable: false, targets: [10] } // Désactiver le tri sur la colonne Actions
+            ],
+            initComplete: function() {
+                // Callback après initialisation
+                console.log('DataTable initialisé');
+            }
+        });
+    }
+}
+
+/**
+ * Gestion des modals
+ */
+function initModals() {
+    // Événement avant l'ouverture d'un modal
+    $('.modal').on('show.bs.modal', function(e) {
+        const patientId = $(e.relatedTarget).data('patient-id');
+        if (patientId) {
+            console.log('Chargement des données pour le patient:', patientId);
+            // Ici vous pourriez faire un appel AJAX pour précharger des données
+        }
+    });
+
+    // Événement après fermeture d'un modal
+    $('.modal').on('hidden.bs.modal', function() {
+        $(this).find('form').trigger('reset');
+    });
+}
+
+/**
+ * Gestion des erreurs
+ */
+function handleError(error) {
+    console.error('Erreur:', error);
+    // Vous pourriez afficher une notification à l'utilisateur ici
+    showToast('Une erreur est survenue', 'error');
+}
+
+/**
+ * Affiche une notification toast
+ */
+function showToast(message, type = 'success') {
+    // Implémentation dépendante de votre bibliothèque de notifications
+    console.log(`Toast [${type}]:`, message);
+}
+</script>
+{#    <script>#}
+{#        // Initialisation des tooltips#}
+{#        $(function () {#}
+{#            $('[data-toggle="tooltip"]').tooltip();#}
+{#        });#}
+{##}
+{#        // Gestion des exports#}
+{#        $(document).on('click', '[data-export]', function (e) {#}
+{#            e.preventDefault();#}
+{#            const format = $(this).data('export');#}
+{#            // Implémenter la logique d'export ici#}
+{#            console.log('Export format:', format);#}
+{#        });#}
+{##}
+{#        // Compte à rebours pour l'observation#}
+{#        function updateCountdowns() {#}
+{#            $('.countdown-badge').each(function () {#}
+{#                const endTime = new Date($(this).data('endtime'));#}
+{#                const observationEnd = new Date(endTime.getTime() + 15 * 60 * 1000);#}
+{#                const now = new Date();#}
+{#                const diff = Math.max(0, observationEnd - now);#}
+{##}
+{#                if (diff <= 0) {#}
+{#                    $(this).html('<span class="badge badge-success">Terminé</span>');#}
+{#                    return;#}
+{#                }#}
+{##}
+{#                const minutes = Math.floor(diff / 1000 / 60);#}
+{#                const seconds = Math.floor((diff / 1000) % 60);#}
+{##}
+{#                $(this).html(`<span class="badge badge-${minutes < 5 ? 'danger' : 'warning'}">#}
+{#            ${minutes}m ${seconds}s#}
+{#        </span>`);#}
+{#            });#}
+{##}
+{#            setTimeout(updateCountdowns, 1000);#}
+{#        }#}
+{##}
+{#        // Initialisation#}
+{#        $(document).ready(function () {#}
+{#            updateCountdowns();#}
+{##}
+{#            // Initialisation de DataTable si nécessaire#}
+{#            if ($.fn.dataTable) {#}
+{#                $('#kt_datatable').DataTable({#}
+{#                    responsive: true,#}
+{#                    language: {#}
+{#                        url: "{% static 'plugins/custom/datatables/French.json' %}"#}
+{#                    }#}
+{#                });#}
+{#            }#}
+{#        });#}
+{#    </script>#}
+    <!--begin::Footer-->
+    {% include 'layout/footer.html' %}
+    <!--end::Footer-->
+</div>
+<!--end::Wrapper-->
 {% endblock %}
+
+
+

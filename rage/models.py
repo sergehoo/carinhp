@@ -238,7 +238,7 @@ type_localite_choices = [
 
 
 class Commune(models.Model):
-    name = models.CharField(max_length=500, null=True, blank=True, unique=True)
+    name = models.CharField(max_length=500, null=True, blank=True, unique=True, db_index=True)
     type = models.CharField(choices=type_localite_choices, max_length=100, null=True, blank=True)
     population = models.CharField(max_length=100, null=True, blank=True)
     is_in = models.CharField(max_length=255, null=True, blank=True)
@@ -263,16 +263,19 @@ class Patient(models.Model):
         ('Voisin du quartier', 'Voisin du quartier'),
         ('Propriétaire animal ', 'Propriétaire animal ')
     ]
-    code_patient = models.CharField(max_length=225, blank=True, unique=True, editable=False)
-    mpi_upi = models.UUIDField(null=True, blank=True, unique=True)
-    nom = models.CharField(max_length=225)
-    prenoms = models.CharField(max_length=225)
-    contact = models.CharField(max_length=20)
-    date_naissance = models.DateField()
+    code_patient = models.CharField(max_length=225, blank=True, unique=True, editable=False,db_index=True)
+    mpi_upi = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
+    nom = models.CharField(max_length=225, db_index=True)
+    prenoms = models.CharField(max_length=225, db_index=True)
+    contact = models.CharField(max_length=20, db_index=True)
+    date_naissance = models.DateField(db_index=True)
     sexe = models.CharField(max_length=10, choices=Sexe_choices, )
+    num_cmu = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    cni_num = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    cni_nni = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     secteur_activite = models.CharField(max_length=200, null=True, blank=True)
     niveau_etude = models.CharField(choices=NIVEAU_ETUDE_CHOICES, max_length=500, null=True, blank=True)
-    commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
+    commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     quartier = models.CharField(max_length=255, blank=True, null=True)
     village = models.CharField(max_length=255, blank=True, null=True)
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
@@ -380,18 +383,18 @@ class Animal(models.Model):
 
 class Preexposition(models.Model):
     #MotifVaccination
-    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True)
-    codeexpo = models.CharField(max_length=255, blank=True, null=True, unique=True)
-    voyage = models.BooleanField(default=False)
-    mise_a_jour = models.BooleanField(default=False)
-    protection_rage = models.BooleanField(default=False)
-    chien_voisin = models.BooleanField(default=False)
-    chiens_errants = models.BooleanField(default=False)
-    autre = models.BooleanField(default=False)
-    autre_motif = models.TextField(blank=True, null=True)
+    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    codeexpo = models.CharField(max_length=255, blank=True, null=True, unique=True, db_index=True)
+    voyage = models.BooleanField(default=False, db_index=True)
+    mise_a_jour = models.BooleanField(default=False, db_index=True)
+    protection_rage = models.BooleanField(default=False, db_index=True)
+    chien_voisin = models.BooleanField(default=False, db_index=True)
+    chiens_errants = models.BooleanField(default=False, db_index=True)
+    autre = models.BooleanField(default=False, db_index=True)
+    autre_motif = models.TextField(blank=True, null=True, db_index=True)
     #InformationVaccination
-    tele = models.BooleanField(default=False)
-    radio = models.BooleanField(default=False)
+    tele = models.BooleanField(default=False, db_index=True)
+    radio = models.BooleanField(default=False, db_index=True)
     sensibilisation = models.BooleanField(default=False)
     proche = models.BooleanField(default=False)
     presse = models.BooleanField(default=False)
@@ -441,12 +444,12 @@ class Preexposition(models.Model):
 
 class PostExposition(models.Model):
     # Identification du patient
-    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True)
+    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
 
     # Exposition
-    date_exposition = models.DateField(null=True, blank=True)
-    lieu_exposition = models.CharField(max_length=255, null=True, blank=True)
-    exposition_commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
+    date_exposition = models.DateField(null=True, blank=True, db_index=True)
+    lieu_exposition = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    exposition_commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     exposition_quartier = models.CharField(max_length=255, null=True, blank=True)
 
     circonstance = models.CharField(
@@ -471,8 +474,8 @@ class PostExposition(models.Model):
         null=True, blank=True
     )
 
-    morsure = models.BooleanField(default=False)
-    griffure = models.BooleanField(default=False)
+    morsure = models.BooleanField(default=False, db_index=True)
+    griffure = models.BooleanField(default=False, db_index=True)
     lechage_saine = models.BooleanField(default=False)
     lechage_lesee = models.BooleanField(default=False)
     contactanimalpositif = models.BooleanField(default=False)
@@ -801,21 +804,21 @@ class ProtocoleVaccination(models.Model):
 
 
 class RendezVousVaccination(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="rendez_vous_vaccination")
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="rendez_vous_vaccination", db_index=True)
     preexposition = models.ForeignKey(Preexposition, null=True, blank=True, on_delete=models.CASCADE,
-                                      related_name="rendez_vous_pre_expo")
+                                      related_name="rendez_vous_pre_expo", db_index=True)
     postexposition = models.ForeignKey(PostExposition, null=True, blank=True, on_delete=models.CASCADE,
-                                       related_name="rendez_vous_post_expo")
-    protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, related_name="protocole_rendez_vous")
-    date_rendez_vous = models.DateField(help_text="Date prévue du rendez-vous")
-    dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole")
-    ordre_rdv = models.IntegerField(help_text="Numéro d’ordre du RDV pour ce patient", null=True, blank=True)
-    est_effectue = models.BooleanField(default=False, help_text="Le vaccin a-t-il été administré ?")
+                                       related_name="rendez_vous_post_expo", db_index=True)
+    protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, related_name="protocole_rendez_vous", db_index=True)
+    date_rendez_vous = models.DateField(help_text="Date prévue du rendez-vous", db_index=True)
+    dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole", db_index=True)
+    ordre_rdv = models.IntegerField(help_text="Numéro d’ordre du RDV pour ce patient", null=True, blank=True, db_index=True)
+    est_effectue = models.BooleanField(default=False, help_text="Le vaccin a-t-il été administré ?", db_index=True)
     statut_rdv = models.CharField(
         choices=[('Passé', 'Passé'), ('Aujourd\'hui', 'Aujourd\'hui'), ('À venir', 'À venir')],
         max_length=100, null=True, blank=True)
-    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     history = HistoricalRecords()
 
@@ -835,8 +838,8 @@ class Vaccins(models.Model):
         ('flacon', 'Flacons')
     ]
 
-    nom = models.CharField(max_length=255, help_text="Nom du vaccin")
-    nbr_dose = models.PositiveIntegerField(help_text="Nombre de dose recquis", null=True, blank=True)
+    nom = models.CharField(max_length=255, help_text="Nom du vaccin", db_index=True)
+    nbr_dose = models.PositiveIntegerField(help_text="Nombre de dose recquis", null=True, blank=True, db_index=True)
     unite = models.CharField(max_length=10, choices=UNITE_CHOICES, help_text="Unité de mesure")
     prix = models.PositiveIntegerField(help_text="Quantité en stock", null=True, blank=True)
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
@@ -858,9 +861,9 @@ class Vaccins(models.Model):
 
 class LotVaccin(models.Model):
     numero_lot = models.CharField(max_length=100, unique=True, db_index=True)
-    vaccin = models.ForeignKey(Vaccins, on_delete=models.CASCADE, related_name='lotsvaccin')
-    date_fabrication = models.DateField(null=True, blank=True)
-    date_expiration = models.DateField(null=True, blank=True)
+    vaccin = models.ForeignKey(Vaccins, on_delete=models.CASCADE, related_name='lotsvaccin', db_index=True)
+    date_fabrication = models.DateField(null=True, blank=True, db_index=True)
+    date_expiration = models.DateField(null=True, blank=True, db_index=True)
     quantite_initiale = models.PositiveIntegerField()
     quantite_disponible = models.PositiveIntegerField()
     centre = models.ForeignKey(CentreAntirabique, on_delete=models.CASCADE, related_name='lots_centre')

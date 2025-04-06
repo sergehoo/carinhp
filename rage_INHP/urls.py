@@ -17,7 +17,7 @@ from rage.views import CADashborad, DistrictDashborad, RegionDashborad, National
     PostExpositionUpdateView, PostExpositionDeleteView, fichePreExpoPDF, get_communes, RageNotificationCreateView, \
     patients_geojson, fichePostExpoPDF, RageHumaineNotificationListView, RageHumaineNotificationDetailView, \
     RageHumaineNotificationUpdateView, RageHumaineNotificationDeleteView, ajouter_mapi, synchroniser_patients_mpi, \
-    attestation_vaccination, lots_par_vaccin
+    attestation_vaccination, get_lots_by_vaccin
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
@@ -92,7 +92,10 @@ urlpatterns = [
 
                   path('mapi/ajouter/<int:vaccination_id>/', ajouter_mapi, name='ajouter_mapi'),
 
-                  path('api/lots/', lots_par_vaccin, name='lots_par_vaccin'),
+                  # path('api/lots/', lots_par_vaccin, name='lots_par_vaccin'),
+                  path('ajax/get-lots/', get_lots_by_vaccin, name='get_lots_by_vaccin'),
+
+
                   path('vacciner/<int:rendez_vous_id>/', vacciner, name='vacciner'),
                   path('vaccination/<int:vaccination_id>/attestation/', attestation_vaccination,
                        name='attestation_vaccination'),

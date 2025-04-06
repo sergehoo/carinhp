@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+from rage.core import version
+from rage.core.version import get_version
+
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -16,11 +19,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # Auth
     'allauth',
     'allauth.account',
-
     # Tiers
     'rest_framework',
     'leaflet',
@@ -35,7 +36,6 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django.contrib.humanize',
-
     # Local apps
     'rage',
 ]
@@ -94,7 +94,7 @@ LANGUAGES = [
 ]
 
 # Static & Media
-STATIC_URL = '/public/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -149,12 +149,12 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
+APP_VERSION = get_version()
 # Sessions
 SESSION_COOKIE_AGE = 30 * 60
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

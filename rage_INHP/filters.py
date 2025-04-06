@@ -83,3 +83,4 @@ class RageHumaineNotificationFilter(django_filters.FilterSet):
         model = RageHumaineNotification
         fields = ['date_notification', 'hopital', 'agent_declarant', 'nature_exposition', 'categorie_lesion',
                   'evolution']
+

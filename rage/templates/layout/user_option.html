@@ -1,0 +1,245 @@
+<div id="kt_quick_user" class="offcanvas offcanvas-right p-10">
+    <!--begin::Header-->
+    <div class="offcanvas-header d-flex align-items-center justify-content-between pb-5">
+        <h3 class="font-weight-bold m-0">
+            Profil Utilisateur
+            <small class="text-muted font-size-sm ml-2">
+                {{ request.user.centre|default:"Système Anti-Rabique" }}
+            </small>
+        </h3>
+        <a href="#" class="btn btn-xs btn-icon btn-light btn-hover-primary" id="kt_quick_user_close">
+            <i class="ki ki-close icon-xs text-muted"></i>
+        </a>
+    </div>
+    <!--end::Header-->
+
+    <!--begin::Content-->
+    <div class="offcanvas-content pr-5 mr-n5">
+        <!--begin::Header-->
+        <div class="d-flex align-items-center mt-5">
+            <div class="symbol symbol-100 mr-5">
+                {% if request.user.profile.image %}
+                <img alt="Photo profil" src="{{ request.user.profile.image.url }}" class="symbol-label" />
+                {% else %}
+                <div class="symbol-label bg-light-primary">
+                    <span class="font-size-h3 font-weight-boldest text-primary">
+                        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                    </span>
+                </div>
+                {% endif %}
+                <i class="symbol-badge bg-{{ request.user.is_active|yesno:'success,danger' }}"></i>
+            </div>
+            <div class="d-flex flex-column">
+                <a href="#" class="font-weight-bold font-size-h5 text-dark-75 text-hover-primary">
+                    {{ request.user.get_full_name|default:request.user.username }}
+                </a>
+                <div class="text-muted mt-1">
+                    {{ request.user.get_civilite_display }} • {{ request.user.fonction|default:"Utilisateur" }}
+                </div>
+                <div class="navi mt-2">
+                    <a href="mailto:{{ request.user.email }}" class="navi-item">
+                        <span class="navi-link p-0 pb-2">
+                            <span class="navi-icon mr-1">
+                                <span class="svg-icon svg-icon-lg svg-icon-primary">
+                                    <!-- Icône email -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                        <path d="M20,4H4C2.896,4,2,4.896,2,6v12c0,1.104,0.896,2,2,2h16c1.104,0,2-0.896,2-2V6C22,4.896,21.104,4,20,4z M20,8.7l-8,5.334 L4,8.7V6.297l8,5.333l8-5.333V8.7z" fill="#3699FF"/>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="navi-text text-muted text-hover-primary">
+                                {{ request.user.email|default:"Non renseigné" }}
+                            </span>
+                        </span>
+                    </a>
+                    <a href="tel:{{ request.user.contact }}" class="navi-item">
+                        <span class="navi-link p-0 pb-2">
+                            <span class="navi-icon mr-1">
+                                <span class="svg-icon svg-icon-lg svg-icon-success">
+                                    <!-- Icône téléphone -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                        <path d="M20,15.5c-1.2,0-2.5-0.2-3.6-0.6h-0.1c-0.3-0.1-0.7-0.1-1,0.1l-2.2,2.2c-2.8-1.5-5.2-3.8-6.6-6.6l2.2-2.2 c0.3-0.3,0.4-0.7,0.2-1.1V8.6C8.7,7.5,8.5,6.2,8.5,5c0-0.6-0.4-1-1-1H4C3.4,4,3,4.4,3,5c0,9.4,7.6,17,17,17c0.6,0,1-0.4,1-1v-3.5 C21,15.9,20.6,15.5,20,15.5z" fill="#1BC5BD"/>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="navi-text text-muted text-hover-primary">
+                                {{ request.user.contact|default:"Non renseigné" }}
+                            </span>
+                        </span>
+                    </a>
+                    <a href="{% url 'account_logout' %}" class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 mt-3">
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!--end::Header-->
+
+        <!--begin::Separator-->
+        <div class="separator separator-dashed mt-8 mb-5"></div>
+        <!--end::Separator-->
+
+        <!--begin::Nav-->
+        <div class="navi navi-spacer-x-0 p-0">
+            <!--begin::Item-->
+            <a href="" class="navi-item">
+                <div class="navi-link">
+                    <div class="symbol symbol-40 bg-light mr-3">
+                        <div class="symbol-label">
+                            <span class="svg-icon svg-icon-md svg-icon-primary">
+                                <!-- Icône profil -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                    <path d="M12,12c2.8,0,5-2.2,5-5S14.8,2,12,2S7,4.2,7,7S9.2,12,12,12z M12,4c1.7,0,3,1.3,3,3s-1.3,3-3,3S9,8.7,9,7S10.3,4,12,4z M19,22H5v-2c0-3.9,3.1-7,7-7h0c3.9,0,7,3.1,7,7V22z M17,20c0-2.8-2.2-5-5-5s-5,2.2-5,5h10z" fill="#3699FF"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="navi-text">
+                        <div class="font-weight-bold">
+                            Mon Profil
+                        </div>
+                        <div class="text-muted">
+                            Informations personnelles
+                            {% if not request.user.profile.complete %}
+                            <span class="label label-light-danger label-inline font-weight-bold">à compléter</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <!--end:Item-->
+
+            <!--begin::Item-->
+            <a href="{% url 'vaccination_list' %}" class="navi-item">
+                <div class="navi-link">
+                    <div class="symbol symbol-40 bg-light mr-3">
+                        <div class="symbol-label">
+                            <span class="svg-icon svg-icon-md svg-icon-warning">
+                                <!-- Icône vaccins -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                    <path d="M19,7h-3V5.5A1.5,1.5,0,0,0,14.5,4h-5A1.5,1.5,0,0,0,8,5.5V7H5A1,1,0,0,0,5,9H6V19a3,3,0,0,0,3,3h6a3,3,0,0,0,3-3V9h1a1,1,0,0,0,0-2ZM10,5.5a.5.5,0,0,1,.5-.5h5a.5.5,0,0,1,.5.5V7H10Zm5,14H9V9h6Z" fill="#FFA800"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="navi-text">
+                        <div class="font-weight-bold">
+                            Mes Vaccinations
+                        </div>
+                        <div class="text-muted">
+                            Gestion des patients vaccinés
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <!--end:Item-->
+
+            <!--begin::Item-->
+            <a href="" class="navi-item">
+                <div class="navi-link">
+                    <div class="symbol symbol-40 bg-light mr-3">
+                        <div class="symbol-label">
+                            <span class="svg-icon svg-icon-md svg-icon-success">
+                                <!-- Icône rapports -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                    <path d="M19,3H5A2,2,0,0,0,3,5V19a2,2,0,0,0,2,2H19a2,2,0,0,0,2-2V5A2,2,0,0,0,19,3ZM5,19V5H19V19Z" fill="#1BC5BD"/>
+                                    <rect x="7" y="7" width="3" height="8" fill="#1BC5BD"/>
+                                    <rect x="12" y="7" width="3" height="5" fill="#1BC5BD"/>
+                                    <rect x="17" y="7" width="3" height="10" fill="#1BC5BD"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="navi-text">
+                        <div class="font-weight-bold">
+                            Rapports
+                        </div>
+                        <div class="text-muted">
+                            Statistiques et exports
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <!--end:Item-->
+
+            {% if request.user.is_superuser %}
+            <!--begin::Item-->
+            <a href="" class="navi-item">
+                <div class="navi-link">
+                    <div class="symbol symbol-40 bg-light mr-3">
+                        <div class="symbol-label">
+                            <span class="svg-icon svg-icon-md svg-icon-danger">
+                                <!-- Icône admin -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                                    <path d="M12,1L3,5v6c0,5.5,3.8,10.7,9,12c5.2-1.3,9-6.5,9-12V5L12,1z M19,11c0,1.9-0.3,3.7-1,5.4l-1.4-1.4 c0.5-1.3,0.8-2.6,0.8-4c0-0.3,0-0.7-0.1-1l2.5-1.4V11z M12,13c-1.7,0-3-1.3-3-3s1.3-3,3-3s3,1.3,3,3S13.7,13,12,13z M5.1,6.3L12,3.2 l6.9,3.1l-6.9,4.6L5.1,6.3z" fill="#F64E60"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="navi-text">
+                        <div class="font-weight-bold">
+                            Administration
+                        </div>
+                        <div class="text-muted">
+                            Interface d'administration
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <!--end:Item-->
+            {% endif %}
+        </div>
+        <!--end::Nav-->
+
+        <!--begin::Separator-->
+        <div class="separator separator-dashed my-7"></div>
+        <!--end::Separator-->
+
+        <!--begin::Notifications-->
+        <div>
+            <h5 class="mb-5">
+                Activités Récentes
+            </h5>
+
+            <!-- Exemple d'activité -->
+            <div class="d-flex align-items-center bg-light-primary rounded p-5 gutter-b">
+                <span class="svg-icon svg-icon-primary mr-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">
+                        <path d="M18,8h-1V6c0-2.8-2.2-5-5-5S7,3.2,7,6v2H6c-1.1,0-2,0.9-2,2v10c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2V10C20,8.9,19.1,8,18,8z M9,6c0-1.7,1.3-3,3-3s3,1.3,3,3v2H9V6z M18,20H6V10h12V20z" fill="#3699FF"/>
+                    </svg>
+                </span>
+                <div class="d-flex flex-column flex-grow-1 mr-2">
+                    <span class="font-weight-normal text-dark-75 font-size-lg mb-1">
+                        Dernière connexion
+                    </span>
+                    <span class="text-muted font-size-sm">
+                        {{ request.user.last_login|date:"d/m/Y H:i"|default:"Jamais" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <!--end::Notifications-->
+    </div>
+    <!--end::Content-->
+</div>
+
+<style>
+/* Style personnalisé pour le panneau utilisateur */
+#kt_quick_user {
+    width: 350px;
+}
+
+.symbol-label.bg-light-primary {
+    background-color: #f3f6ff !important;
+}
+
+.btn-light-danger {
+    background-color: #fff5f8;
+    color: #f64e60;
+}
+
+.btn-light-danger:hover {
+    background-color: #f64e60;
+    color: white;
+}
+</style>

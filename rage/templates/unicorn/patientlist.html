@@ -74,7 +74,17 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center">Aucun patient trouvé</td>
+                <td colspan="8" class="text-center">    <!-- Empty State (optional) -->
+                            <div class="empty-state" data-empty-state>
+                                <div class="empty-state-content">
+                                    <i class="flaticon-users-1 icon-4x text-primary"></i>
+                                    <h4>Aucun patient trouvé</h4>
+                                    <p>Commencez par ajouter votre premier patient</p>
+                                    <a href="{% url 'patient_create' %}" class="btn btn-primary">
+                                        <i class="flaticon2-add mr-2"></i>Ajouter un patient
+                                    </a>
+                                </div>
+                            </div></td>
             </tr>
             {% endfor %}
         </tbody>

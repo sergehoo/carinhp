@@ -193,7 +193,8 @@ class PatientAdmin(admin.ModelAdmin):
             'fields': (
                 'secteur_activite', 'niveau_etude',
                 'commune', 'quartier', 'village',
-                'centre_ar',
+                'centre_ar', 'num_cmu',
+                'cni_num','cni_nni',
                 'proprietaire_animal', 'typeanimal', 'autretypeanimal'
             )
         }),

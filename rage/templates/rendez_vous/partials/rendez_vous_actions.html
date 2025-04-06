@@ -6,150 +6,58 @@
 {% else %}
 {#    <span class="badge badge-success">Effectué</span>#}
 {% endif %}
-
-<!-- Modal Vaccination -->
-{#<div class="modal fade" id="vaccinerModal{{ record.id }}" tabindex="-1" role="dialog" aria-labelledby="vaccinerLabel{{ record.id }}" aria-hidden="true">#}
-{#    <div class="modal-dialog" role="document">#}
-{#        <div class="modal-content">#}
-{#            <div class="modal-header">#}
-{#                <h5 class="modal-title" id="vaccinerLabel{{ record.id }}">Vaccination du patient {{ record.patient.nom }}</h5>#}
-{#                <button type="button" class="close" data-dismiss="modal" aria-label="Close">#}
-{#                    <span aria-hidden="true">&times;</span>#}
-{#                </button>#}
-{#            </div>#}
-{##}
-{#            <form method="post" action="{% url 'vacciner' record.id %}">#}
-{#                <div class="modal-body">#}
-{#                    {% csrf_token %}#}
-{#                    {{ vaccination_form.as_p }}#}
-{#                </div>#}
-{#                <div class="modal-footer">#}
-{#                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>#}
-{#                    <button type="submit" class="btn btn-primary">Confirmer</button>#}
-{#                </div>#}
-{#            </form>#}
-{##}
-{#        </div>#}
-{#    </div>#}
-{#</div>#}
-<!-- Template HTML amélioré -->
-<div class="modal fade" id="vaccinerModal{{ record.id }}" tabindex="-1"
-     aria-labelledby="vaccinerLabel{{ record.id }}" aria-hidden="true"
-     x-data="vaccinationForm({{ record.id }})" x-init="init()">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="vaccinerModal{{ record.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form method="post" action="{% url 'vacciner' record.id %}" @submit.prevent="submitForm">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="vaccinerLabel{{ record.id }}">
-                        <i class="fas fa-syringe me-2"></i> Vaccination de {{ record.patient.nom_complet }}
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            <form method="post" action="{% url 'vacciner' record.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Vaccination de {{ record.patient.nom }}</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
                 </div>
 
                 <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="row mb-3">
-                        <!-- Vaccin -->
-                        <div class="col-lg-12 mb-3">
-                            <label class="form-label">Vaccin <span class="text-danger">*</span></label>
-                            <select class="form-select" x-model="selectedVaccin" @change="fetchLots" required>
-                                <option value="">-- Choisir un vaccin --</option>
-                                {% for vaccin in vaccination_form.fields.vaccin.queryset %}
-                                    <option value="{{ vaccin.id }}">{{ vaccin.nom }} ({{ vaccin.fabricant }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <!-- Lot -->
-                        <div class="col-lg-12 mb-3" x-show="selectedVaccin">
-                            <label class="form-label">Lot <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Rechercher un lot"
-                                       x-model="lotSearch" @input.debounce.300ms="filterLots"
-                                       :disabled="isLoading" required>
-                                <span class="input-group-text" x-show="isLoading">
-                                    <span class="spinner-border spinner-border-sm"></span>
-                                </span>
-                            </div>
-
-                            <input type="hidden" name="lot" :value="selectedLotId">
-
-                            <div class="position-relative">
-                                <ul class="list-group position-absolute w-100 z-3 shadow mt-1"
-                                    x-show="showDropdown && !isLoading" x-transition
-                                    @click.away="showDropdown = false" style="max-height: 200px; overflow-y: auto;">
-                                    <template x-for="lot in filteredLots" :key="lot.id">
-                                        <li class="list-group-item list-group-item-action cursor-pointer"
-                                            @click="selectLot(lot)">
-                                            <div class="d-flex justify-content-between">
-                                                <strong x-text="lot.numero"></strong>
-                                                <small class="text-muted" x-text="'Stock: ' + lot.stock_restant"></small>
-                                            </div>
-                                            <small class="text-muted" x-text="'Exp: ' + formatDate(lot.date_expiration)"></small>
-                                        </li>
-                                    </template>
-                                    <li class="list-group-item text-muted" x-show="filteredLots.length === 0 && !isLoading">
-                                        Aucun lot disponible
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div class="form-text" x-text="selectedLotDetails"></div>
-                            <div class="invalid-feedback" x-show="lotError" x-text="lotError"></div>
-                        </div>
-                    </div>
-
-                    <!-- Date & dosage -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Date de vaccination <span class="text-danger">*</span></label>
-                            <input type="date" name="date_effective" class="form-control"
-                                   x-model="vaccinationDate" :max="today" required>
-                            <div class="invalid-feedback">Date invalide</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Dose (ml) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.1" min="0.1" max="5" name="dose_ml" class="form-control"
-                                   x-model="doseVolume" required>
-                            <div class="form-text">Dose standard: 0.5 ml</div>
-                        </div>
-                    </div>
-
-                    <!-- Voie d'injection -->
-                    <div class="mb-3">
-                        <label class="form-label">Voie d'injection <span class="text-danger">*</span></label>
-                        <div class="btn-group w-100" role="group">
-                            {% for choice in vaccination_form.voie_injection %}
-                                <input type="radio" class="btn-check" name="voie_injection"
-                                       id="voie-{{ choice.data.value }}-{{ record.id }}"
-                                       value="{{ choice.data.value }}" x-model="injectionMethod" required>
-                                <label class="btn btn-outline-primary"
-                                       for="voie-{{ choice.data.value }}-{{ record.id }}">
-                                    {{ choice.choice_label }}
-                                </label>
+                    <div class="form-group">
+                        <label for="vaccin-{{ record.id }}">Vaccin</label>
+                        <select class="form-control select2" name="vaccin" id="vaccin-{{ record.id }}">
+                            <option value="">-- Sélectionner un vaccin --</option>
+                            {% for vaccin in vaccins %}
+                                <option value="{{ vaccin.id }}">{{ vaccin.nom }}</option>
                             {% endfor %}
-                        </div>
+                        </select>
                     </div>
 
-                    <!-- Observations -->
-                    <div class="mb-3">
-                        <label class="form-label">Observations</label>
-                        <textarea name="observations" class="form-control" rows="2"></textarea>
+                    <div class="form-group">
+                        <label for="lot-{{ record.id }}">Lot</label>
+                        <select class="form-control select2" name="lot" id="lot-{{ record.id }}">
+                            <option value="">-- Sélectionner un lot --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Voie d'injection</label>
+                        <select class="form-control" name="voie_injection">
+                            <option value="">-- Choisir --</option>
+                            <option value="ID">Intradermique</option>
+                            <option value="IM">Intramusculaire</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dose (ml)</label>
+                        <input type="number" step="any" name="dose_ml" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date effective</label>
+                        <input type="datetime-local" name="date_effective" class="form-control">
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary" :disabled="isSubmitting || !isFormValid">
-                        <template x-if="!isSubmitting">
-                            <span><i class="fas fa-save me-1"></i> Enregistrer</span>
-                        </template>
-                        <template x-if="isSubmitting">
-                            <span>
-                                <span class="spinner-border spinner-border-sm me-1"></span> Enregistrement...
-                            </span>
-                        </template>
-                    </button>
+                    <button type="submit" class="btn btn-primary">Confirmer</button>
                 </div>
             </form>
         </div>
@@ -157,161 +65,57 @@
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('vaccinationForm', (id) => ({
-        selectedVaccin: null,
-        lots: [],
-        filteredLots: [],
-        lotSearch: '',
-        selectedLotId: null,
-        selectedLotDetails: '',
-        showDropdown: false,
-        isLoading: false,
-        isSubmitting: false,
-        lotError: null,
-        vaccinationDate: new Date().toISOString().split('T')[0],
-        doseVolume: 0.5,
-        injectionMethod: 'IM',
-        today: new Date().toISOString().split('T')[0],
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalId = '#vaccinerModal{{ record.id }}';
+        const vaccinSelector = '#vaccin-{{ record.id }}';
+        const lotSelector = '#lot-{{ record.id }}';
 
-        init() {
-            // Initialisation si nécessaire
-        },
+        // Initialiser Select2 à l'ouverture de la modale
+        $(modalId).on('shown.bs.modal', function () {
+            $(vaccinSelector).select2({
+                dropdownParent: $(modalId),
+                width: '100%',
+                placeholder: "Sélectionner un vaccin"
+            });
 
-        get isFormValid() {
-            return this.selectedVaccin && this.selectedLotId && this.vaccinationDate && this.doseVolume > 0;
-        },
+            $(lotSelector).select2({
+                dropdownParent: $(modalId),
+                width: '100%',
+                placeholder: "Sélectionner un lot"
+            });
+        });
 
-        async fetchLots() {
-            if (!this.selectedVaccin) {
-                this.lots = [];
-                this.filteredLots = [];
-                this.selectedLotId = null;
-                this.selectedLotDetails = '';
+        // Lorsque le vaccin change, recharger les lots
+        $(vaccinSelector).on('change', function () {
+            const vaccinId = $(this).val();
+
+            if (!vaccinId) {
+                $(lotSelector).empty().append(new Option('-- Sélectionner un lot --', ''));
+                $(lotSelector).val('').trigger('change');
                 return;
             }
 
-            this.isLoading = true;
-            this.lotError = null;
+            fetch(`/ajax/get-lots/?vaccin_id=${vaccinId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Supprimer les anciennes options de lot
+                    $(lotSelector).empty().append(new Option('-- Sélectionner un lot --', ''));
 
-            try {
-                const response = await fetch(`/api/lots/?vaccin_id=${this.selectedVaccin}`);
-                if (!response.ok) throw new Error('Erreur de chargement des lots');
+                    // Ajouter les nouvelles options
+                    data.lots.forEach(lot => {
+                        const newOption = new Option(lot.label, lot.id, false, false);
+                        $(lotSelector).append(newOption);
+                    });
 
-                this.lots = await response.json();
-                this.filteredLots = this.lots;
-
-                if (this.lots.length === 0) {
-                    this.lotError = 'Aucun lot disponible pour ce vaccin';
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                this.lotError = 'Impossible de charger les lots';
-                this.lots = [];
-                this.filteredLots = [];
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        filterLots() {
-            if (!this.lotSearch) {
-                this.filteredLots = this.lots;
-                return;
-            }
-
-            const query = this.lotSearch.toLowerCase();
-            this.filteredLots = this.lots.filter(lot =>
-                lot.numero.toLowerCase().includes(query) ||
-                (lot.vaccin_nom && lot.vaccin_nom.toLowerCase().includes(query))
-            );
-
-            this.showDropdown = true;
-        },
-
-        selectLot(lot) {
-            this.selectedLotId = lot.id;
-            this.lotSearch = lot.numero;
-            this.selectedLotDetails = `Lot: ${lot.numero} | Exp: ${this.formatDate(lot.date_expiration)} | Stock: ${lot.stock_restant}`;
-            this.showDropdown = false;
-            this.lotError = null;
-        },
-
-        formatDate(dateStr) {
-            if (!dateStr) return 'N/A';
-            return new Date(dateStr).toLocaleDateString('fr-FR');
-        },
-
-        async submitForm() {
-            if (!this.isFormValid) {
-                showToast('Veuillez compléter tous les champs obligatoires', 'warning');
-                return;
-            }
-
-            this.isSubmitting = true;
-
-            try {
-                const form = this.$el.querySelector('form');
-                const formData = new FormData(form);
-
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    // Rafraîchir l'affichage de Select2
+                    $(lotSelector).val('').trigger('change');
                 });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Erreur lors de la soumission');
-                }
-
-                if (data.success) {
-                    showToast('Vaccination enregistrée avec succès', 'success');
-
-                    // Fermer le modal après un délai
-                    setTimeout(() => {
-                        const modal = bootstrap.Modal.getInstance(this.$el);
-                        modal.hide();
-
-                        // Redirection ou rafraîchissement
-                        if (data.redirect_url) {
-                            window.location.href = data.redirect_url;
-                        }
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                showToast(error.message || 'Une erreur est survenue', 'danger');
-            } finally {
-                this.isSubmitting = false;
-            }
-        }
-    }));
-});
-
-function showToast(message, type = 'success') {
-    const toastEl = document.getElementById('liveToast');
-    if (!toastEl) return;
-
-    const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-    const toastBody = toastEl.querySelector('.toast-body');
-
-    // Mise à jour du contenu
-    toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning');
-    toastEl.classList.add(`bg-${type}`);
-    toastBody.textContent = message;
-
-    // Affichage
-    toast.show();
-}
+        });
+    });
 </script>
-
 
 <!-- Bouton pour voir les détails -->
 <a href="{% url 'detail_rendez_vous' record.pk %}" class="btn btn-icon btn-info btn-xs">
     <i class="fa fa-list-alt"></i>
 </a>
+

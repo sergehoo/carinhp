@@ -17,6 +17,13 @@ def synchroniser_avec_mpi(patient_instance):
         "date_naissance": patient_instance.date_naissance.isoformat(),
         "contact": patient_instance.contact,
         "sexe": patient_instance.sexe,
+        "num_cmu": patient_instance.num_cmu,
+        "cni_num": patient_instance.cni_num,
+        "cni_nni": patient_instance.cni_nni,
+        "profession": patient_instance.secteur_activite,
+        "niveau_etude": patient_instance.niveau_etude,
+        # "quartier": patient_instance.quartier,
+        # "village": patient_instance.village,
     }
 
     mpi_response = mpi_client.synchroniser_patient(patient_data)

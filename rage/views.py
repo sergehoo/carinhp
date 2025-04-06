@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q, Count
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -30,13 +30,13 @@ from xhtml2pdf import pisa
 
 from rage.models import HealthRegion, PolesRegionaux, Patient, ProtocoleVaccination, Vaccination, Animal, \
     RendezVousVaccination, Facture, Preexposition, PostExposition, Commune, RageHumaineNotification, CentreAntirabique, \
-    DistrictSanitaire, LotVaccin
+    DistrictSanitaire, LotVaccin, Vaccins
 from rage.tables import RendezVousTable, FactureTable, PreExpositionTable, PostExpositionTable, \
     RageHumaineNotificationTable
 from rage_INHP.decorators import role_required
 from rage_INHP.filters import RendezVousFilter, RageHumaineNotificationFilter
 # from rage_INHP.filters import ExpositionFilter
-from rage_INHP.forms import PatientForm, EchantillonForm, SymptomForm, \
+from rage_INHP.forms import EchantillonForm, SymptomForm, \
     VaccinationForm, PaiementForm, ClientForm, PreExpositionForm, PostExpositionForm, ClientPreExpositionForm, \
     ClientPostExpositionForm, PatientRageNotificationForm, RageHumaineNotificationForm, PreExpositionUpdateForm, \
     MAPIForm
@@ -488,7 +488,7 @@ class PatientListView(LoginRequiredMixin, TemplateView):
 
 class PatientCreateView(LoginRequiredMixin, CreateView):
     model = Patient
-    form_class = PatientForm
+    form_class = ClientForm
     template_name = 'pages/patients/patient_form.html'  # Template pour afficher le formulaire
     success_url = reverse_lazy('patient_list')  # Redirige après la soumission réussie
 
@@ -637,54 +637,25 @@ class DeclarationTemplate(TemplateView):
     #     ))
 
 
-# class PreExpositionCreateView(CreateView):
-#     model = Preexposition
-#     form_class = PreExpositionForm
-#     template_name = "pages/expositions/preexposition_form.html"
-#     success_url = reverse_lazy("success_page")  # Remplace par ton URL de succès
-#
-#     def form_valid(self, form):
-#         # Vérifie si un patient est sélectionné
-#         client = form.cleaned_data.get("client")
-#         if not client:
-#             messages.error(self.request, "Veuillez sélectionner un patient avant d'enregistrer.")
-#             return self.form_invalid(form)
-#
-#         messages.success(self.request, "Le dossier de vaccination a été enregistré avec succès ! ✅")
-#         return super().form_valid(form)
-#
-#     def form_invalid(self, form):
-#         messages.error(self.request, "Veuillez corriger les erreurs du formulaire.")
-#         return super().form_invalid(form)
-# class PreExpositionCreateView(View):
-#     template_name = "pages/expositions/preexposition_form.html"
-#
-#     def get(self, request):
-#         client_form = ClientForm()
-#         preexposition_form = PreExpositionForm()
-#         return render(request, self.template_name, {
-#             'client_form': client_form,
-#             'preexposition_form': preexposition_form,
-#         })
-#
-#     def post(self, request):
-#         client_form = ClientForm(request.POST)
-#         preexposition_form = PreExpositionForm(request.POST)
-#
-#         if client_form.is_valid() and preexposition_form.is_valid():
-#             patient = client_form.save()  # Enregistre le patient
-#             preexposition = preexposition_form.save(commit=False)  # Ne sauvegarde pas encore
-#             preexposition.client = patient  # Associe au patient
-#             preexposition.save()  # Enregistre l'entrée PreExposition
-#
-#             messages.success(request, "Le dossier de vaccination et le patient ont été enregistrés avec succès ! ✅")
-#             return redirect(reverse_lazy("preexposition_list"))
-#
-#         messages.error(request, "Veuillez corriger les erreurs du formulaire.")
-#         return render(request, self.template_name, {
-#             'client_form': client_form,
-#             'preexposition_form': preexposition_form,
-#         })
+def verifier_patient_mpi(patient_temp):
+    return Patient.objects.filter(
+        nom__iexact=patient_temp.nom,
+        prenoms__iexact=patient_temp.prenoms,
+        date_naissance=patient_temp.date_naissance,
+        sexe=patient_temp.sexe
+    ).first()
+
+
+def comparer_patients(patient_local, patient_mpi):
+    champs = ['contact', 'cni_num', 'cni_nni', 'commune_id', 'quartier', 'village']
+    differences = {}
+    for champ in champs:
+        local = getattr(patient_local, champ, None)
+        distant = getattr(patient_mpi, champ, None)
+        if local != distant:
+            differences[champ] = {"local": local, "mpi": distant}
+    return differences
+
 
 class PreExpositionCreateView(View):
     template_name = "pages/expositions/preexposition_form.html"
@@ -693,220 +664,259 @@ class PreExpositionCreateView(View):
         form = ClientPreExpositionForm()
         return render(request, self.template_name, {"form": form})
 
-    # def post(self, request):
-    #     form = ClientPreExpositionForm(request.POST)
-    #
-    #     if form.is_valid():
-    #         with transaction.atomic():
-    #             # Sauvegarde du patient
-    #             patient = form.save(commit=False)
-    #             patient.created_by = request.user
-    #             if hasattr(request.user, 'centre'):
-    #                 patient.centre_ar = request.user.centre
-    #             patient.save()
-    #
-    #             # Sauvegarde des données de pré-exposition
-    #             preexposition = Preexposition.objects.create(
-    #                 client=patient,
-    #                 voyage=form.cleaned_data['voyage'],
-    #                 mise_a_jour=form.cleaned_data['mise_a_jour'],
-    #                 protection_rage=form.cleaned_data['protection_rage'],
-    #                 chien_voisin=form.cleaned_data['chien_voisin'],
-    #                 chiens_errants=form.cleaned_data['chiens_errants'],
-    #                 autre=form.cleaned_data['autre'],
-    #                 autre_motif=form.cleaned_data['autre_motif'],
-    #                 tele=form.cleaned_data['tele'],
-    #                 radio=form.cleaned_data['radio'],
-    #                 sensibilisation=form.cleaned_data['sensibilisation'],
-    #                 proche=form.cleaned_data['proche'],
-    #                 presse=form.cleaned_data['presse'],
-    #                 passage_car=form.cleaned_data['passage_car'],
-    #                 diff_canal=form.cleaned_data['diff_canal'],
-    #                 canal_infos=form.cleaned_data['canal_infos'],
-    #                 aime_animaux=form.cleaned_data['aime_animaux'],
-    #                 type_animal_aime=form.cleaned_data['type_animal_aime'],
-    #                 connait_protocole_var=form.cleaned_data['connait_protocole_var'],
-    #                 dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
-    #                 dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
-    #                 mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
-    #                 appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
-    #                 created_by=request.user,
-    #             )
-    #
-    #             # Récupérer le protocole choisi ou prendre "IPC" par défaut
-    #             protocole = form.cleaned_data.get('protocole_vaccination')
-    #             if not protocole:
-    #                 protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
-    #
-    #             if protocole:
-    #                 # Définition des intervalles entre les visites
-    #                 intervals = [
-    #                     protocole.intervale_visite1_2,
-    #                     protocole.intervale_visite2_3,
-    #                     protocole.intervale_visite3_4,
-    #                     protocole.intervale_visite4_5
-    #                 ]
-    #
-    #                 # Transformation des intervalles en entiers
-    #                 try:
-    #                     intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals]
-    #                 except ValueError:
-    #                     intervals = [None] * 4  # Gérer les erreurs de conversion
-    #
-    #                 # Définition des paramètres du protocole
-    #                 date_rdv = now().date()  # Premier rendez-vous = aujourd'hui
-    #                 doses_restantes = protocole.nombre_doses
-    #                 visites_restantes = protocole.nombre_visite
-    #                 dose_numero = 1
-    #                 duree_max = timedelta(days=protocole.duree) if protocole.duree else None  # Durée max du protocole
-    #                 date_fin_max = date_rdv + duree_max if duree_max else None  # Date limite des rendez-vous
-    #
-    #                 # Création des rendez-vous en respectant les règles
-    #                 for i in range(visites_restantes):
-    #                     if doses_restantes <= 0:
-    #                         break  # Stop si toutes les doses ont été administrées
-    #
-    #                     # Vérifier si la date du rendez-vous dépasse la durée maximale
-    #                     if date_fin_max and date_rdv > date_fin_max:
-    #                         break  # Ne pas créer de rendez-vous après la durée max
-    #
-    #                     # Calcul des doses pour ce rendez-vous
-    #                     doses_pour_ce_rdv = min(doses_restantes, protocole.nbr_dose_par_rdv or 1)
-    #
-    #                     # Création du rendez-vous
-    #                     RendezVousVaccination.objects.create(
-    #                         patient=patient,
-    #                         preexposition=preexposition,
-    #                         protocole=protocole,
-    #                         date_rendez_vous=date_rdv,
-    #                         dose_numero=dose_numero,
-    #                         est_effectue=False,
-    #                         created_by=request.user
-    #                     )
-    #
-    #                     # Mise à jour des doses et de la prochaine date
-    #                     doses_restantes -= doses_pour_ce_rdv
-    #                     dose_numero += doses_pour_ce_rdv
-    #
-    #                     if i < len(intervals) and intervals[i]:
-    #                         date_rdv += timedelta(days=intervals[i])
-    #
-    #             messages.success(request,
-    #                              "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
-    #             return redirect(reverse("preexposition_list"))
-    #
-    #     # Gestion des erreurs du formulaire
-    #     error_messages = [
-    #         f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
-    #         for field, errors in form.errors.items()]
-    #     error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
-    #
-    #     messages.error(request, error_text)
-    #     return render(request, self.template_name, {"form": form})
     def post(self, request):
         form = ClientPreExpositionForm(request.POST)
 
         if form.is_valid():
-            with transaction.atomic():
-                # Sauvegarde du patient
-                patient = form.save(commit=False)
-                patient.created_by = request.user
-                if hasattr(request.user, 'centre'):
-                    patient.centre_ar = request.user.centre
-                patient.save()
+            try:
+                with transaction.atomic():
+                    # Création du patient
+                    patient = form.save(commit=False)
+                    patient.created_by = request.user
+                    if hasattr(request.user, 'centre'):
+                        patient.centre_ar = request.user.centre
 
-                # Sauvegarde des données de pré-exposition
-                preexposition = Preexposition.objects.create(
-                    client=patient,
-                    voyage=form.cleaned_data['voyage'],
-                    mise_a_jour=form.cleaned_data['mise_a_jour'],
-                    protection_rage=form.cleaned_data['protection_rage'],
-                    chien_voisin=form.cleaned_data['chien_voisin'],
-                    chiens_errants=form.cleaned_data['chiens_errants'],
-                    autre=form.cleaned_data['autre'],
-                    autre_motif=form.cleaned_data['autre_motif'],
-                    tele=form.cleaned_data['tele'],
-                    radio=form.cleaned_data['radio'],
-                    sensibilisation=form.cleaned_data['sensibilisation'],
-                    proche=form.cleaned_data['proche'],
-                    presse=form.cleaned_data['presse'],
-                    passage_car=form.cleaned_data['passage_car'],
-                    diff_canal=form.cleaned_data['diff_canal'],
-                    canal_infos=form.cleaned_data['canal_infos'],
-                    aime_animaux=form.cleaned_data['aime_animaux'],
-                    type_animal_aime=form.cleaned_data['type_animal_aime'],
-                    connait_protocole_var=form.cleaned_data['connait_protocole_var'],
-                    dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
-                    dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
-                    mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
-                    appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
-                    created_by=request.user,
-                )
-
-                protocole = form.cleaned_data.get('protocole_vaccination')
-                if not protocole:
-                    protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
-
-                if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
-                    intervals_raw = [
-                        protocole.intervale_visite1_2,
-                        protocole.intervale_visite2_3,
-                        protocole.intervale_visite3_4,
-                        protocole.intervale_visite4_5
-                    ]
-
+                        # Si l'utilisateur a confirmé via le formulaire de comparaison
+                        # if request.POST.get("forcer_mpi") and request.POST.get("mpi_upi"):
+                        #     patient.mpi_upi = request.POST.get("mpi_upi")
+                        #     patient.save()
+                        # else:
+                        #     # Vérifier dans MPI si ce patient existe déjà
+                        #     patient_mpi = verifier_patient_mpi(patient)
+                        #     if patient_mpi:
+                        #         differences = comparer_patients(patient, patient_mpi)
+                        #         if differences:
+                        #             return render(request, "pages/expositions/comparer_patient_mpi.html", {
+                        #                 "form": form,
+                        #                 "patient_mpi": patient_mpi,
+                        #                 "differences": differences
+                        #             })
+                        #         else:
+                        #             patient.mpi_upi = patient_mpi.mpi_upi
                     try:
-                        intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
-                    except ValueError:
-                        intervals = [None] * 4
+                        patient.save()
+                    except IntegrityError as e:
+                        if 'mpi_upi' in str(e):
+                            messages.error(request,
+                                           "❌ Le patient est déjà synchronisé avec le système MPI. Veuillez vérifier son identité.")
+                            return render(request, self.template_name, {"form": form})
+                        raise  # Autre erreur
 
-                    date_rdv = now().date()
-                    dose_numero = 1
-                    doses_restantes = protocole.nombre_doses
-                    visites_max = protocole.nombre_visite
-                    dose_par_rdv = protocole.nbr_dose_par_rdv or 1
-                    duree_max = timedelta(days=protocole.duree) if protocole.duree else None
-                    date_limite = date_rdv + duree_max if duree_max else None
+                    # Pré-exposition
+                    preexposition = Preexposition.objects.create(
+                        client=patient,
+                        voyage=form.cleaned_data['voyage'],
+                        mise_a_jour=form.cleaned_data['mise_a_jour'],
+                        protection_rage=form.cleaned_data['protection_rage'],
+                        chien_voisin=form.cleaned_data['chien_voisin'],
+                        chiens_errants=form.cleaned_data['chiens_errants'],
+                        autre=form.cleaned_data['autre'],
+                        autre_motif=form.cleaned_data['autre_motif'],
+                        tele=form.cleaned_data['tele'],
+                        radio=form.cleaned_data['radio'],
+                        sensibilisation=form.cleaned_data['sensibilisation'],
+                        proche=form.cleaned_data['proche'],
+                        presse=form.cleaned_data['presse'],
+                        passage_car=form.cleaned_data['passage_car'],
+                        diff_canal=form.cleaned_data['diff_canal'],
+                        canal_infos=form.cleaned_data['canal_infos'],
+                        aime_animaux=form.cleaned_data['aime_animaux'],
+                        type_animal_aime=form.cleaned_data['type_animal_aime'],
+                        connait_protocole_var=form.cleaned_data['connait_protocole_var'],
+                        dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
+                        dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
+                        mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
+                        appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
+                        created_by=request.user,
+                    )
 
-                    visites_creees = 0
-                    interval_index = 0
+                    # Protocole et génération RDV
+                    protocole = form.cleaned_data.get('protocole_vaccination') or ProtocoleVaccination.objects.filter(
+                        nom="Pré-Exposition-ID").first()
 
-                    while doses_restantes > 0 and visites_creees < visites_max:
-                        if date_limite and date_rdv > date_limite:
-                            break
+                    if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
+                        intervals_raw = [
+                            protocole.intervale_visite1_2,
+                            protocole.intervale_visite2_3,
+                            protocole.intervale_visite3_4,
+                            protocole.intervale_visite4_5
+                        ]
 
-                        doses_a_admin = min(dose_par_rdv, doses_restantes)
+                        try:
+                            intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
+                        except ValueError:
+                            intervals = [None] * 4
 
-                        RendezVousVaccination.objects.create(
-                            patient=patient,
-                            preexposition=preexposition,
-                            protocole=protocole,
-                            date_rendez_vous=date_rdv,
-                            dose_numero=dose_numero,
-                            ordre_rdv=visites_creees + 1,
-                            est_effectue=False,
-                            created_by=request.user
-                        )
+                        date_rdv = now().date()
+                        dose_numero = 1
+                        doses_restantes = protocole.nombre_doses
+                        visites_max = protocole.nombre_visite
+                        dose_par_rdv = protocole.nbr_dose_par_rdv or 1
+                        duree_max = timedelta(days=protocole.duree) if protocole.duree else None
+                        date_limite = date_rdv + duree_max if duree_max else None
 
-                        dose_numero += doses_a_admin
-                        doses_restantes -= doses_a_admin
-                        visites_creees += 1
+                        visites_creees = 0
+                        interval_index = 0
 
-                        if interval_index < len(intervals) and intervals[interval_index]:
-                            date_rdv += timedelta(days=intervals[interval_index])
-                        interval_index += 1
+                        while doses_restantes > 0 and visites_creees < visites_max:
+                            if date_limite and date_rdv > date_limite:
+                                break
 
-                messages.success(request,
-                                 "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
-                return redirect(reverse("preexposition_list"))
+                            doses_a_admin = min(dose_par_rdv, doses_restantes)
 
+                            RendezVousVaccination.objects.create(
+                                patient=patient,
+                                preexposition=preexposition,
+                                protocole=protocole,
+                                date_rendez_vous=date_rdv,
+                                dose_numero=dose_numero,
+                                ordre_rdv=visites_creees + 1,
+                                est_effectue=False,
+                                created_by=request.user
+                            )
+
+                            dose_numero += doses_a_admin
+                            doses_restantes -= doses_a_admin
+                            visites_creees += 1
+
+                            if interval_index < len(intervals) and intervals[interval_index]:
+                                date_rdv += timedelta(days=intervals[interval_index])
+                            interval_index += 1
+
+                    messages.success(request,
+                                     "✅ Le patient, la pré-exposition et les rendez-vous ont été enregistrés avec succès.")
+                    return redirect(reverse("preexposition_list"))
+
+            except Exception as e:
+                messages.error(request, f"❌ Une erreur est survenue : {str(e)}")
+                return render(request, self.template_name, {"form": form})
+
+        # Gestion erreurs de formulaire (cas form.is_valid() == False)
         error_messages = [
-            f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
-            for field, errors in form.errors.items()]
+            f"<strong>{form.fields[field].label if field in form.fields else field}</strong> : {', '.join(errors)}"
+            for field, errors in form.errors.items()
+        ]
         error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
-
         messages.error(request, error_text)
         return render(request, self.template_name, {"form": form})
+
+
+# class PreExpositionCreateView(View):
+#     template_name = "pages/expositions/preexposition_form.html"
+#
+#     def get(self, request):
+#         form = ClientPreExpositionForm()
+#         return render(request, self.template_name, {"form": form})
+#
+#     def post(self, request):
+#         form = ClientPreExpositionForm(request.POST)
+#
+#         if form.is_valid():
+#             try:
+#                 with transaction.atomic():
+#                     # Sauvegarde du patient
+#                     patient = form.save(commit=False)
+#                     patient.created_by = request.user
+#                     if hasattr(request.user, 'centre'):
+#                         patient.centre_ar = request.user.centre
+#                     try:
+#                         patient.save()
+#                     except IntegrityError as e:
+#                         if 'mpi_upi' in str(e):
+#                             messages.error(request,
+#                                            "❌ Le patient est déjà synchronisé avec le système MPI. Veuillez vérifier son identité.")
+#                             return render(request, self.template_name, {"form": form})
+#                         raise  # autre IntegrityError = remonter
+#
+#                     # Sauvegarde des données de pré-exposition
+#                     preexposition = Preexposition.objects.create(
+#                         client=patient,
+#                         voyage=form.cleaned_data['voyage'],
+#                         mise_a_jour=form.cleaned_data['mise_a_jour'],
+#                         protection_rage=form.cleaned_data['protection_rage'],
+#                         chien_voisin=form.cleaned_data['chien_voisin'],
+#                         chiens_errants=form.cleaned_data['chiens_errants'],
+#                         autre=form.cleaned_data['autre'],
+#                         autre_motif=form.cleaned_data['autre_motif'],
+#                         tele=form.cleaned_data['tele'],
+#                         radio=form.cleaned_data['radio'],
+#                         sensibilisation=form.cleaned_data['sensibilisation'],
+#                         proche=form.cleaned_data['proche'],
+#                         presse=form.cleaned_data['presse'],
+#                         passage_car=form.cleaned_data['passage_car'],
+#                         diff_canal=form.cleaned_data['diff_canal'],
+#                         canal_infos=form.cleaned_data['canal_infos'],
+#                         aime_animaux=form.cleaned_data['aime_animaux'],
+#                         type_animal_aime=form.cleaned_data['type_animal_aime'],
+#                         connait_protocole_var=form.cleaned_data['connait_protocole_var'],
+#                         dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
+#                         dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
+#                         mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
+#                         appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
+#                         created_by=request.user,
+#                     )
+#
+#                     protocole = form.cleaned_data.get('protocole_vaccination')
+#                     if not protocole:
+#                         protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
+#
+#                     if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
+#                         intervals_raw = [
+#                             protocole.intervale_visite1_2,
+#                             protocole.intervale_visite2_3,
+#                             protocole.intervale_visite3_4,
+#                             protocole.intervale_visite4_5
+#                         ]
+#
+#                         try:
+#                             intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
+#                         except ValueError:
+#                             intervals = [None] * 4
+#
+#                         date_rdv = now().date()
+#                         dose_numero = 1
+#                         doses_restantes = protocole.nombre_doses
+#                         visites_max = protocole.nombre_visite
+#                         dose_par_rdv = protocole.nbr_dose_par_rdv or 1
+#                         duree_max = timedelta(days=protocole.duree) if protocole.duree else None
+#                         date_limite = date_rdv + duree_max if duree_max else None
+#
+#                         visites_creees = 0
+#                         interval_index = 0
+#
+#                         while doses_restantes > 0 and visites_creees < visites_max:
+#                             if date_limite and date_rdv > date_limite:
+#                                 break
+#
+#                             doses_a_admin = min(dose_par_rdv, doses_restantes)
+#
+#                             RendezVousVaccination.objects.create(
+#                                 patient=patient,
+#                                 preexposition=preexposition,
+#                                 protocole=protocole,
+#                                 date_rendez_vous=date_rdv,
+#                                 dose_numero=dose_numero,
+#                                 ordre_rdv=visites_creees + 1,
+#                                 est_effectue=False,
+#                                 created_by=request.user
+#                             )
+#
+#                             dose_numero += doses_a_admin
+#                             doses_restantes -= doses_a_admin
+#                             visites_creees += 1
+#
+#                             if interval_index < len(intervals) and intervals[interval_index]:
+#                                 date_rdv += timedelta(days=intervals[interval_index])
+#                             interval_index += 1
+#
+#                     messages.success(request,
+#                                      "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
+#             return redirect(reverse("preexposition_list"))
+#             error_messages = [f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
+#             for field, errors in form.errors.items()]
+#         error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
+#         messages.error(request, error_text)
+#         return render(request, self.template_name, {"form": form})
 
 
 @login_required
@@ -1448,34 +1458,40 @@ def ajouter_symptome(request):
 #
 #     return render(request, 'echantillons/ajouter_echantillon.html', {'form': form, 'exposition': exposition})
 @login_required
-def lots_par_vaccin(request):
+# def lots_par_vaccin(request):
+#     vaccin_id = request.GET.get('vaccin_id')
+#
+#     if not vaccin_id:
+#         return JsonResponse({'error': 'ID de vaccin manquant.'}, status=400)
+#
+#     try:
+#         lots = LotVaccin.objects.filter(
+#             vaccin_id=vaccin_id,
+#             quantite_disponible__gt=0
+#         ).order_by('date_expiration').select_related('vaccin')
+#
+#         data = [
+#             {
+#                 'id': lot.id,
+#                 'numero': lot.numero_lot,
+#                 'date_expiration': lot.date_expiration.isoformat() if lot.date_expiration else None,
+#                 'stock_restant': lot.quantite_disponible,
+#                 'vaccin_nom': lot.vaccin.nom if lot.vaccin else ''
+#             }
+#             for lot in lots
+#         ]
+#
+#         return JsonResponse(data, safe=False)
+#
+#     except Exception as e:
+#         logger.error(f"Erreur dans lots_par_vaccin: {str(e)}")
+#         return JsonResponse({'error': 'Une erreur est survenue.'}, status=500)
+def get_lots_by_vaccin(request):
     vaccin_id = request.GET.get('vaccin_id')
+    lots = LotVaccin.objects.filter(vaccin_id=vaccin_id, quantite_disponible__gt=0)
+    data = [{'id': lot.id, 'label': str(lot)} for lot in lots]
+    return JsonResponse({'lots': data})
 
-    if not vaccin_id:
-        return JsonResponse({'error': 'ID de vaccin manquant.'}, status=400)
-
-    try:
-        lots = LotVaccin.objects.filter(
-            vaccin_id=vaccin_id,
-            quantite_disponible__gt=0
-        ).order_by('date_expiration').select_related('vaccin')
-
-        data = [
-            {
-                'id': lot.id,
-                'numero': lot.numero_lot,
-                'date_expiration': lot.date_expiration.isoformat() if lot.date_expiration else None,
-                'stock_restant': lot.quantite_disponible,
-                'vaccin_nom': lot.vaccin.nom if lot.vaccin else ''
-            }
-            for lot in lots
-        ]
-
-        return JsonResponse(data, safe=False)
-
-    except Exception as e:
-        logger.error(f"Erreur dans lots_par_vaccin: {str(e)}")
-        return JsonResponse({'error': 'Une erreur est survenue.'}, status=500)
 
 @login_required
 def vacciner(request, rendez_vous_id):
@@ -1628,6 +1644,7 @@ class RendezVousListView(SingleTableMixin, FilterView):
         context = super().get_context_data(**kwargs)
         context["filter"] = self.get_filterset(
             self.filterset_class)  # Utiliser get_filterset() au lieu de self.filterset
+        context["vaccins"] = Vaccins.objects.all()
         return context
 
 

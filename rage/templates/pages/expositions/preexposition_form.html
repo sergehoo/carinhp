@@ -90,6 +90,7 @@
         </div>
 
 
+
         <div x-data="{ search: '', selectedId: '', options: [],async fetchOptions() { if (this.search.length > 1) { const response = await fetch('/api/communes?query=' + this.search);
             this.options = await response.json();
         } else {
@@ -117,7 +118,20 @@
 </div>
                                     </div>
 
-
+ <div class="col-md-12 form-group row">
+      <div class="col-md-4 form-group">
+            <label>Numeros CMU </label>
+            {{ form.num_cmu }}
+        </div>
+      <div class="col-md-4 form-group">
+            <label>Numeros NNI </label>
+            {{ form.cni_nni }}
+        </div>
+      <div class="col-md-4 form-group">
+            <label>Numeros CNI </label>
+            {{ form.cni_num }}
+        </div>
+ </div>
 
       <div class=" col-md-6 form-group">
             <label>Quartier </label>

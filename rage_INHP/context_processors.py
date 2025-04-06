@@ -1,3 +1,4 @@
+from rage.core.version import get_version
 from rage.models import PolesRegionaux
 
 
@@ -24,3 +25,13 @@ def menu_context(request):
         return {'poles': poles}
 
     return {}  # Si l'utilisateur n'est pas connecté, retourner un contexte vide
+
+
+def check_new_version(request):
+    current = get_version()
+    if request.session.get("current_version") != current:
+        request.session["new_version"] = current
+        request.session["current_version"] = current
+
+
+APP_VERSION = get_version()

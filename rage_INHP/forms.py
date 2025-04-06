@@ -26,147 +26,6 @@ conduite_CHOICES = [('Abattage', 'Abattage'), ('Surveillance vétérinaire', 'Su
                     ('Autre', 'Autre')]
 
 
-class PatientForm(forms.ModelForm):
-    nom = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Nom'})
-    )
-    prenoms = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Prénoms'})
-    )
-    telephone = forms.CharField(required=True,
-                                widget=forms.TextInput(
-                                    attrs={'type': 'tel', 'class': 'form-control form-control-lg form-control-outlined',
-                                           'placeholder': '0701020304', 'id': 'phone'}))
-    situation_matrimoniale = forms.ChoiceField(
-        required=True,
-        choices=situation_matrimoniales_choices,
-        widget=forms.Select(attrs={'class': 'form-control form-control-lg form-control-outlined'})
-    )
-    lieu_naissance = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Lieu de naissance'})
-    )
-    date_naissance = forms.DateField(
-        required=True,
-        widget=forms.DateInput(attrs={'class': 'form-control form-control-lg form-control-outlined', 'type': 'date'})
-    )
-    genre = forms.ChoiceField(
-        required=True,
-        choices=Sexe_choices,
-        widget=forms.Select(attrs={'class': 'form-control form-control-lg form-control-outlined'})
-    )
-    nationalite = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Nationalité'})
-    )
-    profession = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Profession'})
-    )
-
-    # Champs non obligatoires
-    nbr_enfants = forms.IntegerField(
-        required=False,
-        widget=forms.NumberInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Nombre d\'enfants'})
-    )
-    groupe_sanguin = forms.ChoiceField(
-        required=False,
-        choices=Goupe_sanguin_choices,
-        widget=forms.Select(attrs={'class': 'form-control form-control-lg form-control-outlined'})
-    )
-    niveau_etude = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Niveau d\'études'})
-    )
-    employeur = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Employeur'})
-    )
-    commune = forms.ModelChoiceField(
-        queryset=Commune.objects.all(),
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control form-control-lg form-control-outlined'})
-    )
-    lieu_habitation = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Lieu d’habitation'})
-    )
-    poids = forms.FloatField(
-        required=False,
-        widget=forms.NumberInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Poids (kg)'})
-    )
-    contact_proche = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Contact proche'})
-    )
-    patient_mineur = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    )
-    accompagnateur = forms.CharField(
-        required=False,
-        widget=forms.TextInput(
-            attrs={'class': 'form-control form-control-lg form-control-outlined', 'placeholder': 'Accompagnateur'})
-    )
-
-    class Meta:
-        model = Patient
-        fields = [
-            'nom', 'prenoms', 'telephone', 'situation_matrimoniale', 'lieu_naissance', 'date_naissance',
-            'genre', 'nationalite', 'profession', 'nbr_enfants', 'groupe_sanguin', 'niveau_etude',
-            'employeur', 'commune', 'lieu_habitation', 'poids', 'contact_proche', 'patient_mineur', 'accompagnateur'
-        ]
-
-    def clean_telephone(self):
-        telephone = self.cleaned_data.get('telephone')
-        try:
-            parsed_number = phonenumbers.parse(telephone, 'CI')
-            if not phonenumbers.is_valid_number(parsed_number):
-                raise ValidationError("Invalid phone number format.")
-        except phonenumbers.phonenumberutil.NumberParseException:
-            raise ValidationError("Invalid phone number.")
-        return phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164)
-
-    def clean(self):
-        """ Vérifier si le patient existe déjà """
-        cleaned_data = super().clean()
-        nom = cleaned_data.get('nom')
-        prenoms = cleaned_data.get('prenoms')
-        telephone = cleaned_data.get('telephone')
-
-        if nom and prenoms and telephone:
-            # Vérifier si un patient avec les mêmes informations existe déjà
-            if Patient.objects.filter(nom=nom, prenoms=prenoms, telephone=telephone).exists():
-                raise ValidationError("Ce patient existe déjà dans la base de données.")
-
-        return cleaned_data
-
-    def clean_mandatory(self):
-        """ Vérification des champs obligatoires """
-        cleaned_data = super().clean()
-        required_fields = ['nom', 'prenoms', 'telephone', 'situation_matrimoniale', 'lieu_naissance', 'date_naissance',
-                           'genre', 'nationalite', 'profession']
-
-        for field in required_fields:
-            if not cleaned_data.get(field):
-                self.add_error(field, "Ce champ est obligatoire.")
-
-        return cleaned_data
-
-
 class ClientForm(forms.ModelForm):
     # accompagnateur_nature = forms.ChoiceField(required=False, label="Vètements déchirés ?")
 
@@ -176,8 +35,8 @@ class ClientForm(forms.ModelForm):
                    'gueris',
                    'decede',
                    'cause_deces',
-                   'date_deces', 'commune', 'centre_ar',
-                   'created_by']
+                   'date_deces', 'centre_ar',
+                   'created_by', 'mpi_upi']
         fields = '__all__'
         widgets = {
             'nom': forms.TextInput(attrs={'class': 'form-control'}),
@@ -185,12 +44,19 @@ class ClientForm(forms.ModelForm):
             'contact': forms.TextInput(attrs={'class': 'form-control'}),
             'date_naissance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'sexe': forms.Select(attrs={'class': 'form-control'}),
+            'num_cmu': forms.TextInput(attrs={'class': 'form-control'}),
+            'cni_num': forms.TextInput(attrs={'class': 'form-control'}),
+            'cni_nni': forms.TextInput(attrs={'class': 'form-control'}),
             'profession': forms.TextInput(attrs={'class': 'form-control'}),
             'niveau_etude': forms.TextInput(attrs={'class': 'form-control'}),
             # 'commune': forms.Select(attrs={'class': 'form-control'}),
             # 'centre_ar': forms.Select(attrs={'class': 'form-control'}),
-            'commune': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control select2','id':'kt_select2_1', 'name': 'param'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
+            'secteur_activite': forms.TextInput(attrs={'class': 'form-control'}),
+            'quartier': forms.TextInput(attrs={'class': 'form-control'}),
+            'village': forms.TextInput(attrs={'class': 'form-control'}),
+            'autretypeanimal': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
             'accompagnateur_adresse': forms.TextInput(attrs={'class': 'form-control'}),
@@ -404,6 +270,9 @@ class ClientPreExpositionForm(forms.ModelForm):
             'date_naissance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'sexe': forms.Select(attrs={'class': 'form-control'}),
             'profession': forms.TextInput(attrs={'class': 'form-control'}),
+            'num_cmu': forms.TextInput(attrs={'class': 'form-control'}),
+            'cni_num': forms.TextInput(attrs={'class': 'form-control'}),
+            'cni_nni': forms.TextInput(attrs={'class': 'form-control'}),
             'niveau_etude': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'village': forms.TextInput(attrs={'class': 'form-control'}),
@@ -946,8 +815,10 @@ class VaccinationForm(forms.ModelForm):
         model = Vaccination
         fields = ['vaccin', 'lot', 'voie_injection', 'dose_ml', 'date_effective']
         widgets = {
-            'vaccin': forms.Select(attrs={'class': 'form-control', 'id': 'vaccin-select'}),
-            'lot': forms.Select(attrs={'class': 'form-control', 'id': 'lot-select'}),
+            'vaccin': forms.Select(
+                attrs={'class': 'form-control vaccin-select select2', 'name': 'param'}),
+            'lot': forms.Select(
+                attrs={'class': 'form-control lot-select select2'}),
             'voie_injection': forms.Select(attrs={'class': 'form-control'}),
             'dose_ml': forms.NumberInput(attrs={'class': 'form-control'}),
             'date_effective': forms.DateInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
