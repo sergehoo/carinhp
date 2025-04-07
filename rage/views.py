@@ -70,15 +70,15 @@ def menu_view(request):
 
 
 def patients_geojson(request):
-    patients = Patient.objects.filter(residence_commune__isnull=False, residence_commune__geom__isnull=False)
+    patients = Patient.objects.filter(commune__isnull=False, commune__geom__isnull=False)
     data = {
         "type": "FeatureCollection",
         "features": []
     }
 
     for patient in patients:
-        if patient.residence_commune.geom:  # Vérification que geom n'est pas null
-            lon, lat = patient.residence_commune.geom.coords  # Extraire longitude et latitude
+        if patient.commune.geom:  # Vérification que geom n'est pas null
+            lon, lat = patient.commune.geom.coords  # Extraire longitude et latitude
 
             # Déterminer le type de cas (Post-exposition, Pré-exposition, Notification)
             if PostExposition.objects.filter(client=patient).exists():
@@ -106,7 +106,7 @@ def patients_geojson(request):
                     "contact": patient.contact,
                     "type": patient_type,
                     "lieu_exposition": getattr(patient, "lieu_exposition", "Non renseigné"),
-                    "exposition_commune": patient.residence_commune.name,
+                    "exposition_commune": patient.commune.name,
                     "date_exposition": getattr(patient, "date_exposition", "Non renseigné"),
                     "color": color
                 }
