@@ -169,11 +169,10 @@ def count_cases(model, sexe, min_age, max_age):
     start_dob = today - relativedelta(years=max_age)
     # date la plus récente = aujourd'hui moins min_age années
     end_dob = today - relativedelta(years=min_age)
-    return model.objects.filter(
-        client__sexe=sexe,
-        client__date_naissance__gte=start_dob,
-        client__date_naissance__lte=end_dob,
-    ).count()
+    return model.objects.filter(client__sexe=sexe,
+                                client__date_naissance__gte=start_dob,
+                                client__date_naissance__lte=end_dob,
+                                ).count()
 
 
 class CADashborad(LoginRequiredMixin, TemplateView):
@@ -224,6 +223,7 @@ class CADashborad(LoginRequiredMixin, TemplateView):
             "31-45 ans": (31, 45),
             "46-60 ans": (46, 60),
             "61-80 ans": (61, 80),
+            "81 ans et plus": (81, 150),
             # "41 ans et plus": (41, 150),
         }
         # Statistiques par tranche d'âge, sexe et type de cas
@@ -609,10 +609,10 @@ class NationalDashborad(LoginRequiredMixin, TemplateView):
         return super().dispatch(*args, **kwargs)
 
 
-#------------------------------ Les Vues des ressources-------------------------------------------------------
+# ------------------------------ Les Vues des ressources-------------------------------------------------------
 
 
-#------------------------------ Donnees des patients ----------------------------------------------------------
+# ------------------------------ Donnees des patients ----------------------------------------------------------
 
 class PatientListView(LoginRequiredMixin, TemplateView):
     template_name = 'pages/patients/patient_list.html'
@@ -738,7 +738,7 @@ class PatientDeleteView(LoginRequiredMixin, DeleteView):
 #     })
 
 
-#------------------------------ Fin Donnees des patients ----------------------------------------------------------
+# ------------------------------ Fin Donnees des patients ----------------------------------------------------------
 
 class DeclarationTemplate(LoginRequiredMixin, TemplateView):
     template_name = 'pages/expositions/declaration.html'
@@ -1407,7 +1407,7 @@ class PostExpositionDeleteView(LoginRequiredMixin, DeleteView):
 #     return response
 #
 
-#-------------------------------------------- Exposition de la rage ----------------------------
+# -------------------------------------------- Exposition de la rage ----------------------------
 
 # class ExpositionListView(ListView):
 #     model = Exposition
@@ -1483,30 +1483,41 @@ class RageHumaineNotificationDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("notification_rage_liste")
 
 
-@login_required()
-class RageNotificationCreateView(View):
+class RageNotificationCreateView(LoginRequiredMixin, View):
+    login_url = 'login'
+    redirect_field_name = 'next'
     template_name = "pages/rage_notification/rage_notification_form.html"
 
     def get(self, request):
-        form = PatientRageNotificationForm()
-        return render(request, self.template_name, {"form": form})
+        patient_form = ClientForm()
+        rage_notif_form = RageHumaineNotificationForm()
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "rage_notif_form": rage_notif_form
+        })
 
     def post(self, request):
-        form = PatientRageNotificationForm(request.POST)
-        if form.is_valid():
-            patient_data = {field.name: form.cleaned_data[field.name] for field in Patient._meta.fields if
-                            field.name in form.cleaned_data}
-            patient = Patient.objects.create(**patient_data)
+        patient_form = ClientForm(request.POST)
+        rage_notif_form = RageHumaineNotificationForm(request.POST)
 
-            notification_data = {field.name: form.cleaned_data[field.name] for field in
-                                 RageHumaineNotification._meta.fields if field.name in form.cleaned_data}
-            notification = RageHumaineNotification.objects.create(client=patient, **notification_data)
+        if patient_form.is_valid() and rage_notif_form.is_valid():
+            # Sauvegarde du patient
+            patient = patient_form.save()
+
+            # Sauvegarde de la notification avec lien vers le patient
+            notification = rage_notif_form.save(commit=False)
+            notification.client = patient
+            notification.save()
 
             messages.success(request, "La notification a été enregistrée avec succès ! ✅")
             return redirect("notification_rage_liste")
-        else:
-            messages.error(request, "Veuillez corriger les erreurs du formulaire.")
-            return render(request, self.template_name, {"form": form})
+
+        # Si les formulaires ne sont pas valides
+        messages.error(request, "Veuillez corriger les erreurs ci-dessous.")
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "rage_notif_form": rage_notif_form
+        })
 
 
 @login_required
@@ -1815,7 +1826,7 @@ class RendezVousDetailView(LoginRequiredMixin, DetailView):
 #     success_url = reverse_lazy('exposition_list')
 
 
-#----------------------------------- Animal ------------------------------------------------------
+# ----------------------------------- Animal ------------------------------------------------------
 
 class AnimalListView(LoginRequiredMixin, ListView):
     model = Animal
@@ -1843,7 +1854,7 @@ class AnimalDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('animal_list')
 
 
-#-------------------- Protocole de Vaccinantion ------------------------------------#
+# -------------------- Protocole de Vaccinantion ------------------------------------#
 
 class ProtocoleVaccinationListView(LoginRequiredMixin, ListView):
     model = ProtocoleVaccination
@@ -1870,7 +1881,7 @@ class ProtocoleVaccinationDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('protocole_list')
 
 
-#----------------------  Vaccinantion ------------------------------------
+# ----------------------  Vaccinantion ------------------------------------
 @login_required
 def attestation_vaccination(request, vaccination_id):
     vaccination = get_object_or_404(Vaccination, id=vaccination_id)
@@ -2133,10 +2144,10 @@ class InjectionImmunoglobulineCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-#--------------------------------------------------------Parametres---------------------------------------------------#
+# --------------------------------------------------------Parametres---------------------------------------------------#
 
 
-#----------Vaccins------------------#
+# ----------Vaccins------------------#
 
 class VaccinListView(LoginRequiredMixin, ListView):
     model = Vaccins
@@ -2231,7 +2242,7 @@ class LotVaccinDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'lot'
 
 
-#--------------------Employee Mnagement--------------------------------
+# --------------------Employee Mnagement--------------------------------
 
 class EmployeeUserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = EmployeeUser

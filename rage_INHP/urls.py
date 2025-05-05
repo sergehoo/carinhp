@@ -83,13 +83,13 @@ urlpatterns = [
                        name='generate_avis_surveillance'),
 
                   path('notification/', RageHumaineNotificationListView.as_view(), name='notification_rage_liste'),
-                  path('notification/add/', RageNotificationCreateView, name='notification_rage_add'),
+                  path('notification/add/', RageNotificationCreateView.as_view(), name='notification_rage_add'),
 
-                  path('notification/<int:pk>/', RageHumaineNotificationDetailView.as_view(),
+                  path('notification/details/<int:pk>/', RageHumaineNotificationDetailView.as_view(),
                        name='rage_notification_detail'),
-                  path('notification/<int:pk>/', RageHumaineNotificationUpdateView.as_view(),
+                  path('notification/update/<int:pk>/', RageHumaineNotificationUpdateView.as_view(),
                        name='rage_notification_update'),
-                  path('notification/<int:pk>/', RageHumaineNotificationDeleteView.as_view(),
+                  path('notification/delete/<int:pk>/', RageHumaineNotificationDeleteView.as_view(),
                        name='rage_notification_delete'),
 
                   # path('ajout-protocole/<int:exposition_id>', ajouterProtocole, name='ajout-protocole-expo'),

@@ -3,9 +3,6 @@
 {% load unicorn %}
 {% load django_tables2 %}
 
-
-
-
 {% block content %}
     <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
@@ -32,7 +29,9 @@
                             <div class="card-toolbar">
                                 <!--begin::Dropdown-->
                                 <div class="dropdown dropdown-inline mr-2">
-                                    <button type="button" class="btn btn-light-primary font-weight-bolder dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button type="button"
+                                            class="btn btn-light-primary font-weight-bolder dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 		<span class="svg-icon svg-icon-md"><!--begin::Svg Icon | path:assets/media/svg/icons/Design/PenAndRuller.svg--><svg
                 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
                 viewBox="0 0 24 24" version="1.1">
@@ -113,8 +112,7 @@
                             <div class="container mt-4" x-data="{ showFilters: false }">
 
                                 <!-- Bouton pour afficher/masquer les filtres -->
-                                <button @click="showFilters = !showFilters" class="btn btn-primary mb-3"><i class="fa fa-eye"></i> Filtres
-                                </button>
+                                <button @click="showFilters = !showFilters" class="btn btn-primary mb-3"><i class="fa fa-eye"></i> Filtres</button>
 
                                 <!-- Formulaire de filtrage -->
                                 <div x-show="showFilters" class="card p-3 mb-3">

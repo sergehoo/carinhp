@@ -321,6 +321,32 @@ class DistrictSanitaire(models.Model):
         return f'{self.nom} -> {self.region}'
 
 
+class TypeServiceSanitaire(models.Model):
+    nom = models.CharField(max_length=500, null=True, blank=True)
+    acronyme = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.acronyme}"
+
+
+class ServiceSanitaire(models.Model):
+    nom = models.CharField(max_length=100, null=True, blank=True)
+    type = models.ForeignKey(TypeServiceSanitaire, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(DistrictSanitaire, on_delete=models.CASCADE, null=True, blank=True, )
+    geom = models.PointField(srid=4326, null=True, blank=True)
+    upstream = models.CharField(max_length=255, null=True, blank=True)
+    date_modified = models.DateTimeField(null=True, blank=True)
+    source_url = models.URLField(max_length=500, null=True, blank=True)
+    completeness = models.CharField(max_length=100, null=True, blank=True)
+    uuid = models.UUIDField(null=True, blank=True)
+    source = models.CharField(max_length=100, null=True, blank=True)
+    what3words = models.CharField(max_length=255, null=True, blank=True)
+    version = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.nom}- {self.district} {self.geom}"
+
+
 # Modèle des Centres Antirabiques
 class CentreAntirabique(models.Model):
     nom = models.CharField(max_length=100, null=True, blank=True, db_index=True)
@@ -860,16 +886,18 @@ class RageHumaineNotification(models.Model):
     email = models.EmailField("E-mail")
 
     # Origine possible de la contamination
+    exposition = models.ForeignKey(PostExposition, on_delete=models.CASCADE, null=True, blank=True)
+
     date_exposition = models.DateField("Date de l’exposition")
-    lieu_exposition = models.CharField("Lieu de l’exposition", max_length=200)
+    lieu_exposition = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
     pays = models.CharField("Pays", max_length=100)
-    exposition_commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
-    district_sanitaire_exposition = models.ForeignKey(DistrictSanitaire, on_delete=models.SET_NULL, null=True,
-                                                      blank=True)
+
     nature_exposition = models.CharField("Nature de l’exposition", max_length=20, choices=[
         ('Morsure', 'Morsure'), ('Griffure', 'Griffure'), ('Léchage', 'Léchage'),
         ('Simple manipulation', 'Simple manipulation'), ('Autres', 'Autres')
     ])
+    autre_nature_exposition = models.CharField("Autres nature", max_length=120, )
+
     siege_lesion = models.CharField("Siège de la lésion", max_length=20, choices=[
         ('Tête et cou', 'Tête et cou'), ('Membre supérieur', 'Membre supérieur'),
         ('Tronc', 'Tronc'), ('OGE', 'OGE'), ('Membre inférieur', 'Membre inférieur')
@@ -885,18 +913,18 @@ class RageHumaineNotification(models.Model):
     devenir_animal = models.CharField("Devenir de l’animal", max_length=10,
                                       choices=[('Vivant', 'Vivant'), ('Errant', 'Errant'), ('Mort', 'Mort'),
                                                ('Abattu', 'Abattu'), ('Disparu', 'Disparu')])
-    prelevement_animal = models.BooleanField("Prélèvement d’échantillons chez l’animal mordeur", default=False)
+    prelevement_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     resultat_analyse = models.CharField("Résultat analyse", max_length=10, choices=[('Oui', 'Oui'), ('Non', 'Non')],
                                         blank=True, null=True)
-    labo_pathologie_animale = models.BooleanField("Laboratoire de pathologie Animale", default=False)
+    labo_pathologie_animale = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     autres_labos = models.CharField("Autres laboratoires", max_length=100, blank=True, null=True)
 
     # Prophylaxie post-exposition
-    soins_locaux = models.BooleanField("Soins locaux : lavage de la plaie", default=False)
-    desinfection = models.BooleanField("Désinfection", default=False)
+    soins_locaux = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    desinfection = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     produit_desinfection = models.CharField("Produit utilisé pour la désinfection", max_length=100, blank=True,
                                             null=True)
-    vaccination_antirabique = models.BooleanField("Vaccination antirabique", default=False)
+    vaccination_antirabique = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     date_debut_vaccination = models.DateField("Date de début de la vaccination antirabique", blank=True, null=True)
     protocole_vaccination = models.CharField("Protocole utilisé", max_length=10,
                                              choices=[('Essen', 'Essen'), ('Zagreb', 'Zagreb'), ('ID', 'ID')],
@@ -904,11 +932,11 @@ class RageHumaineNotification(models.Model):
 
     # Période de la maladie
     date_premiers_signes = models.DateField("Date des premiers signes", blank=True, null=True)
-    trouble_comportement = models.BooleanField("Trouble du comportement", default=False)
-    agitation = models.BooleanField("Agitation", default=False)
-    hospitalisation = models.BooleanField("Hospitalisation", default=False)
+    trouble_comportement = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    agitation = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    hospitalisation = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     date_hospitalisation = models.DateField("Date d’hospitalisation", blank=True, null=True)
-    lieu_hospitalisation = models.CharField("Lieu d’hospitalisation", max_length=100, blank=True, null=True)
+    lieu_hospitalisation = models.CharField(max_length=50)
     evolution = models.CharField("Évolution", max_length=20,
                                  choices=[('Encore malade', 'Encore malade'), ('Décédé(e)', 'Décédé(e)')], blank=True,
                                  null=True)

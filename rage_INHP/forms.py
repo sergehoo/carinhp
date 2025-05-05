@@ -670,53 +670,144 @@ class PostExpositionForm(forms.ModelForm):
 
         return cleaned_data
 
-
 class RageHumaineNotificationForm(forms.ModelForm):
     class Meta:
         model = RageHumaineNotification
-        fields = '__all__'  # Inclure tous les champs
+
+        # Liste explicite des champs (on exclut created_at)
+        fields = [
+            "client",
+            "date_notification",
+            "hopital", "service", "agent_declarant",
+            "adresse", "telephone", "cel", "email",
+            "exposition",
+            "date_exposition", "lieu_exposition", "pays",
+            "nature_exposition", "autre_nature_exposition",
+            "siege_lesion", "precision_siege", "categorie_lesion",
+            "animal_responsable", "precis_animal_responsable",
+            "animal_suspect_rage", "devenir_animal", "prelevement_animal",
+            "resultat_analyse", "labo_pathologie_animale", "autres_labos",
+            "soins_locaux", "desinfection", "produit_desinfection",
+            "vaccination_antirabique", "date_debut_vaccination", "protocole_vaccination",
+            "date_premiers_signes", "trouble_comportement", "agitation",
+            "hospitalisation", "date_hospitalisation", "lieu_hospitalisation",
+            "evolution", "date_deces",
+            "signature_agent",
+        ]
 
         widgets = {
-            'date_notification': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_exposition': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_debut_vaccination': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_premiers_signes': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_hospitalisation': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'date_deces': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            # ForeignKey → Select
+            "client":                        forms.Select(attrs={"class": "form-control"}),
+            "exposition":                    forms.Select(attrs={"class": "form-control"}),
+            "lieu_exposition":               forms.Select(attrs={"class": "form-control"}),
+            "signature_agent":               forms.Select(attrs={"class": "form-control"}),
 
-            'hopital': forms.TextInput(attrs={'class': 'form-control'}),
-            'service': forms.TextInput(attrs={'class': 'form-control'}),
-            'agent_declarant': forms.TextInput(attrs={'class': 'form-control'}),
-            'adresse': forms.TextInput(attrs={'class': 'form-control'}),
-            'telephone': forms.TextInput(attrs={'class': 'form-control'}),
-            'cel': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            # Dates
+            "date_notification":             forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_exposition":               forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_debut_vaccination":        forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_premiers_signes":          forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_hospitalisation":          forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_deces":                    forms.DateInput(attrs={"type": "date", "class": "form-control"}),
 
-            'lieu_exposition': forms.TextInput(attrs={'class': 'form-control'}),
-            'pays': forms.TextInput(attrs={'class': 'form-control'}),
-            'precision_siege': forms.TextInput(attrs={'class': 'form-control'}),
-            'precis_animal_responsable': forms.TextInput(attrs={'class': 'form-control'}),
-            'autres_labos': forms.TextInput(attrs={'class': 'form-control'}),
-            'produit_desinfection': forms.TextInput(attrs={'class': 'form-control'}),
-            'lieu_hospitalisation': forms.TextInput(attrs={'class': 'form-control'}),
-            'signature_agent': forms.TextInput(attrs={'class': 'form-control'}),
+            # Text inputs
+            "hopital":                       forms.TextInput(attrs={"class": "form-control"}),
+            "service":                       forms.TextInput(attrs={"class": "form-control"}),
+            "agent_declarant":               forms.TextInput(attrs={"class": "form-control"}),
+            "adresse":                       forms.TextInput(attrs={"class": "form-control"}),
+            "telephone":                     forms.TextInput(attrs={"class": "form-control"}),
+            "cel":                           forms.TextInput(attrs={"class": "form-control"}),
+            "email":                         forms.EmailInput(attrs={"class": "form-control"}),
+            "pays":                          forms.TextInput(attrs={"class": "form-control"}),
+            "autre_nature_exposition":       forms.TextInput(attrs={"class": "form-control"}),
+            "precision_siege":               forms.TextInput(attrs={"class": "form-control"}),
+            "precis_animal_responsable":     forms.TextInput(attrs={"class": "form-control"}),
+            "autres_labos":                  forms.TextInput(attrs={"class": "form-control"}),
+            "produit_desinfection":          forms.TextInput(attrs={"class": "form-control"}),
+            "lieu_hospitalisation":          forms.TextInput(attrs={"class": "form-control"}),
 
-            'nature_exposition': forms.Select(attrs={'class': 'form-control'}),
-            'siege_lesion': forms.Select(attrs={'class': 'form-control'}),
-            'categorie_lesion': forms.Select(attrs={'class': 'form-control'}),
-            'animal_responsable': forms.Select(attrs={'class': 'form-control'}),
-            'animal_suspect_rage': forms.Select(attrs={'class': 'form-control'}),
-            'devenir_animal': forms.Select(attrs={'class': 'form-control'}),
-            'protocole_vaccination': forms.Select(attrs={'class': 'form-control'}),
-            'evolution': forms.Select(attrs={'class': 'form-control'}),
-            'resultat_analyse': forms.Select(attrs={'class': 'form-control'}),
-            'vaccination_antirabique': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'soins_locaux': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'desinfection': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'trouble_comportement': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'agitation': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'hospitalisation': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            # ChoiceFields → Select
+            "nature_exposition":             forms.Select(attrs={"class": "form-control"}),
+            "siege_lesion":                  forms.Select(attrs={"class": "form-control"}),
+            "categorie_lesion":              forms.Select(attrs={"class": "form-control"}),
+            "animal_responsable":            forms.Select(attrs={"class": "form-control"}),
+            "animal_suspect_rage":           forms.Select(attrs={"class": "form-control"}),
+            "devenir_animal":                forms.Select(attrs={"class": "form-control"}),
+            "prelevement_animal":            forms.Select(attrs={"class": "form-control"}),
+            "resultat_analyse":              forms.Select(attrs={"class": "form-control"}),
+            "labo_pathologie_animale":       forms.Select(attrs={"class": "form-control"}),
+            "soins_locaux":                  forms.Select(attrs={"class": "form-control"}),
+            "desinfection":                  forms.Select(attrs={"class": "form-control"}),
+            "vaccination_antirabique":       forms.Select(attrs={"class": "form-control"}),
+            "protocole_vaccination":         forms.Select(attrs={"class": "form-control"}),
+            "trouble_comportement":          forms.Select(attrs={"class": "form-control"}),
+            "agitation":                     forms.Select(attrs={"class": "form-control"}),
+            "hospitalisation":               forms.Select(attrs={"class": "form-control"}),
+            "evolution":                     forms.Select(attrs={"class": "form-control"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        """
+        Assurez-vous toujours que la signature accepte *args et **kwargs,
+        puis appelez super() avant toute personnalisation.
+        """
+        super().__init__(*args, **kwargs)
+        # Exemple : vider le placeholder du champ « autre_nature_exposition » tant que non nécessaire
+        self.fields["autre_nature_exposition"].widget.attrs.update({
+            "placeholder": "Précisez si « Autres »"
+        })
+# class RageHumaineNotificationForm(forms.ModelForm):
+#     class Meta:
+#         model = RageHumaineNotification
+#         fields = '__all__'  # Inclure tous les champs
+#
+#         widgets = {
+#             'date_notification': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#             'date_exposition': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#             'date_debut_vaccination': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#             'date_premiers_signes': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#             'date_hospitalisation': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#             'date_deces': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+#
+#             'hopital': forms.TextInput(attrs={'class': 'form-control'}),
+#             'service': forms.TextInput(attrs={'class': 'form-control'}),
+#             'agent_declarant': forms.TextInput(attrs={'class': 'form-control'}),
+#             'adresse': forms.TextInput(attrs={'class': 'form-control'}),
+#             'telephone': forms.TextInput(attrs={'class': 'form-control'}),
+#             'cel': forms.TextInput(attrs={'class': 'form-control'}),
+#             'email': forms.EmailInput(attrs={'class': 'form-control'}),
+#
+#             'lieu_exposition': forms.TextInput(attrs={'class': 'form-control'}),
+#             'pays': forms.TextInput(attrs={'class': 'form-control'}),
+#             'precision_siege': forms.TextInput(attrs={'class': 'form-control'}),
+#             'precis_animal_responsable': forms.TextInput(attrs={'class': 'form-control'}),
+#             'autres_labos': forms.TextInput(attrs={'class': 'form-control'}),
+#             'produit_desinfection': forms.TextInput(attrs={'class': 'form-control'}),
+#             'lieu_hospitalisation': forms.TextInput(attrs={'class': 'form-control'}),
+#             'signature_agent': forms.TextInput(attrs={'class': 'form-control'}),
+#
+#             'nature_exposition': forms.Select(attrs={'class': 'form-control'}),
+#             'siege_lesion': forms.Select(attrs={'class': 'form-control'}),
+#             'categorie_lesion': forms.Select(attrs={'class': 'form-control'}),
+#             'animal_responsable': forms.Select(attrs={'class': 'form-control'}),
+#             'animal_suspect_rage': forms.Select(attrs={'class': 'form-control'}),
+#             'devenir_animal': forms.Select(attrs={'class': 'form-control'}),
+#             'protocole_vaccination': forms.Select(attrs={'class': 'form-control'}),
+#             'evolution': forms.Select(attrs={'class': 'form-control'}),
+#             'resultat_analyse': forms.Select(attrs={'class': 'form-control'}),
+#             'vaccination_antirabique': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'soins_locaux': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'desinfection': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'trouble_comportement': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'agitation': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'hospitalisation': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#         }
+#
+#         def __init__(self, *args, **kwargs):
+#             # ATTENTION : la signature doit impérativement être (*args, **kwargs)
+#             super().__init__(*args, **kwargs)
+#             # Exemple : limiter le queryset de client si besoin
+#             # self.fields['client'].queryset = Client.objects.filter(actif=True)
 
 
 class ClientPostExpositionForm(forms.ModelForm):

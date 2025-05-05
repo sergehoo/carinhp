@@ -3,8 +3,12 @@
 {% load unicorn %}
 {% load django_tables2 %}
 
-
 {% block content %}
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
     <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
         <!--begin::Content-->
@@ -23,83 +27,23 @@
                         <div class="card-header flex-wrap border-0 pt-6 pb-0">
                             <div class="card-title">
                                 <h3 class="card-label">
-                                    Gestion des Patients
-                                    <span class="d-block text-muted pt-2 font-size-sm">User management made easy</span>
+                                    Notification de Rage Humaine
+                                    <span class="d-block text-muted pt-2 font-size-sm">Formulaire de déclaration</span>
                                 </h3>
                             </div>
                             <div class="card-toolbar">
-                                <!--begin::Dropdown-->
-                                <div class="dropdown dropdown-inline mr-2">
-                                    <button type="button" class="btn btn-light-primary font-weight-bolder dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		<span class="svg-icon svg-icon-md"><!--begin::Svg Icon | path:assets/media/svg/icons/Design/PenAndRuller.svg--><svg
-                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
-                viewBox="0 0 24 24" version="1.1">
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect x="0" y="0" width="24" height="24"/>
-        <path d="M3,16 L5,16 C5.55228475,16 6,15.5522847 6,15 C6,14.4477153 5.55228475,14 5,14 L3,14 L3,12 L5,12 C5.55228475,12 6,11.5522847 6,11 C6,10.4477153 5.55228475,10 5,10 L3,10 L3,8 L5,8 C5.55228475,8 6,7.55228475 6,7 C6,6.44771525 5.55228475,6 5,6 L3,6 L3,4 C3,3.44771525 3.44771525,3 4,3 L10,3 C10.5522847,3 11,3.44771525 11,4 L11,19 C11,19.5522847 10.5522847,20 10,20 L4,20 C3.44771525,20 3,19.5522847 3,19 L3,16 Z"
-              fill="#000000" opacity="0.3"/>
-        <path d="M16,3 L19,3 C20.1045695,3 21,3.8954305 21,5 L21,15.2485298 C21,15.7329761 20.8241635,16.200956 20.5051534,16.565539 L17.8762883,19.5699562 C17.6944473,19.7777745 17.378566,19.7988332 17.1707477,19.6169922 C17.1540423,19.602375 17.1383289,19.5866616 17.1237117,19.5699562 L14.4948466,16.565539 C14.1758365,16.200956 14,15.7329761 14,15.2485298 L14,5 C14,3.8954305 14.8954305,3 16,3 Z"
-              fill="#000000"/>
-    </g>
-</svg><!--end::Svg Icon--></span> Export
-                                    </button>
-
-                                    <!--begin::Dropdown Menu-->
-                                    <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                                        <!--begin::Navigation-->
-                                        <ul class="navi flex-column navi-hover py-2">
-                                            <li class="navi-header font-weight-bolder text-uppercase font-size-sm text-primary pb-2">
-                                                Choose an option:
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-print"></i></span>
-                                                    <span class="navi-text">Print</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-copy"></i></span>
-                                                    <span class="navi-text">Copy</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-excel-o"></i></span>
-                                                    <span class="navi-text">Excel</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-text-o"></i></span>
-                                                    <span class="navi-text">CSV</span>
-                                                </a>
-                                            </li>
-                                            <li class="navi-item">
-                                                <a href="#" class="navi-link">
-                                                    <span class="navi-icon"><i class="la la-file-pdf-o"></i></span>
-                                                    <span class="navi-text">PDF</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                        <!--end::Navigation-->
-                                    </div>
-                                    <!--end::Dropdown Menu-->
-                                </div>
-                                <!--end::Dropdown-->
-
                                 <!--begin::Button-->
-                                <a href="" class="btn btn-primary font-weight-bolder">
-	<span class="svg-icon svg-icon-md"><!--begin::Svg Icon | path:assets/media/svg/icons/Design/Flatten.svg--><svg
-            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px"
-            viewBox="0 0 24 24" version="1.1">
-    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect x="0" y="0" width="24" height="24"/>
-        <circle fill="#000000" cx="9" cy="15" r="6"/>
-        <path d="M8.8012943,7.00241953 C9.83837775,5.20768121 11.7781543,4 14,4 C17.3137085,4 20,6.6862915 20,10 C20,12.2218457 18.7923188,14.1616223 16.9975805,15.1987057 C16.9991904,15.1326658 17,15.0664274 17,15 C17,10.581722 13.418278,7 9,7 C8.93357256,7 8.86733422,7.00080962 8.8012943,7.00241953 Z"
-              fill="#000000" opacity="0.3"/>
-    </g>
-</svg><!--end::Svg Icon--></span> Nouveau cas
+                                <a href="{% url 'notification_rage_liste' %}" class="btn btn-primary font-weight-bolder">
+                                    <span class="svg-icon svg-icon-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                <rect x="0" y="0" width="24" height="24"/>
+                                                <path d="M10,4 L21,4 C21.5522847,4 22,4.44771525 22,5 L22,7 C22,7.55228475 21.5522847,8 21,8 L10,8 C9.44771525,8 9,7.55228475 9,7 L9,5 C9,4.44771525 9.44771525,4 10,4 Z M10,10 L21,10 C21.5522847,10 22,10.4477153 22,11 L22,13 C22,13.5522847 21.5522847,14 21,14 L10,14 C9.44771525,14 9,13.5522847 9,13 L9,11 C9,10.4477153 9.44771525,10 10,10 Z M10,16 L21,16 C21.5522847,16 22,16.4477153 22,17 L22,19 C22,19.5522847 21.5522847,20 21,20 L10,20 C9.44771525,20 9,19.5522847 9,19 L9,17 C9,16.4477153 9.44771525,16 10,16 Z" fill="#000000"/>
+                                                <rect fill="#000000" opacity="0.3" x="2" y="4" width="5" height="16" rx="1"/>
+                                            </g>
+                                        </svg>
+                                    </span>
+                                    Liste des notifications
                                 </a>
                                 <!--end::Button-->
                             </div>
@@ -107,311 +51,172 @@
                         <!--end::Header-->
 
                         <!--begin::Body-->
-
                         <div class="card-body">
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
-            {{ message }}
-        </div>
-    {% endfor %}
-{% endif %}
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
 
-  <form method="post" class="needs-validation"
-        x-data="{
-        patientMineur: false,
-        aimeAnimaux: false,
-        autre: false,
-        diffCanal: false,
-        connaitProtocoleVar: false,
-        }">
-        {% csrf_token %}
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">
-        {% for error in form.non_field_errors %}
-          <p>{{ error }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
+                            <form method="post" class="needs-validation" enctype="multipart/form-data"
+                                  x-data="patientFormLogic()"
+                                  @submit="if ($event.target.checkValidity()) { loading = true } else { $event.target.reportValidity(); }">
+                                {% csrf_token %}
 
+                                <!-- 1️⃣ Informations du Patient -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-primary text-white font-weight-bold">
+                                        Identification du Patient
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in patient_form %}
+                                            {% if field.name in "nom prenoms contact sexe poids num_cmu cni_num secteur_activite niveau_etude commune quartier" %}
+                                                <div class="col-md-3 mb-3" x-data
+                                                     x-init="if('{{ field.name }}' === 'patient_mineur') { $el.querySelector('input').addEventListener('change', e => patientMineur = e.target.checked) }">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
 
-        <!-- Identification du Patient -->
-        <h2>I. Identification du client</h2>
-  <div class="row">
-  <div class="col-4">
-        <div class="form-group">
-            <label>Nom </label>
-            {{ form.nom }}
-
-        </div>
-  </div>
-  <div class="col-4">
-        <div class="form-group">
-            <label>Prénoms </label>
-            {{ form.prenoms }}
-
-        </div>
-  </div>
-  <div class="col-4">
-    <div class="form-group">
-            <label>Date de Naissance </label>
-            {{ form.date_naissance }}
-    </div></div>
-<div class="col-4">
-  <div class="form-group">
-            <label>Sexe </label>
-            {{ form.sexe }}
-
-  </div></div>
-
-        <div class="col-4"><div class="form-group">
-            <label>Contact </label>
-            {{ form.contact }}
-        </div></div>
-<div class="col-4">
-    <div x-data="{
-    search: '',
-    options: [],
-    async fetchOptions() {
-        if (this.search.length > 1) {
-            const response = await fetch('/api/communes?query=' + this.search);
-            this.options = await response.json();
-        } else {
-            this.options = [];
-        }
-    }
-}" class=" form-group position-relative">
-                                        <label for="commune">Commune</label>
-                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
-                                               class="form-control" placeholder="Rechercher une commune..."
-                                               autocomplete="off">
-
-                                        <!-- Liste déroulante améliorée -->
-                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
-                                             x-show="options.length" x-on:click.away="options = []">
-                                            <ul class="list-group shadow bg-white w-100">
-                                                <template x-for="option in options" :key="option.id">
-                                                    <li class="list-group-item list-group-item-action"
-                                                        x-text="option.name"
-                                                        x-on:click.prevent="search = option.name; options = []">
-                                                    </li>
-                                                </template>
-                                            </ul>
+                                        <div class="col-md-3 mb-3">
+                                            <label>Date de naissance <span class="text-danger">*</span></label>
+                                            <input type="date" name="date_naissance" id="id_date_naissance"
+                                                   class="form-control" @change="handleDateChange">
+                                            <small class="text-danger">{{ field.errors }}</small>
                                         </div>
-    </div></div>
 
+                                        <!-- Section Accompagnateur si mineur -->
+                                        <div class="card-body row" x-show="patientMineur" x-transition>
+                                            <div class="row col-12 text-muted">
+                                                Le patient est un mineur de moins de 21 ans, veuillez renseigner les informations de l'accompagnant
+                                            </div>
+                                            <h2>Informations Accompagnateur</h2>
+                                            {% for field in patient_form %}
+                                                {% if field.name in "accompagnateur accompagnateur_contact accompagnateur_niveau_etude" %}
+                                                    <div class="col-md-6 mb-3">
+                                                        <label>{{ field.label|capfirst }} <span class="text-danger">*</span></label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
 
+                                            <div class="col-md-6 mb-3">
+                                                <label>{{ patient_form.accompagnateur_nature.label|capfirst }} <span class="text-danger">*</span></label>
+                                                <select x-ref="accompagnateurNature"
+                                                        @change="checkProprioAnimal($event.target.value)"
+                                                        name="{{ patient_form.accompagnateur_nature.name }}"
+                                                        class="form-control">
+                                                    {% for val, label in patient_form.accompagnateur_nature.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if patient_form.accompagnateur_nature.value == val %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ patient_form.accompagnateur_nature.errors }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-     <div class="col-3"> <div class="form-group">
-            <label>Quartier </label>
-            {{ form.quartier }}
-     </div></div>
+                                <!-- 2️⃣ Informations de Notification -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-info text-white font-weight-bold">
+                                        Détails de la Notification
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in rage_notif_form %}
+                                            {% if field.name in "date_notification hopital agent_declarant service adresse telephone cel email" %}
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
 
-     <div class="col-3"> <div class="form-group">
-            <label>Village </label>
-            {{ form.village }}
-     </div></div>
+                                <!-- 3️⃣ Origine de la Contamination -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-danger text-white font-weight-bold">
+                                        Origine de la Contamination
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in rage_notif_form %}
+                                            {% if field.name in "date_exposition lieu_exposition exposition_commune district_sanitaire_exposition nature_exposition siege_lesion precision_siege categorie_lesion" %}
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
 
-      <div class="col-3">  <div class="form-group">
-            <label>Niveau d'étude </label>
-            {{ form.niveau_etude }}
-      </div></div>
+                                <!-- 4️⃣ Prophylaxie Post-Exposition -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-success text-white font-weight-bold">
+                                        Prophylaxie Post-Exposition
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in rage_notif_form %}
+                                            {% if field.name in "vaccination_antirabique date_debut_vaccination protocole_vaccination soins_locaux desinfection produit_desinfection" %}
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
 
-        <div class="col-3"><div class="form-group" x-data="{ checked: false }">
-            <label>le Patient est-il mineur ? (moin de 15 ans )</label>
-            <div class="col-12">
-            <span class="switch  switch-lg switch-icon">
-                <label>
-                    <input type="checkbox" name="patient_mineur" x-model="patientMineur">
-                    <span></span>
+                                <!-- 5️⃣ Évolution et Conclusion -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-warning text-white font-weight-bold">
+                                        Évolution et Conclusion
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in rage_notif_form %}
+                                            {% if field.name in "evolution date_deces signature_agent" %}
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
 
-                </label>
-            </span></div>
-        </div></div>
-  </div>
+                                <!-- Bouton de soumission -->
+                                <div class="text-center mt-5">
+                                    <button type="submit" class="btn btn-primary btn-lg" :disabled="loading">
+                                        <span x-show="!loading">Enregistrer</span>
+                                        <span x-show="loading">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Enregistrement en cours...
+                                        </span>
+                                    </button>
+                                </div>
 
-<div class="row" x-show="patientMineur" x-transition>
-<div class="col-3">
-    <div class="form-group">
-            <label>nom & prenom de Accompagnateur</label>
-            {{ form.accompagnateur }}
-        </div>
-    </div>
-    <div class="col-3">
-    <div class="form-group" >
-            <label> Contact</label>
-            {{ form.accompagnateur_contact }}
-        </div>
-            </div>
-    <div class="col-3">
-    <div class="form-group" >
-            <label>Adresse</label>
-            {{ form.accompagnateur_adresse }}
-        </div>
-            </div>
-    <div class="col-3">
-    <div class="form-group">
-            <label>Lien avec le Patient</label>
-            {{ form.accompagnateur_nature }}
-        </div>
-            </div>
-    <div class="col-3">
-    <div class="form-group">
-            <label>Niveau d'etude</label>
-            {{ form.accompagnateur_niveau_etude }}
-        </div>
-        </div>
-</div>
-                <!-- Informations générales -->
-       <h2 class="mt-4">II. Informations Générales</h2>
-                <div class="row">
-                    <div class="col-md-4 form-group">
-                        <label>Date de la Notification</label>
-                        {{ form.date_notification }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Hôpital</label>
-                        {{ form.hopital }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Agent Déclarant</label>
-                        {{ form.agent_declarant }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Service</label>
-                        {{ form.service }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Adresse</label>
-                        {{ form.adresse }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Téléphone</label>
-                        {{ form.telephone }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Cel</label>
-                        {{ form.cel }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Email</label>
-                        {{ form.email }}
-                    </div>
-                </div>
-                <!-- Origine de la Contamination -->
- <h2 class="mt-4">III. Origine de la Contamination</h2>
-                <div class="row">
-                    <div class="col-md-6 form-group">
-                        <label>Date d'Exposition</label>
-                        {{ form.date_exposition }}
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label>Lieu d'Exposition</label>
-                        {{ form.lieu_exposition }}
-                    </div>
-
-                    <div class="col-md-4 form-group">
-                        <label>Commune</label>
-                        {{ form.exposition_commune }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>District Sanitaire</label>
-                        {{ form.district_sanitaire_exposition }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Nature de l'exposition</label>
-                        {{ form.nature_exposition }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Siège de la lésion</label>
-                        {{ form.siege_lesion }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Précision siège</label>
-                        {{ form.precision_siege }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Catégorie de la lésion</label>
-                        {{ form.categorie_lesion }}
-                    </div>
-                </div>
-
- <!-- Prophylaxie Post-Exposition -->
-                <h2 class="mt-4">IV. Prophylaxie Post-Exposition</h2>
-                <div class="row">
-                    <div class="col-md-4 form-group">
-                        <label>Vaccination Antirabique</label>
-                        {{ form.vaccination_antirabique }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Date Début Vaccination</label>
-                        {{ form.date_debut_vaccination }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Protocole de Vaccination</label>
-                        {{ form.protocole_vaccination }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Soins Locaux</label>
-                        {{ form.soins_locaux }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Désinfection</label>
-                        {{ form.desinfection }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Produit Désinfection</label>
-                        {{ form.produit_desinfection }}
-                    </div>
-                </div>
-
-      <div class="form-group" x-show="aimeAnimaux" x-transition>
-            <label>Type d'animal aimé</label>
-            {{ form.type_animal_aime }}
-        </div>
-
-  {% for field in form %}
-            {% if field.name in "connait_protocole_var" %}
-                <div class="form-group" x-data="{ checked: false }">
-                    <label class="col-6 col-form-label">Le Client connait-il le Protocole vaccinal de l'animal ?</label>
-                    <div class="d-flex align-items-center">
-                        <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
-                        <span class="switch switch-lg switch-icon">
-                            <label>
-                                <input type="checkbox" name="{{ field.name }}" x-model="checked" @change="connaitProtocoleVar = checked">
-                                <span></span>
-                            </label>
-                        </span>
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
-
-
-<!-- Évolution et Conclusion -->
-                <h2 class="mt-4">V. Évolution et Conclusion</h2>
-                <div class="row">
-                    <div class="col-md-4 form-group">
-                        <label>Évolution</label>
-                        {{ form.evolution }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Date de Décès (si applicable)</label>
-                        {{ form.date_deces }}
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label>Signature de l'Agent</label>
-                        {{ form.signature_agent }}
-                    </div>
-                </div>
-
-
-      <button type="submit" class="btn btn-primary mt-4">Enregistrer</button>
-    </form>
-
-
+                                <!-- Overlay de chargement -->
+                                <div x-show="loading" x-transition.opacity
+                                     class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90 backdrop-blur-sm">
+                                    <div class="text-center">
+                                        <img src="{% static 'assets/media/logo_inhp.png' %}" width="400px" alt="Logo" class="w-24 mx-auto mb-4 animate-pulse"/>
+                                        <div class="text-xl font-semibold text-primary">Veuillez patienter...</div>
+                                        <div class="mt-2 text-muted">Nous traitons votre formulaire</div>
+                                        <div class="spinner spinner-primary mr-15"></div>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-
                         <!--end::Body-->
                     </div>
                     <!--end::Card-->
@@ -422,8 +227,37 @@
         </div>
         <!--end::Content-->
 
+        <script>
+            function patientFormLogic() {
+                return {
+                    loading: false,
+                    patientMineur: false,
+                    estProprietaireAnimal: false,
+
+                    checkProprioAnimal(value) {
+                        this.estProprietaireAnimal = value === 'Propriétaire animal';
+                    },
+
+                    calculateAge(dateString) {
+                        const today = new Date();
+                        const birthDate = new Date(dateString);
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const m = today.getMonth() - birthDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                        }
+                        return age;
+                    },
+
+                    handleDateChange(event) {
+                        const age = this.calculateAge(event.target.value);
+                        this.patientMineur = age < 21;
+                    }
+                }
+            }
+        </script>
+
         <!--begin::Footer-->
-        <!--doc: add "bg-white" class to have footer with solod background color-->
         {% include 'layout/footer.html' %}
         <!--end::Footer-->
     </div>

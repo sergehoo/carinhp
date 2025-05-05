@@ -177,8 +177,8 @@ synchroniser_patients_mpi.short_description = "🔄 Synchroniser patients sélec
 class PatientAdmin(admin.ModelAdmin):
     list_display = (
         'code_patient', 'nom', 'prenoms',
-        'contact', 'accompagnateur_contact',
-        'calculate_age', 'poids', 'mpi_upi', 'status', 'gueris', 'decede', 'created_at'
+        'contact', 'accompagnateur_contact','date_naissance',
+        'calculate_age', 'poids', 'mpi_upi', 'created_at'
     )
     list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'commune', 'created_at')
     search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateur_contact')
