@@ -25,30 +25,35 @@ RUN pip install --upgrade pip
 #    postgresql-client && \
 #    apt-get clean && \
 #    rm -rf /var/lib/apt/lists/*
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      # compilateurs et GDAL pour GIS
-      g++ \
-      gcc \
+RUN python3 -m venv $VIRTUAL_ENV \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      # compilateurs & headers Python pour les extensions C
+      build-essential \
+      python3-dev \
+      \
+      # GDAL / Postgres
       gdal-bin \
       libgdal-dev \
-      # client PostgreSQL et headers
       postgresql-client \
       libpq-dev \
-      # utilitaires divers
-      ca-certificates \
-      dirmngr \
-      gnupg2 \
-      lsb-release \
-      # **les bibliothèques Pango/Cairo pour WeasyPrint**
+      \
+      # dependencies WeasyPrint (Cairo, Pango, GdkPixbuf)
       libcairo2 \
+      libcairo2-dev \
       libpango-1.0-0 \
+      libpango1.0-dev \
       libpangocairo-1.0-0 \
       libgdk-pixbuf2.0-0 \
-      libffi7 \
+      \
+      # libffi pour cffi
+      libffi-dev \
+      \
+      # utilitaires
       shared-mime-info \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+      ca-certificates \
+  && pip install --upgrade pip \
+  && rm -rf /var/lib/apt/lists/*
 
 # Set GDAL environment variables
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
