@@ -3,31 +3,34 @@ import string
 import uuid
 import datetime as dt
 from django.conf import settings
+from django.contrib.auth import get_user_model
 # from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, AbstractUser
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import now, make_aware
 from djgeojson.fields import PointField
 from django.contrib.gis.db import models
-from phonenumber_field.formfields import PhoneNumberField
+# from phonenumber_field.formfields import PhoneNumberField
+from phonenumber_field.modelfields import PhoneNumberField
 from simple_history.models import HistoricalRecords
 from tinymce.models import HTMLField
 from datetime import datetime, date
-
 from rage_INHP.services import synchroniser_avec_mpi
 from rage_INHP.utils.phone import nettoyer_numero, formater_numero_local
 
 # Create your models here.
+# User = get_user_model()
 
 Sexe_choices = [('Masculin', 'Masculin'), ('Feminin', 'Féminin')]
 
 Resultat_choices = [
     ('POSITIF', 'POSITIF'),
     ('NEGATIF', 'NEGATIF'),
-
 ]
 
 typeAnimal_choices = [
@@ -102,11 +105,162 @@ nbr_lesions_CHOICES = [
     ('8', '8'),
     ('9', '9'),
     ('10', '10'),
-    ('plus de 10 ', 'plus de 10'),
+    ('11-15', '11-15'),
+    ('16-20', '16-20'),
+    ('21 et plus', '21 et plus '),
+]
+OUI_NON_CHOICES = [
+    # ('Inconnu', 'Inconnu'),
+    ('Oui', 'Oui'),
+    ('Non', 'Non'),
+
 ]
 
+Retour_CHOICES = [
+    ('AVIS', 'AVIS'),
+    ('PROFILAXIE', 'PROFILAXIE'),
+]
+Membre_Superieur_CHOICES = [
+    ('epaule', 'Épaule'),
+    ('bras', 'Bras'),
+    ('coude', 'Coude'),
+    ('avant_bras', 'Avant-bras'),
+    ('poignet', 'Poignet'),
+    ('main', 'Main'),
+    # ('doigts', 'Doigts'),
+]
+Tronc_CHOICES = [
+    ('Zone Clavicule', 'Zone Clavicule'),
+    ('Zone Sternum', 'Zone Sternum'),
+    ('Zone Côtes', 'Zone Côtes'),
+    ('Poitrine', 'Poitrine'),
+    ('Seins', 'Seins'),
+    ('Abdomen', 'Abdomen'),
+    ('Dos', 'Dos'),
+    # ('Flancs', 'Flancs'),
+    # ('Muscles obliques', 'Muscles obliques'),
+    # ('Omoplates', 'Omoplates'),
+    # ('Colonne vertébrale thoracique', 'Colonne vertébrale thoracique'),
+    # ('Colonne vertébrale lombaire', 'Colonne vertébrale lombaire'),
+    # ('Muscles lombaires', 'Muscles lombaires'),
+]
+Tete_Cou_CHOICES = [
+    ('Cuire chevelure', 'Cuire chevelure'),
+    ('Front', 'Front'),
+    ('Tempe', 'Tempe'),
+    ('Yeux/paupieres', 'Yeux/paupieres'),
+    ('Joues', 'Joues'),
+    ('Nez', 'Nez'),
+    ('Bouche/lèvres', 'Bouche/lèvres'),
+    ('Oreilles', 'Oreilles'),
+    ('Mâchoire', 'Mâchoire'),
+    ('Menton', 'Menton'),
+    ('Nuque', 'Nuque'),
+    ('Cou', 'Cou'),
 
-# User = get_user_model()
+]
+Membre_Inferieur_CHOICES = [
+    ('Hanche', 'Hanche'),
+    ('Fesse', 'Fesse'),
+    ('Cuisse', 'Cuisse'),
+    ('Genou', 'Genou'),
+    ('Jambe', 'Jambe'),
+    ('Cheville', 'Cheville'),
+
+    ('Talon', 'Talon'),
+    ('Pied', 'Pied'),
+    # ('Plante du pied', 'Plante du pied'),
+    # ('Dos du pied', 'Dos du pied'),
+    # ('Orteils', 'Orteils'),
+]
+
+Grossesse_SEMAINES_CHOICES = [
+    ('1', 'Semaine 1'),
+    ('2', 'Semaine 2'),
+    ('3', 'Semaine 3'),
+    ('4', 'Semaine 4'),
+    ('5', 'Semaine 5'),
+    ('6', 'Semaine 6'),
+    ('7', 'Semaine 7'),
+    ('8', 'Semaine 8'),
+    ('9', 'Semaine 9'),
+    ('10', 'Semaine 10'),
+    ('11', 'Semaine 11'),
+    ('12', 'Semaine 12'),
+    ('13', 'Semaine 13'),
+    ('14', 'Semaine 14'),
+    ('15', 'Semaine 15'),
+    ('16', 'Semaine 16'),
+    ('17', 'Semaine 17'),
+    ('18', 'Semaine 18'),
+    ('19', 'Semaine 19'),
+    ('20', 'Semaine 20'),
+    ('21', 'Semaine 21'),
+    ('22', 'Semaine 22'),
+    ('23', 'Semaine 23'),
+    ('24', 'Semaine 24'),
+    ('25', 'Semaine 25'),
+    ('26', 'Semaine 26'),
+    ('27', 'Semaine 27'),
+    ('28', 'Semaine 28'),
+    ('29', 'Semaine 29'),
+    ('30', 'Semaine 30'),
+    ('31', 'Semaine 31'),
+    ('32', 'Semaine 32'),
+    ('33', 'Semaine 33'),
+    ('34', 'Semaine 34'),
+    ('35', 'Semaine 35'),
+    ('36', 'Semaine 36'),
+    ('37', 'Semaine 37'),
+    ('38', 'Semaine 38'),
+    ('39', 'Semaine 39'),
+    ('40', 'Semaine 40'),
+    ('41', 'Semaine 41'),
+]
+
+delai_CHOICES = [
+    ('0', 'moin d\'une heure'),
+    ('1-2', '1 -2 heure'),
+    ('3-4', '3-4 heure'),
+    ('5-6', '5-6 heure'),
+]
+
+# Connaissance & attitude
+conduite_CHOICES = [
+    ('Abattage', 'Abattage'),
+    ('Surveillance vétérinaire', 'Surveillance vétérinaire'),
+    ('Ne rien faire', 'Ne rien faire'),
+    ('Autre', 'Autre')
+]
+# mesure_CHOICES = [
+#     ('Abattage des chiens', 'Abattage des chiens'),
+#     ('Eviter d’avoir un chien', 'Eviter d’avoir un chien'),
+#     ('Eviter la divagation des chiens ', 'Eviter la divagation des chiens'),
+#     ('Organiser des séances de CCC', 'Organiser des séances de CCC'),
+#     ('Vacciner la population contre la rage', 'Vacciner la population contre la rage'),
+#     ('Sensibiliser particulièrement les propriétaires de chien',
+#      'Sensibiliser particulièrement les propriétaires de chien'),
+#     ('Intégrer rage dans le programme des cours au primaire', 'Intégrer rage dans le programme des cours au primaire'),
+# ]
+appreciation_CHOICES = [
+    ('Elevé', 'Elevé'),
+    ('Acceptable', 'Acceptable'),
+    ('Pas à la portée de tous', 'Pas à la portée de tous'),
+    ('Moins couteux', 'Moins couteux')
+]
+
+CARACASSE_CHOICES = [
+    ('Caracasse disponible', 'Caracasse disponible'),
+    ('Caracasse non disponible', 'Caracasse non disponible'),
+    ('Non', 'Non')
+]
+
+STATUT_VACCINAL_CHOICES = [
+    ('Animal non vacciné', 'Animal non vacciné'),
+    ('Statut vaccinal Inconnu', 'Statut vaccinal Inconnu'),
+    ('Non à jour', 'Non à jour'),
+    ('Oui', 'Correctement vaccine')
+]
 
 
 class EmployeeUser(AbstractUser):
@@ -130,6 +284,10 @@ class EmployeeUser(AbstractUser):
     fonction = models.CharField(max_length=255, blank=True, null=True)
     roleemployee = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CentreAntirabique')
     centre = models.ForeignKey('CentreAntirabique', on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Employé"
+        verbose_name_plural = "Employés"
 
     def __str__(self):
         return f"{self.username} - {self.roleemployee}"
@@ -246,7 +404,9 @@ class Commune(models.Model):
     geom = models.PointField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.name} - {self.district}"
+        if self.district:
+            return f"{self.name} - {self.district.nom}"
+        return self.name or "Commune sans nom"
 
 
 class Patient(models.Model):
@@ -261,13 +421,14 @@ class Patient(models.Model):
         ('Cousine', 'Cousine'),
         ('Connaissance du quartier', 'Connaissance du quartier'),
         ('Voisin du quartier', 'Voisin du quartier'),
-        ('Propriétaire animal ', 'Propriétaire animal ')
+        ('Propriétaire animal', 'Propriétaire animal')
     ]
-    code_patient = models.CharField(max_length=225, blank=True, unique=True, editable=False,db_index=True)
+    code_patient = models.CharField(max_length=225, blank=True, unique=True, editable=False, db_index=True)
     mpi_upi = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
     nom = models.CharField(max_length=225, db_index=True)
     prenoms = models.CharField(max_length=225, db_index=True)
-    contact = models.CharField(max_length=20, db_index=True)
+    contact = PhoneNumberField(region='CI', blank=True, null=True, db_index=True)
+
     date_naissance = models.DateField(db_index=True)
     sexe = models.CharField(max_length=10, choices=Sexe_choices, )
     num_cmu = models.CharField(max_length=100, null=True, blank=True, db_index=True)
@@ -278,13 +439,22 @@ class Patient(models.Model):
     commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     quartier = models.CharField(max_length=255, blank=True, null=True)
     village = models.CharField(max_length=255, blank=True, null=True)
+    poids = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(250)],
+        help_text="Poids du patient (1 à 250 kg)",
+        null=True, blank=True
+    )
+
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
     proprietaire_animal = models.BooleanField(default=False)
     typeanimal = models.CharField(choices=typeAnimal_choices, max_length=255, blank=True, null=True)
     autretypeanimal = models.CharField(max_length=255, blank=True, null=True)
+
     patient_mineur = models.BooleanField(default=False)
     accompagnateur = models.CharField(max_length=255, blank=True, null=True)
-    accompagnateur_contact = models.CharField(max_length=20, blank=True, null=True)
+
+    accompagnateur_contact = PhoneNumberField(region='CI', blank=True, null=True)
+
     accompagnateur_adresse = models.CharField(max_length=255, blank=True, null=True)
     accompagnateur_nature = models.CharField(choices=nature_acompagnateur_CHOICES, max_length=255, blank=True,
                                              null=True)
@@ -382,72 +552,57 @@ class Animal(models.Model):
 
 
 class Preexposition(models.Model):
-    #MotifVaccination
+    # Motif de vaccination
     client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
     codeexpo = models.CharField(max_length=255, blank=True, null=True, unique=True, db_index=True)
-    voyage = models.BooleanField(default=False, db_index=True)
-    mise_a_jour = models.BooleanField(default=False, db_index=True)
-    protection_rage = models.BooleanField(default=False, db_index=True)
-    chien_voisin = models.BooleanField(default=False, db_index=True)
-    chiens_errants = models.BooleanField(default=False, db_index=True)
-    autre = models.BooleanField(default=False, db_index=True)
-    autre_motif = models.TextField(blank=True, null=True, db_index=True)
-    #InformationVaccination
-    tele = models.BooleanField(default=False, db_index=True)
-    radio = models.BooleanField(default=False, db_index=True)
-    sensibilisation = models.BooleanField(default=False)
-    proche = models.BooleanField(default=False)
-    presse = models.BooleanField(default=False)
-    passage_car = models.BooleanField(default=False)
-    diff_canal = models.BooleanField(default=False)
-    canal_infos = models.TextField(blank=True, null=True)
-    #ConnaissanceAttitude
-    conduite_CHOICES = [('Abattage', 'Abattage'), ('Surveillance vétérinaire', 'Surveillance vétérinaire'),
-                        ('Ne rien faire', 'Ne rien faire'),
-                        ('Autre', 'Autre')]
-    mesure_CHOICES = [('Abattage des chiens', 'Abattage des chiens'),
-                      ('Eviter d’avoir un chien', 'Eviter d’avoir un chien'),
-                      ('Eviter la divagation des chiens ', 'Eviter la divagation des chiens'),
-                      ('Organiser des séances de CCC', 'Organiser des séances de CCC'),
-                      ('Vacciner la population contre la rage', 'Vacciner la population contre la rage'),
-                      ('Sensibiliser particulièrement les propriétaires de chien',
-                       'Sensibiliser particulièrement les propriétaires de chien'),
-                      ('Intégrer rage dans le programme des cours au primaire',
-                       'Intégrer rage dans le programme des cours au primaire'),
-                      ]
-    appreciation_CHOICES = [('Elevé', 'Elevé'), ('Acceptable', 'Acceptable'),
-                            ('Pas à la portée de tous', 'Pas à la portée de tous'),
-                            ('Moins couteux', 'Moins couteux')]
+    voyage = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    mise_a_jour = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    protection_rage = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    chien_voisin = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    chiens_errants = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    autre = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    autre_motif = models.CharField(blank=True, null=True, db_index=True)
 
-    aime_animaux = models.BooleanField(default=False)
+    # Information sur la vaccination
+    tele = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    radio = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    sensibilisation = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    proche = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    presse = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    passage_car = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    diff_canal = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    canal_infos = models.TextField(blank=True, null=True)
+
+    aime_animaux = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
     type_animal_aime = models.CharField(choices=ESPECE_CHOICES, max_length=255, blank=True, null=True)
     conduite_animal_mordeur = models.CharField(choices=conduite_CHOICES, max_length=255, null=True, blank=True)
-    connait_protocole_var = models.BooleanField(default=False)
+    connait_protocole_var = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
     dernier_var_animal_type = models.CharField(max_length=255, blank=True, null=True)
     dernier_var_animal_date = models.DateField(blank=True, null=True)
     mesures_elimination_rage = models.CharField(null=True, blank=True)
     appreciation_cout_var = models.CharField(choices=appreciation_CHOICES, max_length=255, null=True, blank=True)
-    protocole_vaccination = models.ForeignKey('ProtocoleVaccination', on_delete=models.CASCADE, null=True, blank=True, )
+    protocole_vaccination = models.ForeignKey('ProtocoleVaccination', on_delete=models.CASCADE, null=True, blank=True)
 
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="employeer")
     created_at = models.DateTimeField(auto_now_add=True)
-    fin_protocole = models.BooleanField(default=False)
+    fin_protocole = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
 
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
         if not self.codeexpo:
-            self.codeexpo = f"PREP-{uuid.uuid4().hex[:8].upper()}"  # EXPO-8CARACTERES
+            self.codeexpo = f"PREP-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
 
 
 class PostExposition(models.Model):
     # Identification du patient
-    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
+    client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, db_index=True,
+                               related_name="patientpep")
 
     # Exposition
-    date_exposition = models.DateField(null=True, blank=True, db_index=True)
+    date_exposition = models.DateField(db_index=True)
     lieu_exposition = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     exposition_commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     exposition_quartier = models.CharField(max_length=255, null=True, blank=True)
@@ -457,16 +612,16 @@ class PostExposition(models.Model):
         choices=[
             ('Attaque provoquée', 'Attaque provoquée'),
             ('Agression', 'Agression'),
-            ('Attaque collective', 'Attaque collective'),
-            ('Professionnel', 'Professionnel')
+            ('Contact patient suspect/positif de rage ', 'Contact patient suspect/positif de rage'),
+            # ('Attaque collective', 'Attaque collective'),
+            # ('Professionnel', 'Professionnel')
         ],
         null=True, blank=True
     )
-
-    attaque_provoquee = models.BooleanField(default=False)
-    agression = models.BooleanField(default=False)
-    attaque_collective = models.BooleanField(default=False)
-    professionnel = models.BooleanField(default=False)
+    attaque_provoquee = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True)
+    agression = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True)
+    attaque_collective = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    professionnel = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
 
     type_professionnel = models.CharField(
         max_length=50,
@@ -474,32 +629,33 @@ class PostExposition(models.Model):
         null=True, blank=True
     )
 
-    morsure = models.BooleanField(default=False, db_index=True)
-    griffure = models.BooleanField(default=False, db_index=True)
-    lechage_saine = models.BooleanField(default=False)
-    lechage_lesee = models.BooleanField(default=False)
-    contactanimalpositif = models.BooleanField(default=False)
-    contactpatientpositif = models.BooleanField(default=False)
-    autre = models.BooleanField(default=False)
-    autre_nature_exposition = models.TextField(null=True, blank=True)
+    morsure = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    griffure = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    lechage_saine = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    lechage_lesee = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    contactanimalpositif = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    contactpatientpositif = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    autre = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    autre_nature_exposition = models.CharField(max_length=10, null=True, blank=True, db_index=True)
 
     # Siège de l’exposition
-    tete = models.BooleanField(default=False)
-    cou = models.BooleanField(default=False)
-    membre_superieur = models.BooleanField(default=False)
-    preciser_membre_sup = models.CharField(max_length=255, null=True, blank=True)
-    tronc = models.BooleanField(default=False)
-    preciser_tronc = models.CharField(max_length=255, null=True, blank=True)
-    organes_genitaux_externes = models.BooleanField(default=False)
-    membre_inferieur = models.BooleanField(default=False)
-    preciser_membre_inf = models.CharField(max_length=255, null=True, blank=True)
-    saignement_immediat = models.BooleanField(default=False)
-    vetements_presents = models.BooleanField(default=False)
-    dechires = models.BooleanField(default=False)
+    tete_cou = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    preciser_tetecou = models.JSONField(null=True, blank=True)
+    membre_superieur = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+
+    preciser_membre_sup = models.JSONField(null=True, blank=True)
+    tronc = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    preciser_tronc = models.JSONField(null=True, blank=True)
+    organes_genitaux_externes = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    membre_inferieur = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    preciser_membre_inf = models.JSONField(null=True, blank=True)
+    saignement_immediat = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    vetements_presents = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    dechires = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
 
     siege_exposition = models.TextField(null=True, blank=True)
-    vetements_dechires = models.BooleanField(default=False)
-    nbrlesions = models.CharField(max_length=300, null=True, blank=True)
+    vetements_dechires = models.CharField(max_length=10, choices=OUI_NON_CHOICES, blank=True, null=True, db_index=True)
+    nbrlesions = models.CharField(max_length=300, choices=nbr_lesions_CHOICES, null=True, blank=True)
 
     # Animal
     espece = models.CharField(
@@ -508,35 +664,42 @@ class PostExposition(models.Model):
                  ('Autre', 'Autre')],
         null=True, blank=True
     )
-    autre_animal = models.CharField(max_length=255, null=True, blank=True)
-    domestic = models.BooleanField(default=False, )
 
-    connais_proprio = models.BooleanField(default=False)
+    autre_animal = models.CharField(max_length=255, null=True, blank=True)
+    domestic = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+
+    connais_proprio = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
     nom_proprietaire = models.CharField(max_length=255, null=True, blank=True)
     contact_proprietaire = models.CharField(max_length=255, null=True, blank=True)
-    info_proprietaire = models.IntegerField(null=True, blank=True)
-    retour_info_proprietaire = models.CharField(max_length=50, null=True, blank=True)
+    info_proprietaire = models.CharField(max_length=50, choices=OUI_NON_CHOICES, null=True, blank=True)
+    retour_info_proprietaire = models.CharField(max_length=50, choices=OUI_NON_CHOICES, null=True, blank=True)
 
     avis = models.BooleanField(default=False)
-    convocation = models.BooleanField(default=False)
-    prophylaxie = models.BooleanField(default=False)
+    convocation = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    prophylaxie = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
 
-    correctement_vaccine = models.BooleanField(default=False)
-    non_vaccine = models.BooleanField(default=False)
-    nonajours = models.BooleanField(default=False)
-    vacinconnu = models.BooleanField(default=False)
+    correctement_vaccine = models.CharField(max_length=50, choices=STATUT_VACCINAL_CHOICES, null=True, blank=True,
+                                            db_index=True)
+    non_vaccine = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    nonajours = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    vacinconnu = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    carnet_Vaccin = models.FileField(upload_to='carnets/', null=True, blank=True)
 
-    inconnu = models.BooleanField(default=False, verbose_name='connu')
-    errant = models.BooleanField(default=False, verbose_name='errant')
-    disparu = models.BooleanField(default=False)
-    mort = models.BooleanField(default=False)
-    abatu = models.BooleanField(default=False)
+    connu = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    disponible = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    errant = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    disparu = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    mort = models.CharField(max_length=30, choices=CARACASSE_CHOICES, null=True, blank=True, db_index=True)
+    abatu = models.CharField(max_length=30, choices=CARACASSE_CHOICES, null=True, blank=True, db_index=True)
+    autre_statut = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    autre_statut_precis = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     date_derniere_vaccination = models.DateField(null=True, blank=True)
 
     # Gravité et Surveillance
     gravite_oms = models.CharField(max_length=10, choices=[('I', 'I'), ('II', 'II'), ('III', 'III')], null=True,
                                    blank=True)
-    surveillance_veterinaire = models.BooleanField(default=False)
+    surveillance_veterinaire = models.CharField(max_length=10, null=True, blank=True, choices=OUI_NON_CHOICES,
+                                                db_index=True)
 
     certificat = models.CharField(max_length=50, null=True, blank=True)
     piece_jointe = models.FileField(upload_to="certifiatVaccin", null=True, blank=True)
@@ -546,39 +709,45 @@ class PostExposition(models.Model):
     Decision_d_arrete_tar = models.CharField(max_length=50, null=True, blank=True)
 
     # Diagnostic et Prise en charge
-    prelevement_animal = models.BooleanField(default=False)
+    prelevement_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
     diagnostic_laboratoire = models.CharField(max_length=50, choices=[('Positif', 'Positif'), ('Negatif', 'Négatif')],
                                               null=True, blank=True)
     date_diagnostic = models.DateField(null=True, blank=True)
 
     # Dossier Médical
-    antecedents_medicaux = models.TextField(null=True, blank=True)
-    probleme_coagulation = models.BooleanField(default=False)
-    details_problemes = models.CharField(max_length=50, null=True, blank=True)
-    immunodepression = models.BooleanField(default=False)
-    details_immo = models.CharField(max_length=50, null=True, blank=True)
-    grossesse = models.BooleanField(default=False)
-    details_grosesse = models.CharField(max_length=50, null=True, blank=True)
-    allergies = models.TextField(null=True, blank=True)
-    traitements_en_cours = models.TextField(null=True, blank=True)
+    antecedents_medicaux = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    details_antecedents = models.JSONField(null=True, blank=True)
+    probleme_coagulation = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    details_problemes = models.JSONField(null=True, blank=True)
+    immunodepression = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    details_immo = models.JSONField(null=True, blank=True)
+    grossesse = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    details_grosesse = models.CharField(max_length=10, null=True, blank=True, choices=Grossesse_SEMAINES_CHOICES,
+                                        db_index=True)
+    allergies = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    details_allergies = models.JSONField(null=True, blank=True)
+    traitements_en_cours = models.CharField(max_length=10, choices=OUI_NON_CHOICES, db_index=True)
+    details_traitements = models.TextField(null=True, blank=True)
 
     # Antécédents vaccinaux
     vat_dernier_injection = models.DateField(null=True, blank=True)
     vat_rappel = models.DateField(null=True, blank=True)
     vat_lot = models.CharField(max_length=255, null=True, blank=True)
-    vaccin_antirabique = models.BooleanField(default=False)
-    carnet_vaccinal = models.TextField(null=True, blank=True)
+    vaccin_antirabique = models.CharField(max_length=10, null=True, blank=True, choices=OUI_NON_CHOICES, db_index=True)
+    carnet_vaccinal = models.FileField(upload_to='carnets/', null=True, blank=True)
+    carnet_vaccinal_verso = models.FileField(upload_to='carnets/', null=True, blank=True)
 
     # Prise en charge
-    lavage_plaies = models.BooleanField(default=False)
-    desinfection_plaies = models.BooleanField(default=False)
-    delai_apres_exposition = models.CharField(max_length=50, null=True, blank=True)
+    lavage_plaies = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    desinfection_plaies = models.CharField(max_length=10, null=True, blank=True, choices=OUI_NON_CHOICES, db_index=True)
+    delai_apres_exposition = models.CharField(max_length=50, choices=delai_CHOICES, null=True, blank=True)
+    delai_apres_desinfection = models.CharField(max_length=50, choices=delai_CHOICES, null=True, blank=True)
     produits_utilises = models.CharField(max_length=50, null=True, blank=True)
 
-    sutures = models.BooleanField(default=False)
-    serum_antitetanique = models.BooleanField(default=False)
+    sutures = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
+    serum_antitetanique = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
 
-    antibiotiques = models.BooleanField(default=False)
+    antibiotiques = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, db_index=True)
     details_antibiotiques = models.TextField(null=True, blank=True)
 
     # Vaccination Antirabique
@@ -595,7 +764,7 @@ class PostExposition(models.Model):
     issue = models.CharField(max_length=50,
                              choices=[('Perdu de vue', 'Perdu de vue'), ('Arrêté', 'Arrêté'), ('Terminé', 'Terminé')],
                              null=True, blank=True)
-    observance = models.BooleanField(default=False)
+    observance = models.CharField(max_length=10, null=True, blank=True, choices=OUI_NON_CHOICES, db_index=True)
     evolution_patient = models.CharField(max_length=50, choices=[('Vivant', 'Vivant'), ('Décédé', 'Décédé'),
                                                                  ('Non précisé', 'Non précisé')], null=True, blank=True)
     cause_deces = models.TextField(null=True, blank=True)
@@ -604,6 +773,73 @@ class PostExposition(models.Model):
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.CASCADE, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
+
+    def determiner_gravite_oms(self):
+        # Cas grave immédiat (catégorie III)
+        if (
+                self.saignement_immediat == "Oui"
+                # self.morsure == "Oui" and self.saignement_immediat == "Oui"
+                or self.tete_cou == "Oui"
+                or self.organes_genitaux_externes == "Oui"
+                # or self.nbrlesions in ["2 à 5 lésions", "Plus de 5 lésions"]
+                # or self.contactanimalpositif == "Oui"
+                or self.espece == "Chauve-souris"
+                or self.membre_superieur == "main"
+        ):
+            return "III"
+
+        # Catégorie II : contact avec risque modéré
+        elif (
+                self.griffure == "Oui"
+                or self.lechage_lesee == "Oui"
+                or self.contactpatientpositif == "Oui"
+        ):
+            return "II"
+
+        # Catégorie I : pas de risque
+        elif (
+                self.lechage_saine == "Oui"
+                or self.autre == "Oui" and self.autre_nature_exposition == "léchage peau saine"
+        ):
+            return "I"
+
+        return None  # Si les conditions sont incohérentes ou incomplètes
+
+    def save(self, *args, **kwargs):
+        # Détermine automatiquement la gravité OMS si non fournie
+        self.gravite_oms = self.determiner_gravite_oms()
+
+        # 🎯 Injection automatique des infos propriétaire à partir du patient
+        if self.client:
+            if not self.connais_proprio and self.client.accompagnateur_nature == 'Propriétaire animal':
+                self.connais_proprio = "Oui"
+                self.retour_info_proprietaire = "Oui"
+                self.avis = True
+
+            if not self.nom_proprietaire and self.client.accompagnateur:
+                self.nom_proprietaire = self.client.accompagnateur
+
+            if not self.contact_proprietaire and self.client.accompagnateur_contact:
+                self.contact_proprietaire = self.client.accompagnateur_contact
+        super().save(*args, **kwargs)
+
+    def clean_preciser_tetecou(self):
+        data = self.cleaned_data.get("preciser_tetecou")
+        if isinstance(data, list):
+            return data  # JSONField accepte une liste Python
+        return []
+
+    def clean_preciser_membre_sup(self):
+        data = self.cleaned_data.get("preciser_membre_sup")
+        return data if isinstance(data, list) else []
+
+    def clean_preciser_tronc(self):
+        data = self.cleaned_data.get("preciser_tronc")
+        return data if isinstance(data, list) else []
+
+    def clean_preciser_membre_inf(self):
+        data = self.cleaned_data.get("preciser_membre_inf")
+        return data if isinstance(data, list) else []
 
     def __str__(self):
         return f"{self.client.nom} {self.client.prenoms} - {self.date_exposition}"
@@ -762,7 +998,7 @@ class ProtocoleVaccination(models.Model):
         # Création de la facture
 
     def __str__(self):
-        return f"{self.nom if self.nom else 'Aucun nom'} ({self.technique})"
+        return f"{self.nom if self.nom else 'Aucun nom'} (OMS)"
 
 
 # def generer_rendez_vous(protocole):
@@ -804,15 +1040,18 @@ class ProtocoleVaccination(models.Model):
 
 
 class RendezVousVaccination(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="rendez_vous_vaccination", db_index=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="rendez_vous_vaccination",
+                                db_index=True)
     preexposition = models.ForeignKey(Preexposition, null=True, blank=True, on_delete=models.CASCADE,
                                       related_name="rendez_vous_pre_expo", db_index=True)
     postexposition = models.ForeignKey(PostExposition, null=True, blank=True, on_delete=models.CASCADE,
                                        related_name="rendez_vous_post_expo", db_index=True)
-    protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, related_name="protocole_rendez_vous", db_index=True)
+    protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, related_name="protocole_rendez_vous",
+                                  db_index=True)
     date_rendez_vous = models.DateField(help_text="Date prévue du rendez-vous", db_index=True)
     dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole", db_index=True)
-    ordre_rdv = models.IntegerField(help_text="Numéro d’ordre du RDV pour ce patient", null=True, blank=True, db_index=True)
+    ordre_rdv = models.IntegerField(help_text="Numéro d’ordre du RDV pour ce patient", null=True, blank=True,
+                                    db_index=True)
     est_effectue = models.BooleanField(default=False, help_text="Le vaccin a-t-il été administré ?", db_index=True)
     statut_rdv = models.CharField(
         choices=[('Passé', 'Passé'), ('Aujourd\'hui', 'Aujourd\'hui'), ('À venir', 'À venir')],
@@ -870,7 +1109,8 @@ class LotVaccin(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True, help_text="Ajouté par")
+    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
+                                   help_text="Ajouté par")
 
     def __str__(self):
         # Vérifie si `date_expiration` n'est pas `None` avant de la formater
@@ -1046,6 +1286,44 @@ class Vaccination(models.Model):
                     nouvelle_date_rdv += dt.timedelta(days=intervals[i])
 
 
+VOIE_CHOICES = [
+    ('IM', 'Intramusculaire'),
+    ('ID', 'Intradermique'),
+    ('SC', 'Sous-cutanée'),
+]
+
+
+class InjectionImmunoglobuline(models.Model):
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="patients_immuno")
+    date_injection = models.DateTimeField(default=now)
+
+    refus_injection = models.BooleanField(default=False, help_text="Le patient a-t-il refusé l'injection ?")
+    motif_refus = models.TextField(blank=True, null=True, help_text="Motif du refus (si refusé)")
+
+    type_produit = models.CharField(max_length=100, blank=True, null=True,
+                                    help_text="Ex: Immunoglobuline antirabique humaine")
+    dose_ml = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
+                                  help_text="Volume injecté en ml")
+    voie_injection = models.CharField(max_length=10, choices=VOIE_CHOICES, blank=True, null=True)
+    site_injection = models.TextField(blank=True, null=True,
+                                      help_text="Sites anatomiques d'injection (ex: bras gauche, cuisse droite...)")
+    numero_lot = models.CharField(max_length=100, blank=True, null=True)
+    date_peremption = models.DateField(blank=True, null=True)
+    laboratoire_fabricant = models.CharField(max_length=100, blank=True, null=True)
+    commentaire = models.TextField(blank=True, null=True)
+
+    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_injection']
+
+    def __str__(self):
+        if self.refus_injection:
+            return f"Refus d'immunoglobuline - {self.patient}"
+        return f"Injection de {self.type_produit} à {self.patient} le {self.date_injection.strftime('%d/%m/%Y')}"
+
+
 class ObservationPostVaccination(models.Model):
     vaccination = models.OneToOneField(Vaccination, on_delete=models.CASCADE, related_name="observation")
     heure_debut = models.DateTimeField()
@@ -1196,3 +1474,12 @@ class City(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WhatsAppMessageLog(models.Model):
+    numero = models.CharField(max_length=20)
+    template = models.CharField(max_length=100, null=True, blank=True)
+    contenu_message = models.TextField(null=True, blank=True)
+    statut = models.CharField(max_length=20)
+    response = models.TextField(null=True, blank=True)
+    date_envoi = models.DateTimeField(auto_now_add=True)

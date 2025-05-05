@@ -1,0 +1,96 @@
+{% extends 'layout/centre-base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!-- Content Section -->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!-- Custom Subheader Component -->
+        {% include 'layout/header-title.html' with title=form_title subtitle="Formulaire de gestion des lots de vaccins" %}
+
+        <!-- Main Content Area -->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!-- Lot Vaccin Form Card -->
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                {{ form_title }}
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Remplissez tous les champs requis
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+
+                    <!-- Form Start -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.numero_lot|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.vaccin|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.date_fabrication|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.date_expiration|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.quantite_initiale|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <button type="submit" class="btn btn-primary mr-2">
+                                        <i class="flaticon2-checkmark"></i> Enregistrer
+                                    </button>
+                                    <a href="{% if object %}{% url 'lot_vaccin_detail' object.pk %}{% else %}{% url 'lot_vaccin_list' %}{% endif %}"
+                                       class="btn btn-light-danger">
+                                        <i class="flaticon2-close"></i> Annuler
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    {% include 'layout/footer.html' %}
+</div>
+
+<!-- Datepicker JS -->
+<script>
+    // Initialisation des datepickers
+    $(document).ready(function() {
+        $('[name="date_fabrication"]').datepicker({
+            format: 'dd/mm/yyyy',
+            todayHighlight: true,
+            autoclose: true
+        });
+
+        $('[name="date_expiration"]').datepicker({
+            format: 'dd/mm/yyyy',
+            todayHighlight: true,
+            autoclose: true
+        });
+    });
+</script>
+{% endblock %}

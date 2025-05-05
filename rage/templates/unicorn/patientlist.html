@@ -48,6 +48,9 @@
                 <th>Téléphone</th>
                 <th>Sexe</th>
                 <th>Commune</th>
+                  {% if request.user.roleemployee != 'CentreAntirabique' %}
+            <th>Centre</th>   <!-- 🏥 Centre Antirabique -->
+        {% endif %}
                 <th>Statut</th>
                 <th>Action</th>
             </tr>
@@ -65,6 +68,15 @@
                 </td>
                 <td>{{ patient.sexe }}</td>
                 <td>{{ patient.residence_commune.name }}</td>
+                {% if request.user.roleemployee != 'CentreAntirabique' %}
+    <td>
+        {% if patient.centre_ar %}
+            {{ patient.centre_ar.nom }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+{% endif %}
                 <td>{{ patient.status }}</td>
                 <td>
                     <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-primary btn-icon btn-xs"><em class="fas fa-eye"></em></a>

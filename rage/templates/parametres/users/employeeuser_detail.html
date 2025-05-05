@@ -1,0 +1,91 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title="Détails Utilisateur" subtitle=user.get_full_name %}
+
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Profil Utilisateur
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            {% if perms.auth.change_user %}
+                            <a href="{% url 'employeeuser_update' user.pk %}"
+                               class="btn btn-sm btn-primary font-weight-bold">
+                                <i class="flaticon2-edit"></i> Modifier
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Nom d'utilisateur</span>
+                                    <span class="text-dark">{{ user.username }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Civilité</span>
+                                    <span class="text-dark">{{ user.get_civilite_display }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Nom complet</span>
+                                    <span class="text-dark">{{ user.get_full_name }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Email</span>
+                                    <span class="text-dark">{{ user.email|default:"Non spécifié" }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Contact</span>
+                                    <span class="text-dark">{{ user.contact|default:"Non spécifié" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Fonction</span>
+                                    <span class="text-dark">{{ user.fonction|default:"Non spécifié" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Rôle</span>
+                                    <span class="text-dark">{{ user.get_roleemployee_display }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Centre/District</span>
+                                    <span class="text-dark">{{ user.centre|default:"Non spécifié" }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permissions -->
+                        <div class="separator separator-dashed my-5"></div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4 class="text-dark font-weight-bold mb-5">Permissions</h4>
+                                <div class="d-flex flex-wrap">
+                                    {% for group in user.groups.all %}
+                                    <span class="label label-primary label-inline font-weight-bold mr-2 mb-2">
+                                        {{ group.name }}
+                                    </span>
+                                    {% empty %}
+                                    <span class="text-muted">Aucune permission spécifique</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

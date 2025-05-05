@@ -67,6 +67,7 @@
                                         <span class="mx-3">|</span>
                                         <i class="fas fa-birthday-cake mr-2"></i> {{ vaccination.patient.date_naissance|date:"d/m/Y" }} ({{ vaccination.patient.calculate_age }} ans)
                                     </span>
+                                    <a href="{% url 'vaccination_certificate' vaccination.pk %}">Certificat</a>
                                 </div>
                             </div>
                         </div>
@@ -117,7 +118,7 @@
                                                         <td>
                                                             {% if vaccination.date_effective %}
                                                                 {{ vaccination.date_effective|date:"l d F Y H:i" }}
-                                                                <span class="label label-inline label-{% if vaccination.date_effective.date == vaccination.date_prevue %}success{% else %}warning{% endif %} ml-2">
+                                                                <span class="badge badge-{% if vaccination.date_effective.date == vaccination.date_prevue %}success{% else %}warning{% endif %} ml-2">
                                                                     {% if vaccination.date_effective.date == vaccination.date_prevue %}À l'heure{% else %}Décalée{% endif %}
                                                                 </span>
                                                             {% else %}
@@ -134,11 +135,19 @@
                                                     <tr>
                                                         <th class="bg-light-primary">Dose</th>
                                                         <td>
-                                                            <span class="label label-inline label-primary font-weight-boldest">
+                                                            <span class="badge badge-primary font-weight-boldest">
                                                                 Dose {{ vaccination.dose_numero }}/{{ vaccination.nombre_dose }}
                                                             </span>
                                                         </td>
                                                     </tr>
+                                                <tr>
+                                                    <th class="bg-light-primary">Delai entre  exposition et vaccinantion</th>
+                                                        <td>
+                                                            <span class="badge badge label-primary font-weight-boldest">
+                                                                delai ----- (h)
+                                                            </span>
+                                                        </td>
+                                                </tr>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -217,9 +226,9 @@
                                                         <th class="w-50 bg-light-info">Statut</th>
                                                         <td>
                                                             {% if vaccination.observation.est_terminee %}
-                                                            <span class="label label-inline label-success">Terminée</span>
+                                                            <span class="badge badge-success">Terminée</span>
                                                             {% else %}
-                                                            <span class="label label-inline label-warning">En cours</span>
+                                                            <span class="badge badge-warning">En cours</span>
                                                             {% endif %}
                                                         </td>
                                                     </tr>
@@ -302,12 +311,12 @@
                                                 <td>{{ mapi.date_apparition|date:"d/m/Y H:i" }}</td>
                                                 <td>{{ mapi.description|truncatewords:10 }}</td>
                                                 <td>
-                                                    <span class="label label-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
+                                                    <span class="badge badge-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
                                                         {{ mapi.get_gravite_display }}
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="label label-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
+                                                    <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
                                                         {{ mapi.get_evolution_display }}
                                                     </span>
                                                 </td>
@@ -407,7 +416,7 @@
                                                                 {{ record.history_date|date:"d/m/Y H:i" }}
                                                             </span>
                                                         </div>
-                                                        <span class="label label-light-{% if forloop.first %}danger{% else %}secondary{% endif %} font-weight-bold">
+                                                        <span class="badge badge-light-{% if forloop.first %}danger{% else %}secondary{% endif %} font-weight-bold">
                                                             {% if forloop.first %}Actuel{% else %}Ancien{% endif %}
                                                         </span>
                                                     </div>
@@ -474,43 +483,51 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="post" action="">
+            <form method="post">
                 <div class="modal-body">
                     {% csrf_token %}
-                    <div class="form-group">
-                        <label>Date d'apparition *</label>
-                        <input type="datetime-local" class="form-control" name="date_apparition" required value="{% now 'Y-m-d\TH:i' %}">
+                <div class="row">
+                    {% for field in mapi_form %}
+                    <div class="col-md-6">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
                     </div>
-                    <div class="form-group">
-                        <label>Description des symptômes *</label>
-                        <textarea class="form-control" name="description" rows="3" required></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Gravité *</label>
-                                <select class="form-control" name="gravite" required>
-                                    <option value="léger">Léger</option>
-                                    <option value="modéré">Modéré</option>
-                                    <option value="sévère">Sévère</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Évolution *</label>
-                                <select class="form-control" name="evolution" required>
-                                    <option value="en observation">En observation</option>
-                                    <option value="guéri">Guéri</option>
-                                    <option value="complications">Complications</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Traitement administré</label>
-                        <textarea class="form-control" name="traitement_administre" rows="2"></textarea>
-                    </div>
+                    {% endfor %}
+                </div>
+{#                    <div class="form-group">#}
+{#                        <label>Date d'apparition *</label>#}
+{#                        <input type="datetime-local" class="form-control" name="date_apparition" required value="{% now 'Y-m-d\TH:i' %}">#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        <label>Description des symptômes *</label>#}
+{#                        <textarea class="form-control" name="description" rows="3" required></textarea>#}
+{#                    </div>#}
+{#                    <div class="row">#}
+{#                        <div class="col-md-6">#}
+{#                            <div class="form-group">#}
+{#                                <label>Gravité *</label>#}
+{#                                <select class="form-control" name="gravite" required>#}
+{#                                    <option value="léger">Léger</option>#}
+{#                                    <option value="modéré">Modéré</option>#}
+{#                                    <option value="sévère">Sévère</option>#}
+{#                                </select>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                        <div class="col-md-6">#}
+{#                            <div class="form-group">#}
+{#                                <label>Évolution *</label>#}
+{#                                <select class="form-control" name="evolution" required>#}
+{#                                    <option value="en observation">En observation</option>#}
+{#                                    <option value="guéri">Guéri</option>#}
+{#                                    <option value="complications">Complications</option>#}
+{#                                </select>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="form-group">#}
+{#                        <label>Traitement administré</label>#}
+{#                        <textarea class="form-control" name="traitement_administre" rows="2"></textarea>#}
+{#                    </div>#}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Annuler</button>
@@ -551,7 +568,7 @@
                                     <tr>
                                         <th class="bg-light-danger">Gravité</th>
                                         <td>
-                                            <span class="label label-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
+                                            <span class="badge badge-{% if mapi.gravite == 'léger' %}success{% elif mapi.gravite == 'modéré' %}warning{% else %}danger{% endif %}">
                                                 {{ mapi.get_gravite_display }}
                                             </span>
                                         </td>
@@ -567,7 +584,7 @@
                                     <tr>
                                         <th class="w-50 bg-light-danger">Évolution</th>
                                         <td>
-                                            <span class="label label-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
+                                            <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'en observation' %}warning{% else %}danger{% endif %}">
                                                 {{ mapi.get_evolution_display }}
                                             </span>
                                         </td>

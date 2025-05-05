@@ -1,0 +1,106 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!-- Content Section -->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!-- Custom Subheader Component -->
+        {% include 'layout/header-title.html' with title="Détails du Lot" subtitle=object.numero_lot %}
+
+        <!-- Main Content Area -->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!-- Lot Detail Card -->
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Informations du lot
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'lot_vaccin_update' object.pk %}"
+                               class="btn btn-sm btn-primary font-weight-bold">
+                                <i class="flaticon2-edit"></i> Modifier
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Numéro de lot</span>
+                                    <span class="text-dark">{{ object.numero_lot }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Vaccin</span>
+                                    <span class="text-dark">{{ object.vaccin.nom }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Date de fabrication</span>
+                                    <span class="text-dark">{{ object.date_fabrication|date:"d/m/Y" }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Date d'expiration</span>
+                                    <span class="text-dark">{{ object.date_expiration|date:"d/m/Y" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Quantité initiale</span>
+                                    <span class="text-dark">{{ object.quantite_initiale }} {{ object.vaccin.get_unite_display }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Quantité disponible</span>
+                                    <span class="text-dark">{{ object.quantite_disponible }} {{ object.vaccin.get_unite_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historique des mouvements -->
+                <div class="card card-custom mt-6">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Historique des utilisations
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Suivi des prélèvements sur ce lot
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Quantité utilisée</th>
+                                        <th>Utilisé par</th>
+                                        <th>Patient</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- À remplacer par votre logique d'historique -->
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aucun mouvement enregistré</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,1906 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surveillance Rage - Côte d'Ivoire</title>
+
+    <!-- CSS optimisé -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.css"/>
+
+    <style>
+        :root {
+            --ci-primary: #5D9C59;
+            --ci-secondary: #C7E8CA;
+            --ci-accent: #DF7861;
+            --ci-light: #FCF8E8;
+            --ci-dark: #2C3639;
+            --ci-text: #4A4A4A;
+            --ci-bg: #F9F9F9;
+            --ci-orange: #FF8200;
+            --ci-white: #FFFFFF;
+            --ci-green: #009A44;
+            --ci-orange-light: rgba(255, 130, 0, 0.1);
+            --ci-green-light: rgba(0, 154, 68, 0.1);
+            --ci-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --ci-transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--ci-bg);
+            color: var(--ci-text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Panneau de contrôle principal */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 350px;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+
+        /* Style des panneaux */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: var(--ci-shadow);
+            border: none;
+            backdrop-filter: blur(8px);
+            transition: var(--ci-transition);
+            overflow: hidden;
+        }
+
+        .control-panel:hover {
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* En-tête des panneaux */
+        .panel-header {
+            padding: 15px 20px;
+            background: var(--ci-primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .panel-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .panel-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .panel-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        /* Contenu des panneaux */
+        .panel-content {
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+        }
+
+        .panel-content.collapsed {
+            max-height: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Style des filtres */
+        .filter-section {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: var(--ci-dark);
+        }
+
+        .form-select, .form-control {
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            box-shadow: none;
+            transition: var(--ci-transition);
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--ci-primary);
+            box-shadow: 0 0 0 3px rgba(93, 156, 89, 0.2);
+        }
+
+        /* Boutons */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: var(--ci-transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--ci-primary);
+            border-color: var(--ci-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #4d8a49;
+            border-color: #4d8a49;
+        }
+
+        /* Liste des incidents */
+        .incident-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .incident-card {
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: var(--ci-transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .incident-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .incident-card.pre-exposition {
+            border-color: var(--ci-primary);
+            background-color: rgba(93, 156, 89, 0.05);
+        }
+
+        .incident-card.post-exposition {
+            border-color: var(--ci-green);
+            background-color: rgba(0, 154, 68, 0.05);
+        }
+
+        .incident-card.notification {
+            border-color: var(--ci-accent);
+            background-color: rgba(223, 120, 97, 0.05);
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .incident-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ci-dark);
+        }
+
+        .incident-date {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .incident-location {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: var(--ci-text);
+        }
+
+        .incident-badge {
+            align-self: flex-end;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        /* Résumé */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 15px;
+        }
+
+        .summary-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: var(--ci-transition);
+        }
+
+        .summary-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Overlay de chargement */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.2rem;
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--ci-primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Boutons de contrôle */
+        .map-button {
+            position: absolute;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            box-shadow: var(--ci-shadow);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--ci-transition);
+        }
+
+        .map-button:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+
+        .map-button i {
+            color: var(--ci-primary);
+            font-size: 1.2rem;
+        }
+
+        #home-button {
+            top: 15px;
+            left: 15px;
+        }
+
+        #fullscreen-button {
+            bottom: 80px;
+            right: 15px;
+        }
+
+        #locate-button {
+            bottom: 20px;
+            right: 15px;
+        }
+
+        /* Légende */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: var(--ci-shadow);
+            font-size: 0.8rem;
+            max-width: 200px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--ci-dark);
+            font-size: 0.9rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        /* Barre de recherche */
+        .search-container {
+            position: absolute;
+            top: 20px;
+            left: 70px;
+            z-index: 1000;
+            width: 300px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            box-shadow: var(--ci-shadow);
+            font-size: 0.9rem;
+            transition: var(--ci-transition);
+            padding-left: 40px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(93, 156, 89, 0.3);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ci-primary);
+        }
+
+        /* Popup personnalisé */
+        .leaflet-popup-content {
+            margin: 12px;
+            min-width: 250px;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .popup-title {
+            font-weight: 600;
+            color: var(--ci-dark);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .popup-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .popup-detail {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .popup-detail i {
+            margin-right: 8px;
+            color: var(--ci-primary);
+            margin-top: 2px;
+        }
+
+        .popup-button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .map-controls {
+                width: 100%;
+                max-width: 100%;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+            }
+
+            .control-panel {
+                border-radius: 0;
+            }
+
+            .panel-content {
+                max-height: 200px;
+            }
+
+            .search-container {
+                width: calc(100% - 90px);
+                left: 70px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Chargement des données...</p>
+</div>
+
+<!-- Barre de recherche -->
+<div class="search-container">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" class="search-input" placeholder="Rechercher un lieu..." id="search-input">
+</div>
+
+<!-- Panneau de contrôle -->
+<div class="map-controls">
+    <!-- Panneau de résumé -->
+    <div class="control-panel">
+        <div class="panel-header" id="summary-header">
+            <h4><i class="fas fa-chart-pie me-2"></i> Tableau de bord</h4>
+            <i class="fas fa-chevron-up"></i>
+        </div>
+        <div class="panel-content" id="summary-content">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">Pré-exposition</div>
+                    <div class="summary-count" id="pre-count">0</div>
+                    <div class="progress mt-2" style="height: 4px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Post-exposition</div>
+                    <div class="summary-count" id="post-count">0</div>
+                    <div class="progress mt-2" style="height: 4px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Notifications</div>
+                    <div class="summary-count" id="notification-count">0</div>
+                    <div class="progress mt-2" style="height: 4px;">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau de filtres -->
+    <div class="control-panel">
+        <div class="panel-header" id="filter-header">
+            <h4><i class="fas fa-filter me-2"></i> Filtres avancés</h4>
+            <i class="fas fa-chevron-up"></i>
+        </div>
+        <div class="panel-content" id="filter-content">
+            <div class="filter-section">
+                <label for="type-filter" class="form-label">Type de cas</label>
+                <select id="type-filter" class="form-select">
+                    <option value="all">Tous les types</option>
+                    <option value="pre">Pré-exposition</option>
+                    <option value="post">Post-exposition</option>
+                    <option value="notification">Notification rage</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <label for="date-range" class="form-label">Période</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    <input type="date" id="start-date" class="form-control" placeholder="Début">
+                </div>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    <input type="date" id="end-date" class="form-control" placeholder="Fin">
+                </div>
+            </div>
+<div class="filter-section">
+  <label for="pole-filter" class="form-label">Pôle</label>
+  <select id="pole-filter" class="form-select">
+    <option value="all">Tous les Pôles</option>
+    {% for pole in poles %}
+      <option value="{{ pole.id }}">{{ pole.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="filter-section">
+  <label for="region-filter" class="form-label">Région</label>
+  <select id="region-filter" class="form-select">
+    <option value="all">Toutes les régions</option>
+    {% for region in regions %}
+      <option value="{{ region.id }}" data-pole="{{ region.poles.id }}">{{ region.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="filter-section">
+  <label for="district-filter" class="form-label">District</label>
+  <select id="district-filter" class="form-select">
+    <option value="all">Tous les districts</option>
+    {% for district in districts %}
+      <option value="{{ district.id }}" data-region="{{ district.region.id }}">{{ district.nom }}</option>
+    {% endfor %}
+  </select>
+</div>
+        <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const poleSelect     = document.getElementById('pole-filter');
+  const regionSelect   = document.getElementById('region-filter');
+  const districtSelect = document.getElementById('district-filter');
+
+  function filterRegions() {
+    const poleId = poleSelect.value;
+    Array.from(regionSelect.options).forEach(opt => {
+      // Toujours laisser 'all' visible
+      if (opt.value === 'all' || poleId === 'all' || opt.dataset.pole === poleId) {
+        opt.hidden = false;
+      } else {
+        opt.hidden = true;
+      }
+    });
+    regionSelect.value = 'all';
+    filterDistricts(); // on remet aussi à jour les districts
+  }
+
+  function filterDistricts() {
+    const regionId = regionSelect.value;
+    Array.from(districtSelect.options).forEach(opt => {
+      if (opt.value === 'all' || regionId === 'all' || opt.dataset.region === regionId) {
+        opt.hidden = false;
+      } else {
+        opt.hidden = true;
+      }
+    });
+    districtSelect.value = 'all';
+  }
+
+  // Brancher les événements
+  poleSelect.addEventListener('change',  filterRegions);
+  regionSelect.addEventListener('change', filterDistricts);
+
+  // Initialisation au chargement
+  filterRegions();
+});
+</script>
+
+            <div class="filter-section">
+                <label for="gravite-filter" class="form-label">Gravité OMS</label>
+                <select id="gravite-filter" class="form-select">
+                    <option value="all">Toutes</option>
+                    <option value="I">Catégorie I</option>
+                    <option value="II">Catégorie II</option>
+                    <option value="III">Catégorie III</option>
+                </select>
+            </div>
+
+            <div class="filter-section d-grid gap-2">
+                <button id="apply-filters" class="btn btn-primary">
+                    <i class="fas fa-check-circle me-1"></i> Appliquer
+                </button>
+                <button id="reset-filters" class="btn btn-outline-secondary">
+                    <i class="fas fa-undo me-1"></i> Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau des derniers cas -->
+    <div class="control-panel">
+        <div class="panel-header" id="incidents-header">
+            <h4><i class="fas fa-list-ul me-2"></i> Derniers cas</h4>
+            <i class="fas fa-chevron-up"></i>
+        </div>
+        <div class="panel-content" id="incidents-content">
+            <div class="incident-list" id="incident-list-container">
+                <!-- Les cas seront chargés ici -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Boutons de contrôle -->
+<div class="map-button" id="home-button" title="Accueil">
+    <a href="{% url 'home' %}" class="text-decoration-none">
+        <i class="fas fa-home"></i>
+    </a>
+</div>
+
+<div class="map-button" id="fullscreen-button" title="Plein écran">
+    <i class="fas fa-expand"></i>
+</div>
+
+<div class="map-button" id="locate-button" title="Ma position">
+    <i class="fas fa-location-arrow"></i>
+</div>
+
+<!-- Légende -->
+<div class="legend">
+    <div class="legend-title"><i class="fas fa-map-marked-alt me-1"></i> Légende</div>
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: #0652f6;"></span>
+        <span>Pré-exposition</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: #ff0016;"></span>
+        <span>Post-exposition</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color" style="background-color: #000000;"></span>
+        <span>Notification rage</span>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.locatecontrol@0.72.0/dist/L.Control.Locate.min.js"></script>
+<script src="https://unpkg.com/leaflet-search@3.0.2/dist/leaflet-search.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Variables globales
+        let map, districtLayer;
+        let currentCases = [];
+        let markerCluster = L.markerClusterGroup({
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            maxClusterRadius: 60,
+            iconCreateFunction: function (cluster) {
+                const childMarkers = cluster.getAllChildMarkers();
+                let types = {
+                    pre: 0,
+                    post: 0,
+                    notification: 0
+                };
+
+                childMarkers.forEach(marker => {
+                    if (marker.options.type) {
+                        types[marker.options.type]++;
+                    }
+                });
+
+                // Détermine le type dominant
+                let dominantType = 'pre';
+                if (types.post > types.pre && types.post > types.notification) {
+                    dominantType = 'post';
+                } else if (types.notification > types.pre && types.notification > types.post) {
+                    dominantType = 'notification';
+                }
+
+                const colors = {
+                    'pre': '#0652f6',
+                    'post': '#ff0016',
+                    'notification': '#000000'
+                };
+
+                return L.divIcon({
+                    html: `<div style="background-color: ${colors[dominantType]}">${cluster.getChildCount()}</div>`,
+                    className: 'marker-cluster marker-cluster-' + dominantType,
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+
+        // Initialisation de la carte
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false,
+                preferCanvas: true
+            }).setView([7.5399, -5.5471], 7);
+
+            // Couche de base
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Contrôle de zoom personnalisé
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
+
+            // Ajouter le cluster de marqueurs
+            map.addLayer(markerCluster);
+            markerCluster.bringToFront();
+
+            // Initialiser la recherche
+            initSearch();
+        }
+
+        // Initialisation de la recherche
+        function initSearch() {
+            const searchControl = new L.Control.Search({
+                position: 'topleft',
+                layer: markerCluster,
+                propertyName: 'name',
+                marker: false,
+                moveToLocation: function (latlng, title, map) {
+                    map.setView(latlng, 14);
+                },
+                textPlaceholder: 'Rechercher un lieu...',
+                collapsed: false,
+                autoCollapse: true,
+                autoType: false,
+                minLength: 2,
+                zoom: 14
+            });
+
+            searchControl.on('search:locationfound', function (e) {
+                e.layer.openPopup();
+            });
+
+            map.addControl(searchControl);
+            document.getElementById('search-input').addEventListener('input', function (e) {
+                searchControl.search(e.target.value);
+            });
+        }
+
+        // Style des districts
+        function getDistrictStyle(feature) {
+            const count = feature.properties.case_count || 0;
+            let fillColor, weight, opacity;
+
+            if (count === 0) {
+                fillColor = '#f8f9fa';
+                weight = 1;
+                opacity = 0.3;
+            } else if (count <= 3) {
+                fillColor = '#fff3b0';
+                weight = 1.5;
+                opacity = 0.6;
+            } else if (count <= 10) {
+                fillColor = '#f8961e';
+                weight = 2;
+                opacity = 0.8;
+            } else {
+                fillColor = '#e85d04';
+                weight = 2.5;
+                opacity = 0.9;
+            }
+
+            return {
+                fillColor: fillColor,
+                weight: weight,
+                opacity: 1,
+                color: '#495057',
+                dashArray: '3',
+                fillOpacity: opacity
+            };
+        }
+
+        // Interactivité des districts
+        function onEachDistrictFeature(feature, layer) {
+            const count = feature.properties.case_count || 0;
+            const name = feature.properties.nom || 'District inconnu';
+
+            layer.bindTooltip(`<b>${name}</b><br>${count} cas`, {
+                permanent: false,
+                direction: 'auto',
+                className: 'district-tooltip'
+            });
+
+            layer.on({
+                mouseover: function (e) {
+                    const layer = e.target;
+                    layer.setStyle({
+                        weight: 3,
+                        color: '#212529',
+                        fillOpacity: 0.9
+                    });
+                    layer.bringToFront();
+                },
+                mouseout: function (e) {
+                    districtLayer.resetStyle(e.target);
+                },
+                click: function (e) {
+                    map.fitBounds(e.target.getBounds(), {
+                        padding: [50, 50],
+                        maxZoom: 12
+                    });
+                }
+            });
+        }
+
+        // Création des marqueurs
+        function createCaseMarkers(features) {
+            console.log(`Creating markers for ${features.length} features`);
+            markerCluster.clearLayers();
+
+            if (features.length === 0) {
+                console.warn("Aucun marqueur à afficher");
+                return;
+            }
+
+            features.forEach(feature => {
+                if (!feature.geometry?.coordinates) {
+                    console.warn("Feature sans coordonnées:", feature);
+                    return;
+                }
+
+                const [lng, lat] = feature.geometry.coordinates;
+                const type = feature.properties.type;
+
+                const marker = L.marker([lat, lng], {
+                    icon: createMarkerIcon(type),
+                    type: type,
+                    name: feature.properties.patient + ' ' + (feature.properties.commune || feature.properties.lieu_exposition || '')
+                });
+
+                marker.bindPopup(createPopupContent(feature));
+                markerCluster.addLayer(marker);
+            });
+
+            // Ajuster la vue pour tous les marqueurs
+            if (features.length > 0) {
+                const bounds = L.latLngBounds(
+                    features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])
+                );
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function createMarkerIcon(type) {
+            const colors = {
+                'pre': '#0652f6',
+                'post': '#ff0016',
+                'notification': '#000000'
+            };
+
+            const icons = {
+                'pre': 'fa-syringe',
+                'post': 'fa-bandaid',
+                'notification': 'fa-exclamation-triangle'
+            };
+
+            return L.divIcon({
+                className: `case-marker ${type}`,
+                html: `
+                    <div style="
+                        background-color: ${colors[type]};
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        border: 2px solid white;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                    ">
+                        <i class="fas ${icons[type]}" style="font-size: 12px;"></i>
+                    </div>
+                `,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+        }
+
+        function createPopupContent(feature) {
+            const props = feature.properties;
+            const detailUrls = {
+                'pre': `/preexposition/${props.id}/`,
+                'post': `/postexposition/${props.id}/`,
+                'notification': `/notification/${props.id}/`
+            };
+
+            let details = '';
+            if (props.type === 'pre') {
+                details = `
+                    <div class="popup-detail">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <strong>${props.patient || 'Non renseigné'}</strong><br>
+                            ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}
+                        </div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-calendar-alt"></i>
+                        <div>${props.created_at || 'Date inconnue'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>${props.commune || 'Lieu non précisé'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-info-circle"></i>
+                        <div>${props.motif || 'Motif non précisé'}</div>
+                    </div>
+                `;
+            } else if (props.type === 'post') {
+                details = `
+                    <div class="popup-detail">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <strong>${props.patient || 'Non renseigné'}</strong><br>
+                            ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}
+                        </div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-calendar-alt"></i>
+                        <div>${props.date || 'Date inconnue'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>${props.commune || 'Lieu non précisé'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-biohazard"></i>
+                        <div>Gravité OMS: <strong>${props.gravite || 'Non précisée'}</strong></div>
+                    </div>
+                `;
+            } else {
+                details = `
+                    <div class="popup-detail">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <strong>${props.patient || 'Non renseigné'}</strong><br>
+                            ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}
+                        </div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-calendar-alt"></i>
+                        <div>${props.date || 'Date inconnue'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>${props.commune|| 'Lieu non précisé'}</div>
+                    </div>
+                    <div class="popup-detail">
+                        <i class="fas fa-skull"></i>
+                        <div>Évolution: <strong>${props.evolution || 'Non précisée'}</strong></div>
+                    </div>
+                `;
+            }
+
+            const typeLabel = getTypeLabel(props.type);
+            const typeClass = props.type + '-exposition';
+
+            return `
+                <div class="popup-content">
+                    <div class="popup-header">
+                        <h6 class="popup-title">${typeLabel}</h6>
+                        <span class="popup-badge ${typeClass}">${typeLabel}</span>
+                    </div>
+                    <div class="popup-body">
+                        ${details}
+                        <a href="${detailUrls[props.type]}"
+                           class="btn btn-sm btn-primary popup-button" target="_blank">
+                            <i class="fas fa-eye me-1"></i> Voir détails
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                'pre': 'Pré-exposition',
+                'post': 'Post-exposition',
+                'notification': 'Notification'
+            };
+            return labels[type] || type;
+        }
+
+        // Mise à jour de la carte
+        function updateMap(features) {
+            createCaseMarkers(features);
+
+            if (features.length > 0) {
+                const bounds = L.latLngBounds(
+                    features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])
+                );
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        // Mise à jour des districts
+        function updateDistricts(districtsData) {
+            if (districtLayer) {
+                map.removeLayer(districtLayer);
+            }
+
+            if (districtsData && districtsData.features && districtsData.features.length > 0) {
+                districtLayer = L.geoJSON(districtsData, {
+                    style: getDistrictStyle,
+                    onEachFeature: onEachDistrictFeature
+                }).addTo(map);
+            }
+        }
+
+        // Mise à jour du résumé
+        function updateSummary(features) {
+            const preCount = features.filter(f => f.properties.type === 'pre').length;
+            const postCount = features.filter(f => f.properties.type === 'post').length;
+            const notifCount = features.filter(f => f.properties.type === 'notification').length;
+            const total = preCount + postCount + notifCount || 1;
+
+            document.getElementById('pre-count').textContent = preCount;
+            document.getElementById('post-count').textContent = postCount;
+            document.getElementById('notification-count').textContent = notifCount;
+
+            // Mettre à jour les barres de progression
+            document.querySelectorAll('.progress-bar')[0].style.width = `${(preCount / total) * 100}%`;
+            document.querySelectorAll('.progress-bar')[1].style.width = `${(postCount / total) * 100}%`;
+            document.querySelectorAll('.progress-bar')[2].style.width = `${(notifCount / total) * 100}%`;
+        }
+
+        // Mise à jour de la liste des cas
+        function updateCaseList(features) {
+            const container = document.getElementById('incident-list-container');
+            container.innerHTML = '';
+
+            if (!features || features.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p>Aucun cas ne correspond aux filtres</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Trier par date (du plus récent au plus ancien)
+            const sortedCases = [...features].sort((a, b) => {
+                const dateA = new Date(a.properties.date || a.properties.created_at || a.properties.date_exposition || a.properties.date_notification);
+                const dateB = new Date(b.properties.date || b.properties.created_at || b.properties.date_exposition || b.properties.date_notification);
+                return dateB - dateA;
+            });
+
+            // Limiter à 20 cas pour les performances
+            sortedCases.slice(0, 20).forEach(feature => {
+                if (!feature.geometry?.coordinates) return;
+
+                const card = document.createElement('div');
+                card.className = `incident-card ${feature.properties.type}-exposition`;
+
+                let date, title, location;
+
+                if (feature.properties.type === 'pre') {
+                    date = feature.properties.created_at;
+                    title = 'Pré-exposition';
+                    location = feature.properties.commune;
+                } else if (feature.properties.type === 'post') {
+                    date = feature.properties.date_exposition;
+                    title = 'Post-exposition';
+                    location = feature.properties.lieu_exposition;
+                } else {
+                    date = feature.properties.date_notification;
+                    title = 'Notification';
+                    location = feature.properties.lieu_exposition;
+                }
+
+                const formattedDate = date ? new Date(date).toLocaleDateString('fr-FR') : 'Date inconnue';
+
+                card.innerHTML = `
+                    <div class="incident-header">
+                        <div class="incident-title">${feature.properties.patient || 'Patient anonyme'}</div>
+                        <div class="incident-date">${formattedDate}</div>
+                    </div>
+                    <div class="incident-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${location || 'Lieu non précisé'}</span>
+                    </div>
+                    <span class="incident-badge ${feature.properties.type}-exposition">${title}</span>
+                `;
+
+                card.addEventListener('click', () => {
+                    const [lng, lat] = feature.geometry.coordinates;
+                    map.flyTo([lat, lng], 15, {
+                        duration: 0.5
+                    });
+
+                    // Trouver et ouvrir le popup correspondant
+                    setTimeout(() => {
+                        markerCluster.eachLayer(layer => {
+                            if (layer instanceof L.Marker &&
+                                layer.getLatLng().lat === lat &&
+                                layer.getLatLng().lng === lng) {
+                                layer.openPopup();
+                            }
+                        });
+                    }, 500);
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        // Chargement des données avec gestion d'erreur améliorée
+        async function loadDataWithParams(params = {}) {
+            try {
+                showLoading(true);
+                const query = new URLSearchParams(params).toString();
+                const url = `{% url 'cartographie_data' %}?${query}`;
+                console.log("Fetching data from:", url);
+
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Data received:", data);
+
+                currentCases = data.features || [];
+                updateMap(currentCases);
+                updateDistricts(data.districts || []);
+                updateSummary(currentCases);
+                updateCaseList(currentCases);
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Erreur lors du chargement des données. Voir la console pour plus de détails.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            document.querySelector('.loading-overlay').style.display = show ? 'flex' : 'none';
+        }
+
+        // Gestion du plein écran
+        document.getElementById('fullscreen-button').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error("Erreur plein écran:", err);
+                });
+                document.getElementById('fullscreen-button').innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                document.exitFullscreen();
+                document.getElementById('fullscreen-button').innerHTML = '<i class="fas fa-expand"></i>';
+            }
+        });
+
+        // Localisation de l'utilisateur
+        document.getElementById('locate-button').addEventListener('click', () => {
+            map.locate({setView: true, maxZoom: 12});
+        });
+
+        // Appliquer les filtres
+        async function applyFilters() {
+            const raw = {
+                pole: document.getElementById('pole-filter')?.value,
+                region: document.getElementById('region-filter')?.value,
+                district: document.getElementById('district-filter')?.value,
+                type: document.getElementById('type-filter')?.value,
+                start_date: document.getElementById('start-date')?.value,
+                end_date: document.getElementById('end-date')?.value
+            };
+
+            // Ne garder que ceux qui ne sont pas « all » ou vides
+            const params = Object.fromEntries(
+                Object.entries(raw)
+                    .filter(([k, v]) => v && v !== 'all')
+            );
+
+            await loadDataWithParams(params);
+        }
+
+        // Réinitialiser les filtres
+        function resetFilters() {
+            document.getElementById('pole-filter').value = 'all';
+            document.getElementById('region-filter').value = 'all';
+            document.getElementById('district-filter').value = 'all';
+            document.getElementById('type-filter').value = 'all';
+            document.getElementById('gravite-filter').value = 'all';
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+
+            loadDataWithParams();
+        }
+
+        // Gestion des panneaux pliables
+        function setupCollapsiblePanels() {
+            const headers = document.querySelectorAll('.panel-header');
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    header.classList.toggle('collapsed');
+                    content.classList.toggle('collapsed');
+                });
+            });
+        }
+
+        // Initialisation
+        initMap();
+        setupCollapsiblePanels();
+        loadDataWithParams();
+
+        // Écouteurs d'événements
+        document.getElementById('apply-filters').addEventListener('click', applyFilters);
+        document.getElementById('reset-filters').addEventListener('click', resetFilters);
+
+        // Gestion des dates par défaut (30 derniers jours)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+
+        document.getElementById('start-date').valueAsDate = startDate;
+        document.getElementById('end-date').valueAsDate = endDate;
+    });
+</script>
+{##}
+{#<script>#}
+{#    document.addEventListener('DOMContentLoaded', function () {#}
+{#        // Variables globales#}
+{#        let map, districtLayer;#}
+{#        let currentCases = [];#}
+{#        let markerCluster = L.markerClusterGroup({#}
+{#            spiderfyOnMaxZoom: true,#}
+{#            showCoverageOnHover: false,#}
+{#            zoomToBoundsOnClick: true,#}
+{#            maxClusterRadius: 60,#}
+{#            iconCreateFunction: function (cluster) {#}
+{#                const childMarkers = cluster.getAllChildMarkers();#}
+{#                let types = {#}
+{#                    pre: 0,#}
+{#                    post: 0,#}
+{#                    notification: 0#}
+{#                };#}
+{##}
+{#                childMarkers.forEach(marker => {#}
+{#                    if (marker.options.type) {#}
+{#                        types[marker.options.type]++;#}
+{#                    }#}
+{#                });#}
+{##}
+{#                // Détermine le type dominant#}
+{#                let dominantType = 'pre';#}
+{#                if (types.post > types.pre && types.post > types.notification) {#}
+{#                    dominantType = 'post';#}
+{#                } else if (types.notification > types.pre && types.notification > types.post) {#}
+{#                    dominantType = 'notification';#}
+{#                }#}
+{##}
+{#                const colors = {#}
+{#                    'pre': '#0652f6',#}
+{#                    'post': '#ff0016',#}
+{#                    'notification': '#000000'#}
+{##}
+{#                };#}
+{##}
+{#                return L.divIcon({#}
+{#                    html: `<div style="background-color: ${colors[dominantType]}">${cluster.getChildCount()}</div>`,#}
+{#                    className: 'marker-cluster marker-cluster-' + dominantType,#}
+{#                    iconSize: L.point(40, 40)#}
+{#                });#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Initialisation de la carte#}
+{#        function initMap() {#}
+{#            map = L.map('map', {#}
+{#                zoomControl: false,#}
+{#                preferCanvas: true#}
+{#            }).setView([7.5399, -5.5471], 7);#}
+{##}
+{#            // Couche de base#}
+{#            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {#}
+{#                attribution: '© OpenStreetMap contributors',#}
+{#                maxZoom: 19#}
+{#            }).addTo(map);#}
+{##}
+{#            // Contrôle de zoom personnalisé#}
+{#            L.control.zoom({#}
+{#                position: 'topright'#}
+{#            }).addTo(map);#}
+{##}
+{#            // Ajouter le cluster de marqueurs#}
+{#            map.addLayer(markerCluster);#}
+{##}
+{#            // Initialiser la recherche#}
+{#            initSearch();#}
+{#        }#}
+{##}
+{#        // Initialisation de la recherche#}
+{#        function initSearch() {#}
+{#            const searchControl = new L.Control.Search({#}
+{#                position: 'topleft',#}
+{#                layer: markerCluster,#}
+{#                propertyName: 'name',#}
+{#                marker: false,#}
+{#                moveToLocation: function (latlng, title, map) {#}
+{#                    map.setView(latlng, 14);#}
+{#                },#}
+{#                textPlaceholder: 'Rechercher un lieu...',#}
+{#                collapsed: false,#}
+{#                autoCollapse: true,#}
+{#                autoType: false,#}
+{#                minLength: 2,#}
+{#                zoom: 14#}
+{#            });#}
+{##}
+{#            searchControl.on('search:locationfound', function (e) {#}
+{#                e.layer.openPopup();#}
+{#            });#}
+{##}
+{#            map.addControl(searchControl);#}
+{#            document.getElementById('search-input').addEventListener('input', function (e) {#}
+{#                searchControl.search(e.target.value);#}
+{#            });#}
+{#        }#}
+{##}
+{#        // Style des districts#}
+{#        function getDistrictStyle(feature) {#}
+{#            const count = feature.properties.case_count || 0;#}
+{#            let fillColor, weight, opacity;#}
+{##}
+{#            if (count === 0) {#}
+{#                fillColor = '#f8f9fa';#}
+{#                weight = 1;#}
+{#                opacity = 0.3;#}
+{#            } else if (count <= 3) {#}
+{#                fillColor = '#fff3b0';#}
+{#                weight = 1.5;#}
+{#                opacity = 0.6;#}
+{#            } else if (count <= 10) {#}
+{#                fillColor = '#f8961e';#}
+{#                weight = 2;#}
+{#                opacity = 0.8;#}
+{#            } else {#}
+{#                fillColor = '#e85d04';#}
+{#                weight = 2.5;#}
+{#                opacity = 0.9;#}
+{#            }#}
+{##}
+{#            return {#}
+{#                fillColor: fillColor,#}
+{#                weight: weight,#}
+{#                opacity: 1,#}
+{#                color: '#495057',#}
+{#                dashArray: '3',#}
+{#                fillOpacity: opacity#}
+{#            };#}
+{#        }#}
+{##}
+{#        // Interactivité des districts#}
+{#        function onEachDistrictFeature(feature, layer) {#}
+{#            const count = feature.properties.case_count || 0;#}
+{#            const name = feature.properties.nom || 'District inconnu';#}
+{##}
+{#            layer.bindTooltip(`<b>${name}</b><br>${count} cas`, {#}
+{#                permanent: false,#}
+{#                direction: 'auto',#}
+{#                className: 'district-tooltip'#}
+{#            });#}
+{##}
+{#            layer.on({#}
+{#                mouseover: function (e) {#}
+{#                    const layer = e.target;#}
+{#                    layer.setStyle({#}
+{#                        weight: 3,#}
+{#                        color: '#212529',#}
+{#                        fillOpacity: 0.9#}
+{#                    });#}
+{#                    layer.bringToFront();#}
+{#                },#}
+{#                mouseout: function (e) {#}
+{#                    districtLayer.resetStyle(e.target);#}
+{#                },#}
+{#                click: function (e) {#}
+{#                    map.fitBounds(e.target.getBounds(), {#}
+{#                        padding: [50, 50],#}
+{#                        maxZoom: 12#}
+{#                    });#}
+{#                }#}
+{#            });#}
+{#        }#}
+{##}
+{#        // Création des marqueurs#}
+{#        function createCaseMarkers(features) {#}
+{#            markerCluster.clearLayers();#}
+{##}
+{#            features.forEach(feature => {#}
+{#                if (!feature.geometry?.coordinates) return;#}
+{##}
+{#                const [lng, lat] = feature.geometry.coordinates;#}
+{#                const type = feature.properties.type;#}
+{##}
+{#                const marker = L.marker([lat, lng], {#}
+{#                    icon: createMarkerIcon(type),#}
+{#                    type: type,#}
+{#                    name: feature.properties.patient + ' ' + (feature.properties.commune || feature.properties.lieu_exposition || '')#}
+{#                });#}
+{##}
+{#                marker.bindPopup(createPopupContent(feature));#}
+{#                markerCluster.addLayer(marker);#}
+{#            });#}
+{#        }#}
+{##}
+{##}
+{#        function createMarkerIcon(type) {#}
+{#            const colors = {#}
+{#                'pre': '#0652f6',#}
+{#                'post': '#ff0016',#}
+{#                'notification': '#000000'#}
+{#            };#}
+{##}
+{#            const icons = {#}
+{#                'pre': 'fa-syringe',#}
+{#                'post': 'fa-bandaid',#}
+{#                'notification': 'fa-exclamation-triangle'#}
+{#            };#}
+{##}
+{#            return L.divIcon({#}
+{#                className: `case-marker ${type}`,#}
+{#                html: `#}
+{#        <div style="#}
+{#            background-color: ${colors[type]};#}
+{#            width: 24px;#}
+{#            height: 24px;#}
+{#            border-radius: 50%;#}
+{#            display: flex;#}
+{#            align-items: center;#}
+{#            justify-content: center;#}
+{#            color: white;#}
+{#            border: 2px solid white;#}
+{#            box-shadow: 0 0 10px rgba(0,0,0,0.3);#}
+{#        ">#}
+{#            <i class="fas ${icons[type]}" style="font-size: 12px;"></i>#}
+{#        </div>#}
+{#    `,#}
+{#                iconSize: [24, 24],#}
+{#                iconAnchor: [12, 12]#}
+{#            });#}
+{#        }#}
+{##}
+{#        function createPopupContent(feature) {#}
+{#            let details = '';#}
+{#        const props = feature.properties;#}
+{#        const detailUrls = {#}
+{#            'pre': `/preexposition/${props.id}/`,#}
+{#            'post': `/postexposition/${props.id}/`,#}
+{#            'notification': `/notification/${props.id}/`#}
+{#        };#}
+{##}
+{#        if (props.type === 'pre') {#}
+{#            details = `#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-user"></i>#}
+{#                    <div>#}
+{#                        <strong>${props.patient || 'Non renseigné'}</strong><br>#}
+{#                        ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}#}
+{#                    </div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-calendar-alt"></i>#}
+{#                    <div>${props.created_at || 'Date inconnue'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-map-marker-alt"></i>#}
+{#                    <div>${props.commune || 'Lieu non précisé'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-info-circle"></i>#}
+{#                    <div>${props.motif || 'Motif non précisé'}</div>#}
+{#                </div>#}
+{#            `;#}
+{#        } else if (props.type === 'post') {#}
+{#            details = `#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-user"></i>#}
+{#                    <div>#}
+{#                        <strong>${props.patient || 'Non renseigné'}</strong><br>#}
+{#                        ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}#}
+{#                    </div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-calendar-alt"></i>#}
+{#                    <div>${props.date_exposition || 'Date inconnue'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-map-marker-alt"></i>#}
+{#                    <div>${props.lieu_exposition || 'Lieu non précisé'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-biohazard"></i>#}
+{#                    <div>Gravité OMS: <strong>${props.gravite_oms || 'Non précisée'}</strong></div>#}
+{#                </div>#}
+{#            `;#}
+{#        } else {#}
+{#            details = `#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-user"></i>#}
+{#                    <div>#}
+{#                        <strong>${props.patient || 'Non renseigné'}</strong><br>#}
+{#                        ${props.age || ''} ${props.sexe ? ' (' + props.sexe + ')' : ''}#}
+{#                    </div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-calendar-alt"></i>#}
+{#                    <div>${props.date_notification || 'Date inconnue'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-map-marker-alt"></i>#}
+{#                    <div>${props.lieu_exposition || 'Lieu non précisé'}</div>#}
+{#                </div>#}
+{#                <div class="popup-detail">#}
+{#                    <i class="fas fa-skull"></i>#}
+{#                    <div>Évolution: <strong>${props.evolution || 'Non précisée'}</strong></div>#}
+{#                </div>#}
+{#            `;#}
+{#        }#}
+{##}
+{#        const typeLabel = getTypeLabel(props.type);#}
+{#        const typeClass = props.type + '-exposition';#}
+{##}
+{#        return `#}
+{#             <div class="popup-content">#}
+{#        <div class="popup-header">#}
+{#            <h6 class="popup-title">${typeLabel}</h6>#}
+{#            <span class="popup-badge ${typeClass}">${typeLabel}</span>#}
+{#        </div>#}
+{#        <div class="popup-body">#}
+{#            ${details}#}
+{#            <a href="${detailUrls[props.type]}"#}
+{#               class="btn btn-sm btn-primary popup-button" target="_blank">#}
+{#                <i class="fas fa-eye me-1"></i> Voir détails#}
+{#            </a>#}
+{#        </div>#}
+{#    </div>#}
+{#        `;#}
+{#    }#}
+{##}
+{#        function getTypeLabel(type) {#}
+{#            const labels = {#}
+{#                'pre': 'Pré-exposition',#}
+{#                'post': 'Post-exposition',#}
+{#                'notification': 'Notification'#}
+{#            };#}
+{#            return labels[type] || type;#}
+{#        }#}
+{##}
+{#        function getAdminPath(type) {#}
+{#            const paths = {#}
+{#                'pre': 'preexposition',#}
+{#                'post': 'postexposition',#}
+{#                'notification': 'ragehumanenotification'#}
+{#            };#}
+{#            return paths[type] || '';#}
+{#        }#}
+{##}
+{#        // Chargement des données#}
+{#        function loadDataWithParams(params = {}) {#}
+{#            const query = new URLSearchParams(params).toString();#}
+{#            showLoading(true);#}
+{##}
+{#            fetch(`{% url 'cartographie_data' %}?${query}`, {#}
+{#                headers: {'X-Requested-With': 'XMLHttpRequest'}#}
+{#            })#}
+{#                .then(res => res.json())#}
+{#                .then(data => {#}
+{#                    currentCases = data.features;#}
+{#                    updateMap(currentCases);#}
+{#                    updateDistricts(data.districts);#}
+{#                    updateSummary(currentCases);#}
+{#                    updateCaseList(currentCases);#}
+{#                    showLoading(false);#}
+{#                })#}
+{#                .catch(error => {#}
+{#                    console.error('Error loading data:', error);#}
+{#                    showLoading(false);#}
+{#                    alert('Une erreur est survenue lors du chargement des données.');#}
+{#                });#}
+{#        }#}
+{##}
+{#        function showLoading(show) {#}
+{#            document.querySelector('.loading-overlay').style.display = show ? 'flex' : 'none';#}
+{#        }#}
+{##}
+{#        // Mise à jour des districts#}
+{#        function updateDistricts(districtsData) {#}
+{#            if (districtLayer) {#}
+{#                map.removeLayer(districtLayer);#}
+{#            }#}
+{##}
+{#            districtLayer = L.geoJSON(districtsData, {#}
+{#                style: getDistrictStyle,#}
+{#                onEachFeature: onEachDistrictFeature#}
+{#            }).addTo(map);#}
+{#        }#}
+{##}
+{#        // Mise à jour de la carte#}
+{#        function updateMap(features) {#}
+{#            createCaseMarkers(features);#}
+{##}
+{#            // Ajuster la vue si moins de 10 marqueurs#}
+{#            if (features.length > 0 && features.length < 10) {#}
+{#                const markers = features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]]);#}
+{#                const bounds = L.latLngBounds(markers);#}
+{#                map.fitBounds(bounds, {padding: [50, 50]});#}
+{#            }#}
+{#        }#}
+{##}
+{#        // Mise à jour du résumé#}
+{#        function updateSummary(features) {#}
+{#            const preCount = features.filter(f => f.properties.type === 'pre').length;#}
+{#            const postCount = features.filter(f => f.properties.type === 'post').length;#}
+{#            const notifCount = features.filter(f => f.properties.type === 'notification').length;#}
+{#            const total = preCount + postCount + notifCount || 1;#}
+{##}
+{#            document.getElementById('pre-count').textContent = preCount;#}
+{#            document.getElementById('post-count').textContent = postCount;#}
+{#            document.getElementById('notification-count').textContent = notifCount;#}
+{##}
+{#            // Mettre à jour les barres de progression#}
+{#            document.querySelectorAll('.progress-bar')[0].style.width = `${(preCount / total) * 100}%`;#}
+{#            document.querySelectorAll('.progress-bar')[1].style.width = `${(postCount / total) * 100}%`;#}
+{#            document.querySelectorAll('.progress-bar')[2].style.width = `${(notifCount / total) * 100}%`;#}
+{#        }#}
+{##}
+{#        // Mise à jour de la liste des cas#}
+{#        function updateCaseList(features) {#}
+{#            const container = document.getElementById('incident-list-container');#}
+{#            container.innerHTML = '';#}
+{##}
+{#            if (features.length === 0) {#}
+{#                container.innerHTML = `#}
+{#                    <div class="text-center py-3 text-muted">#}
+{#                        <i class="fas fa-info-circle fa-2x mb-2"></i>#}
+{#                        <p>Aucun cas ne correspond aux filtres</p>#}
+{#                    </div>#}
+{#                `;#}
+{#                return;#}
+{#            }#}
+{##}
+{#            // Trier par date (du plus récent au plus ancien)#}
+{#            const sortedCases = [...features].sort((a, b) => {#}
+{#                const dateA = new Date(a.properties.date || a.properties.created_at || a.properties.date_exposition || a.properties.date_notification);#}
+{#                const dateB = new Date(b.properties.date || b.properties.created_at || b.properties.date_exposition || b.properties.date_notification);#}
+{#                return dateB - dateA;#}
+{#            });#}
+{##}
+{#            // Limiter à 20 cas pour les performances#}
+{#            sortedCases.slice(0, 20).forEach(feature => {#}
+{#                if (!feature.geometry?.coordinates) return;#}
+{##}
+{#                const card = document.createElement('div');#}
+{#                card.className = `incident-card ${feature.properties.type}-exposition`;#}
+{##}
+{#                let date, title, location;#}
+{##}
+{#                if (feature.properties.type === 'pre') {#}
+{#                    date = feature.properties.created_at;#}
+{#                    title = 'Pré-exposition';#}
+{#                    location = feature.properties.commune;#}
+{#                } else if (feature.properties.type === 'post') {#}
+{#                    date = feature.properties.date_exposition;#}
+{#                    title = 'Post-exposition';#}
+{#                    location = feature.properties.lieu_exposition;#}
+{#                } else {#}
+{#                    date = feature.properties.date_notification;#}
+{#                    title = 'Notification';#}
+{#                    location = feature.properties.lieu_exposition;#}
+{#                }#}
+{##}
+{#                const formattedDate = date ? new Date(date).toLocaleDateString('fr-FR') : 'Date inconnue';#}
+{##}
+{#                card.innerHTML = `#}
+{#                    <div class="incident-header">#}
+{#                        <div class="incident-title">${feature.properties.patient || 'Patient anonyme'}</div>#}
+{#                        <div class="incident-date">${formattedDate}</div>#}
+{#                    </div>#}
+{#                    <div class="incident-location">#}
+{#                        <i class="fas fa-map-marker-alt"></i>#}
+{#                        <span>${location || 'Lieu non précisé'}</span>#}
+{#                    </div>#}
+{#                    <span class="incident-badge ${feature.properties.type}-exposition">${title}</span>#}
+{#                `;#}
+{##}
+{#                card.addEventListener('click', () => {#}
+{#                    const [lng, lat] = feature.geometry.coordinates;#}
+{#                    map.flyTo([lat, lng], 15, {#}
+{#                        duration: 0.5#}
+{#                    });#}
+{##}
+{#                    // Trouver et ouvrir le popup correspondant#}
+{#                    setTimeout(() => {#}
+{#                        markerCluster.eachLayer(layer => {#}
+{#                            if (layer instanceof L.Marker &&#}
+{#                                layer.getLatLng().lat === lat &&#}
+{#                                layer.getLatLng().lng === lng) {#}
+{#                                layer.openPopup();#}
+{#                            }#}
+{#                        });#}
+{#                    }, 500);#}
+{#                });#}
+{##}
+{#                container.appendChild(card);#}
+{#            });#}
+{#        }#}
+{##}
+{#        // Gestion du plein écran#}
+{#        document.getElementById('fullscreen-button').addEventListener('click', () => {#}
+{#            if (!document.fullscreenElement) {#}
+{#                document.documentElement.requestFullscreen().catch(err => {#}
+{#                    console.error("Erreur plein écran:", err);#}
+{#                });#}
+{#                document.getElementById('fullscreen-button').innerHTML = '<i class="fas fa-compress"></i>';#}
+{#            } else {#}
+{#                document.exitFullscreen();#}
+{#                document.getElementById('fullscreen-button').innerHTML = '<i class="fas fa-expand"></i>';#}
+{#            }#}
+{#        });#}
+{##}
+{#        // Localisation de l'utilisateur#}
+{#        document.getElementById('locate-button').addEventListener('click', () => {#}
+{#            map.locate({setView: true, maxZoom: 12});#}
+{#        });#}
+{##}
+{#        // Appliquer les filtres#}
+{#        function applyFilters() {#}
+{#            console.log("Application des filtres...");#}
+{#            const poleFilter = document.getElementById('pole-filter');#}
+{#            const regionFilter = document.getElementById('region-filter');#}
+{#            const districtFilter = document.getElementById('district-filter');#}
+{#            const typeFilter = document.getElementById('type-filter');#}
+{#            const graviteFilter = document.getElementById('gravite-filter');#}
+{#            const startDate = document.getElementById('start-date');#}
+{#            const endDate = document.getElementById('end-date');#}
+{#            if (!poleFilter || !regionFilter || !districtFilter || !typeFilter || !graviteFilter || !startDate || !endDate) {#}
+{#                console.error('Un ou plusieurs éléments de filtre sont introuvables');#}
+{#                return;#}
+{#            }#}
+{#            const params = {#}
+{#                pole_id: poleFilter.value,#}
+{#                region_id: regionFilter.value,#}
+{#                district_id: districtFilter.value,#}
+{#                type: typeFilter.value,#}
+{#                gravite: graviteFilter.value,#}
+{#                start_date: startDate.value,#}
+{#                end_date: endDate.value#}
+{#            };#}
+{##}
+{#            // Nettoyer les paramètres vides#}
+{#            Object.keys(params).forEach(key => {#}
+{#                if (params[key] === 'all' || params[key] === '') delete params[key];#}
+{#            });#}
+{##}
+{#            loadDataWithParams(params);#}
+{#        }#}
+{##}
+{#        // Réinitialiser les filtres#}
+{#        function resetFilters() {#}
+{#            document.getElementById('pole-filter').value = 'all';#}
+{#            document.getElementById('region-filter').value = 'all';#}
+{#            document.getElementById('district-filter').value = 'all';#}
+{#            document.getElementById('type-filter').value = 'all';#}
+{#            document.getElementById('gravite-filter').value = 'all';#}
+{#            document.getElementById('start-date').value = '';#}
+{#            document.getElementById('end-date').value = '';#}
+{##}
+{#            loadDataWithParams();#}
+{#        }#}
+{##}
+{#        // Gestion des panneaux pliables#}
+{#        function setupCollapsiblePanels() {#}
+{#            const headers = document.querySelectorAll('.panel-header');#}
+{##}
+{#            headers.forEach(header => {#}
+{#                header.addEventListener('click', () => {#}
+{#                    const content = header.nextElementSibling;#}
+{#                    header.classList.toggle('collapsed');#}
+{#                    content.classList.toggle('collapsed');#}
+{#                });#}
+{#            });#}
+{#        }#}
+{##}
+{#        // Initialisation#}
+{#        initMap();#}
+{#        setupCollapsiblePanels();#}
+{#        loadDataWithParams();#}
+{##}
+{#        // Écouteurs d'événements#}
+{#        document.getElementById('apply-filters').addEventListener('click', applyFilters);#}
+{#        document.getElementById('reset-filters').addEventListener('click', resetFilters);#}
+{##}
+{#        // Gestion des dates par défaut (30 derniers jours)#}
+{#        const endDate = new Date();#}
+{#        const startDate = new Date();#}
+{#        startDate.setDate(startDate.getDate() - 30);#}
+{##}
+{#        document.getElementById('start-date').valueAsDate = startDate;#}
+{#        document.getElementById('end-date').valueAsDate = endDate;#}
+{#    });#}
+{#</script>#}
+
+</body>
+</html>

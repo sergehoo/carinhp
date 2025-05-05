@@ -146,22 +146,21 @@
                                             <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
-                                        <td>
-                                            {% if v.mapi.all %}
-                                                {% for m in v.mapi.all %}
-                                                <span class="label label-{{ m.gravite }} label-inline mb-1">
-                                                    {{ m.get_gravite_display }} - {{ m.date_apparition|date:"d/m H:i" }}
-                                                </span>
-                                                {% endfor %}
-                                            {% else %}
-                                                <span class="text-muted">Aucun</span>
-                                            {% endif %}
-
+                                        <td style="text-align: center">
+                                        {% if v.mapi.all %}
+    <span class="badge badge-danger" data-toggle="popover"
+               title="Alerte"
+               data-content="⚠️Le patient a signalé une ou plusieurs manisfestation(s) post-injection merci de consulter les donnees dans le detail de la vaccination ">{{ v.mapi.count }} MAPI</span>
+{% else %}
+    <span class="text-muted">Aucun</span>
                                             <button class="btn btn-icon btn-primary btn-xs mt-1" data-toggle="modal"
                                                     data-target="#addMAPI-{{ v.id }}"
                                                     title="Ajouter un MAPI">
                                                 <i class="flaticon2-add"></i>
                                             </button>
+{% endif %}
+
+
 
                                             <!-- MAPI Modal -->
                                             <div class="modal fade" id="addMAPI-{{ v.id }}" tabindex="-1" role="dialog">

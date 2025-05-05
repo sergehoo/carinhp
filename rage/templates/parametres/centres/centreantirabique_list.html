@@ -1,0 +1,100 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title="Gestion des Centres Antirabiques" subtitle="Liste des centres de vaccination antirabique" %}
+
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Liste des Centres
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Centres de vaccination antirabique enregistrés
+                                </span>
+                            </h3>
+                        </div>
+
+                        <div class="card-toolbar">
+                            <!-- Filtre par district -->
+                            <div class="dropdown dropdown-inline mr-2">
+                                <button type="button" class="btn btn-light-primary dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="flaticon2-filter-1"></i> Filtre par district
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    {% for district in districts %}
+                                    <a class="dropdown-item" href="?district={{ district.pk }}">{{ district.nom }}</a>
+                                    {% endfor %}
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="?">Tous les districts</a>
+                                </div>
+                            </div>
+
+                            <!-- Bouton d'ajout -->
+                            {% if perms.rage.add_centreantirabique %}
+                            <a href="{% url 'centreantirabique_create' %}" class="btn btn-primary font-weight-bolder">
+                                <i class="flaticon2-add"></i> Nouveau Centre
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center">
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Type</th>
+                                        <th>District</th>
+                                        <th>Utilisateurs</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for centre in centres %}
+                                    <tr>
+                                        <td>{{ centre.nom }}</td>
+                                        <td>{{ centre.type|default:"-" }}</td>
+                                        <td>{{ centre.district|default:"-" }}</td>
+                                        <td>{{ centre.employeeuser_set.count }}</td>
+                                        <td nowrap>
+                                            <a href="{% url 'centreantirabique_detail' centre.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Détails">
+                                                <i class="flaticon-eye"></i>
+                                            </a>
+                                            {% if perms.rage.change_centreantirabique %}
+                                            <a href="{% url 'centreantirabique_update' centre.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Modifier">
+                                                <i class="flaticon2-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if perms.rage.delete_centreantirabique %}
+                                            <a href="{% url 'centreantirabique_delete' centre.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Supprimer">
+                                                <i class="flaticon2-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aucun centre enregistré</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

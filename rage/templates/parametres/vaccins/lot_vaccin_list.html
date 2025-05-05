@@ -1,0 +1,108 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!-- Content Section -->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!-- Custom Subheader Component -->
+        {% include 'layout/header-title.html' with title="Gestion des Lots de Vaccins" subtitle="Suivi des stocks de vaccins" %}
+
+        <!-- Main Content Area -->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!-- Lot Vaccin Management Card -->
+                <div class="card card-custom">
+                    <!-- Card Header with Actions -->
+                    <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Liste des Lots
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Gestion des stocks de vaccins par lot
+                                </span>
+                            </h3>
+                        </div>
+
+                        <div class="card-toolbar">
+                            <!-- Filter Dropdown -->
+                            <div class="dropdown dropdown-inline mr-2">
+                                <button type="button" class="btn btn-light-primary font-weight-bolder dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="flaticon2-filter-1 mr-2"></i>Filtrer
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <ul class="nav navi flex-column navi-hover py-2">
+                                        <li class="navi-header font-weight-bolder text-uppercase text-primary mb-2">
+                                            Options de filtre
+                                        </li>
+                                        <li class="navi-item">
+                                            <a href="?expiration=soon" class="navi-link">
+                                                <span class="navi-text">Expiration proche (30 jours)</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Add Lot Button -->
+                            <a href="{% url 'lot_vaccin_create' %}"
+                               class="btn btn-primary font-weight-bolder"
+                               data-toggle="tooltip" title="Ajouter un nouveau lot">
+                                <i class="flaticon2-add mr-2"></i>Nouveau Lot
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Card Body with Lot List -->
+                    <div class="card-body pt-0">
+                        <!-- Lot Table -->
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center" id="kt_datatable_lots">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro de lot</th>
+                                        <th>Vaccin</th>
+                                        <th>Date expiration</th>
+                                        <th>Quantité disponible</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lot in lots %}
+                                    <tr>
+                                        <td>{{ lot.numero_lot }}</td>
+                                        <td>{{ lot.vaccin.nom }}</td>
+                                        <td>{{ lot.date_expiration|date:"d/m/Y" }}</td>
+                                        <td>{{ lot.quantite_disponible }} {{ lot.vaccin.get_unite_display }}</td>
+                                        <td nowrap>
+                                            <a href="{% url 'lot_vaccin_detail' lot.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon"
+                                               title="Détails">
+                                                <i class="flaticon-eye"></i>
+                                            </a>
+                                            <a href="{% url 'lot_vaccin_update' lot.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon"
+                                               title="Modifier">
+                                                <i class="flaticon2-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aucun lot enregistré</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

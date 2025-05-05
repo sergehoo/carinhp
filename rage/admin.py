@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.gis.admin import OSMGeoAdmin
 from django.db import transaction
+from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin, ExportMixin
 from leaflet.admin import LeafletGeoAdmin
@@ -10,7 +11,8 @@ from simple_history.admin import SimpleHistoryAdmin
 from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSanitaire, CentreAntirabique, Commune, \
     EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
     PreleveMode, Epidemie, RendezVousVaccination, Echantillon, Vaccins, Facture, Caisse, TypeProtocole, \
-    Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin
+    Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin, \
+    InjectionImmunoglobuline
 from rage_INHP.resources import RageHumaineNotificationResource
 from rage_INHP.services import synchroniser_avec_mpi
 
@@ -176,7 +178,7 @@ class PatientAdmin(admin.ModelAdmin):
     list_display = (
         'code_patient', 'nom', 'prenoms',
         'contact', 'accompagnateur_contact',
-        'calculate_age', 'mpi_upi', 'status', 'gueris', 'decede', 'created_at'
+        'calculate_age', 'poids', 'mpi_upi', 'status', 'gueris', 'decede', 'created_at'
     )
     list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'commune', 'created_at')
     search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateur_contact')
@@ -185,7 +187,7 @@ class PatientAdmin(admin.ModelAdmin):
         ("Identité du patient", {
             'fields': (
                 ('nom', 'prenoms', 'sexe'),
-                ('date_naissance', 'calculate_age'),
+                ('date_naissance', 'calculate_age', 'poids'),
                 ('contact', 'status'),
             )
         }),
@@ -194,7 +196,7 @@ class PatientAdmin(admin.ModelAdmin):
                 'secteur_activite', 'niveau_etude',
                 'commune', 'quartier', 'village',
                 'centre_ar', 'num_cmu',
-                'cni_num','cni_nni',
+                'cni_num', 'cni_nni',
                 'proprietaire_animal', 'typeanimal', 'autretypeanimal'
             )
         }),
@@ -431,3 +433,69 @@ class MAPIAdmin(admin.ModelAdmin):
         if obj:  # editing an existing object
             return ('created_by', 'created_at')
         return ()
+
+
+@admin.register(InjectionImmunoglobuline)
+class InjectionImmunoglobulineAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'injection_status', 'date_injection', 'dose_ml', 'voie_injection', 'created_by')
+    list_filter = ('type_produit', 'voie_injection', 'date_injection', 'refus_injection')
+    search_fields = ('patient__nom', 'patient__prenom', 'type_produit', 'numero_lot', 'motif_refus')
+    date_hierarchy = 'date_injection'
+    readonly_fields = ('created_by', 'created_at')
+    list_select_related = ('patient', 'created_by')
+
+    fieldsets = (
+        ('Informations de base', {
+            'fields': ('patient', 'date_injection', 'created_by', 'created_at')
+        }),
+        ('Statut de l\'injection', {
+            'fields': ('refus_injection', 'motif_refus'),
+            'classes': ('collapse', 'wide')
+        }),
+        ('Détails de l\'injection', {
+            'fields': ('type_produit', 'dose_ml', 'voie_injection', 'site_injection'),
+            'classes': ('collapse',)
+        }),
+        ('Information produit', {
+            'fields': ('numero_lot', 'date_peremption', 'laboratoire_fabricant'),
+            'classes': ('collapse',)
+        }),
+        ('Commentaires', {
+            'fields': ('commentaire',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def injection_status(self, obj):
+        if obj.refus_injection:
+            return format_html(
+                '<span class="badge badge-danger">Refusé</span> - {}'.format(obj.motif_refus or "Pas de motif précisé"))
+        return format_html('<span class="badge badge-success">Injecté</span> - {}'.format(obj.type_produit))
+
+    injection_status.short_description = "Statut"
+    injection_status.admin_order_field = 'refus_injection'
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj and obj.refus_injection:
+            # Réorganise les fieldsets si c'est un refus
+            return (
+                fieldsets[0],  # Informations de base
+                fieldsets[1],  # Statut (qui devient plus visible)
+                fieldsets[4]  # Commentaires
+            )
+        return fieldsets
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+        if obj:  # Si l'objet existe déjà
+            readonly_fields.extend(['patient', 'refus_injection'])
+        return readonly_fields
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # Si c'est une nouvelle création
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('patient', 'created_by')

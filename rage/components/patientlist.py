@@ -82,7 +82,25 @@ class PatientlistView(UnicornView):
         self.filter_patients()
 
     def filter_patients(self):
+        # queryset = Patient.objects.all()
+        user = self.request.user
         queryset = Patient.objects.all()
+
+        # 🔥 Restriction basée sur le role de l'utilisateur connecté
+        if user.roleemployee == 'CentreAntirabique':
+            queryset = queryset.filter(centre_ar=user.centre)
+
+        elif user.roleemployee == 'DistrictSanitaire':
+            if user.centre and user.centre.district:
+                queryset = queryset.filter(centre_ar__district=user.centre.district)
+
+        elif user.roleemployee == 'Regional':
+            if user.centre and user.centre.district and user.centre.district.region:
+                queryset = queryset.filter(
+                    centre_ar__district__region=user.centre.district.region
+                )
+
+        # National → pas de filtrage
 
         if self.search:
             queryset = queryset.filter(

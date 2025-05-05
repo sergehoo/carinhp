@@ -1,0 +1,94 @@
+{% extends 'layout/centre-base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title=form_title|default:"Formulaire Utilisateur" subtitle="Gestion des comptes utilisateurs" %}
+
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                {{ form_title|default:"Nouvel Utilisateur" }}
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Remplissez tous les champs obligatoires
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.username|as_crispy_field }}
+                                    {{ form.civilite|as_crispy_field }}
+                                    {{ form.first_name|as_crispy_field }}
+                                    {{ form.last_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.email|as_crispy_field }}
+                                    {{ form.contact|as_crispy_field }}
+                                    {{ form.fonction|as_crispy_field }}
+                                    {% if form.password1 and form.password2 %}
+                                        {{ form.password1|as_crispy_field }}
+                                        {{ form.password2|as_crispy_field }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mt-5">
+                                <div class="col-md-6">
+                                    {{ form.roleemployee|as_crispy_field }}
+                                    {{ form.centre|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.groups|as_crispy_field }}
+                                    {% if form.is_active %}
+                                        {{ form.is_active|as_crispy_field }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <button type="submit" class="btn btn-primary mr-2">
+                                        <i class="flaticon2-checkmark"></i> Enregistrer
+                                    </button>
+                                    <a href="{% url 'employeeuser_list' %}" class="btn btn-light-danger">
+                                        <i class="flaticon2-close"></i> Annuler
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'layout/footer.html' %}
+</div>
+
+<script>
+    // Dynamiquement montrer/cacher le champ centre selon le rôle
+    $(document).ready(function() {
+        function toggleCentreField() {
+            if ($('#id_roleemployee').val() === 'CentreAntirabique') {
+                $('#div_id_centre').show();
+            } else {
+                $('#div_id_centre').hide();
+            }
+        }
+
+        $('#id_roleemployee').change(toggleCentreField);
+        toggleCentreField(); // Initial call
+    });
+</script>
+{% endblock %}

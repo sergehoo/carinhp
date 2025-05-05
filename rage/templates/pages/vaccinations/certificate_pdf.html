@@ -1,0 +1,254 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Certificat de Vaccination</title>
+    <style>
+        @page {
+            size: A5;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPgogIDxkZWZzPgogICAgPHBhdHRlcm4gaWQ9InBhdHRlcm4iIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj4KICAgICAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmOGY4ZjgiLz4KICAgICAgPHBhdGggZD0iTTAgNTAgTDEwMCA1MCBNNTAgMCBMNTAgMTAwIiBzdHJva2U9IiNlMWUxZTEiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPC9wYXR0ZXJuPgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3BhdHRlcm4pIi8+Cjwvc3ZnPg==');
+            background-repeat: repeat;
+            position: relative;
+        }
+        .watermark {
+            position: absolute;
+            opacity: 0.1;
+            width: 80%;
+            height: auto;
+            left: 10%;
+            top: 30%;
+            z-index: -1;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            position: relative;
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        .header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(90deg, #1a6fc9, #34b7eb);
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1a6fc9;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+        .logo {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: rgba(240, 248, 255, 0.5);
+            border-radius: 5px;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #1a6fc9;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: "•";
+            color: #1a6fc9;
+            font-size: 20px;
+            margin-right: 8px;
+        }
+        .patient-info, .vaccination-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .info-item {
+            width: 48%;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+        }
+        .label {
+            font-weight: bold;
+            min-width: 120px;
+            color: #555;
+        }
+        .value {
+            flex-grow: 1;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: white;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .qr-container {
+            text-align: center;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .signature {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 150px;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 11px;
+        }
+        .stamp {
+            position: absolute;
+            right: 30px;
+            bottom: 30px;
+            opacity: 0.8;
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #c00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c00;
+            font-size: 10px;
+            transform: rotate(-15deg);
+        }
+        .decoration {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: rgba(52, 183, 235, 0.1);
+            border-radius: 50%;
+            z-index: -1;
+        }
+        .decoration-1 {
+            top: -50px;
+            right: -50px;
+        }
+        .decoration-2 {
+            bottom: -30px;
+            left: -30px;
+            width: 60px;
+            height: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="decoration decoration-1"></div>
+        <div class="decoration decoration-2"></div>
+
+        <div class="header">
+            <div class="title">Certificat de Vaccination</div>
+            <div class="subtitle">Ministère de la Santé • République</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">INFORMATIONS DU PATIENT</div>
+            <div class="patient-info">
+                <div class="info-item">
+                    <span class="label">Nom:</span>
+                    <span class="value">{{ vaccination.patient.nom }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Prénom:</span>
+                    <span class="value">{{ vaccination.patient.prenoms }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Date de naissance:</span>
+                    <span class="value">{{ vaccination.patient.date_naissance|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">DÉTAILS DE LA VACCINATION</div>
+            <div class="vaccination-info">
+                <div class="info-item">
+                    <span class="label">Date:</span>
+                    <span class="value">{{ vaccination.date_effective|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Vaccin:</span>
+                    <span class="value">{{ vaccination.vaccin.nom|default:"Non spécifié" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Numéro de lot:</span>
+                    <span class="value">{{ vaccination.lot.numero|default:"Non spécifié" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Dose:</span>
+                    <span class="value">{{ vaccination.dose_numero }}/{{ vaccination.nombre_dose }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Protocole:</span>
+                    <span class="value">{{ vaccination.protocole.nom }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Lieu:</span>
+                    <span class="value">{{ vaccination.lieu }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="qr-container">
+            <div class="qr-code">
+                <img src="data:image/png;base64,{{ qr_code_data|qr_code_image }}" width="120" height="120">
+                <div style="font-size: 11px; margin-top: 5px;">Code de vérification unique</div>
+            </div>
+        </div>
+
+        <div class="signature">
+            <div class="signature-line">Signature du professionnel de santé</div>
+            <div class="signature-line">Signature du patient/tuteur</div>
+        </div>
+
+        <div class="stamp">
+            Cachet<br>officiel
+        </div>
+
+        <div class="footer">
+            Certificat généré le {{ date_emission|date:"d/m/Y à H:i" }}<br>
+            Document officiel - Ne pas falsifier
+        </div>
+    </div>
+</body>
+</html>

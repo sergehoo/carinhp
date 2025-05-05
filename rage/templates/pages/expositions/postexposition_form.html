@@ -5,6 +5,11 @@
 
 
 {% block content %}
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
     <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
         <!--begin::Content-->
@@ -32,628 +37,858 @@
                         <!--end::Header-->
 
                         <!--begin::Body-->
-
                         <div class="card-body">
-                            {% if messages %}
-                                {% for message in messages %}
-                                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
-                                        {{ message }}
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
+                            <div class="container mt-5" x-data="patientFormLogic()">
+                                <h1 class="text-center text-primary mb-4">Création d'un Dossier de Post-Exposition</h1>
 
-                            <form method="post" class="needs-validation" x-data="{
-                            patientMineur: false,
-                            aimeAnimaux: false,
-                            autre: false,
-                            diffCanal: false,
-                            connaitProtocoleVar: false }">
-                                {% csrf_token %}
-
-                                {% if form.non_field_errors %}
+                                {% if patient_form.errors or exposition_form.errors %}
                                     <div class="alert alert-danger">
-                                        {% for error in form.non_field_errors %}
-                                            <p>{{ error }}</p>
-                                        {% endfor %}
+                                        <strong>Veuillez corriger les erreurs ci-dessous :</strong>
+                                        <ul>
+                                            {% for field in patient_form %}
+                                                {% for error in field.errors %}
+                                                    <li><strong>{{ field.label }} :</strong> {{ error }}</li>
+                                                {% endfor %}
+                                            {% endfor %}
+                                            {% for field in exposition_form %}
+                                                {% for error in field.errors %}
+                                                    <li><strong>{{ field.label }} :</strong> {{ error }}</li>
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </ul>
                                     </div>
                                 {% endif %}
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                                            {{ message }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
 
-                                <!-- Identification du Patient -->
-                                <h2 class="mt-4 text-center text-primary">IDENTIFICATION DU CLIENT</h2>
-                                <div class="row">
-                                    <div class="col-md-6 form-group">
-                                        <label>Nom</label>
-                                        {{ form.nom }}
-                                        <small class="text-danger">{{ form.nom.errors }}</small>
 
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Prénom</label>
-                                        {{ form.prenoms }}
-                                        <small class="text-danger">{{ form.prenoms.errors }}</small>
+                                <form method="post" enctype="multipart/form-data" class="needs-validation"
+                                      @submit="if ($event.target.checkValidity()) { loading = true } else { $event.target.reportValidity(); }">
+                                    {% csrf_token %}
+                                    <!-- 1️⃣ Informations Principales du Patient -->
 
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Date de Naissance</label>
-                                        {{ form.date_naissance }}
-                                        <small class="text-danger">{{ form.date_naissance.errors }}</small>
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Sexe</label>
-                                        {{ form.sexe }}
-                                        <small class="text-danger">{{ form.sexe.errors }}</small>
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Contact</label>
-                                        {{ form.contact }}
-                                        <small class="text-danger">{{ form.contact.errors }}</small>
+
+                                    <div class="card mb-5 shadow-sm">
+                                        <div class="card-header bg-primary text-white font-weight-bold">
+                                            Identification du Patient
+                                        </div>
+                                        <div class="card-body row">
+                                            {% for field in patient_form %}
+                                                {% if field.name == "nom" or field.name == "prenoms" or field.name == "contact" or field.name == "sexe" or field.name == "poids"  or field.name == "num_cmu" or field.name == "cni_num" or field.name == "secteur_activite" or field.name == "niveau_etude" or field.name == "commune" or field.name == "quartier" %}
+
+                                                    <div class="col-md-3 mb-3" x-data
+                                                         x-init="if('{{ field.name }}' === 'patient_mineur') { $el.querySelector('input').addEventListener('change', e => patientMineur = e.target.checked) }">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+
+                                                {% endif %}
+
+                                            {% endfor %}
+                                            <div class="col-md-3 mb-3">
+                                                <label>Date de naissance <span class="text-danger">*</span></label>
+                                                <input type="date"
+                                                       name="date_naissance"
+                                                       id="id_date_naissance"
+
+                                                       class="form-control"
+                                                       @change="handleDateChange">
+                                                <small class="text-danger">{{ field.errors }}</small>
+                                            </div>
+                                            <!-- 2️⃣ Informations Accompagnateur (seulement si Patient Mineur) -->
+
+                                            <div class="card-body row " x-show="patientMineur"
+                                                 x-init="checkProprioAnimal($refs.accompagnateurNature?.value)">
+                                                <div class="row col-12 text-muted">
+                                                    Le patient est un mineur de moins de 21 ans, veuillez renseigner les
+                                                    informations de l'accompagnant
+                                                </div>
+                                                <h1> Informations Accompagnateur (seulement si Patient Mineur)</h1>
+                                                {% for field in patient_form %}
+                                                    {% if field.name == "accompagnateur" or field.name == "accompagnateur_contact" or field.name == "accompagnateur_niveau_etude" %}
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>{{ field.label|capfirst }} <span class="text-danger">*</span></label>
+                                                            {{ field }}
+                                                            <small class="text-danger">{{ field.errors }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                <div class="col-md-6 mb-3">
+                                                    <label>{{ patient_form.accompagnateur_nature.label|capfirst }} <span
+                                                            class="text-danger">*</span></label>
+                                                    <select x-ref="accompagnateurNature"
+                                                            @change="checkProprioAnimal($event.target.value)"
+                                                            name="{{ patient_form.accompagnateur_nature.name }}"
+                                                            class="form-control">
+                                                        {% for val, label in patient_form.accompagnateur_nature.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if patient_form.accompagnateur_nature.value == val %}selected{% endif %}>{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ patient_form.accompagnateur_nature.errors }}</small>
+                                                </div>
+                                            </div>
+
+                                        </div>
                                     </div>
 
-                                    <div x-data="{
-    search: '',
-    options: [],
-    async fetchOptions() {
-        if (this.search.length > 1) {
-            const response = await fetch('/api/communes?query=' + this.search);
-            this.options = await response.json();
-        } else {
-            this.options = [];
-        }
-    }
-}" class="col-md-6 form-group position-relative">
-                                        <label for="commune">Commune</label>
-                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
-                                               class="form-control" placeholder="Rechercher une commune..."
-                                               autocomplete="off">
 
-                                        <!-- Liste déroulante améliorée -->
-                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
-                                             x-show="options.length" x-on:click.away="options = []">
-                                            <ul class="list-group shadow bg-white w-100">
-                                                <template x-for="option in options" :key="option.id">
-                                                    <li class="list-group-item list-group-item-action"
-                                                        x-text="option.name"
-                                                        x-on:click.prevent="search = option.name; options = []">
-                                                    </li>
+                                    <!-- 3️⃣ Détails de l'Exposition -->
+                                    <div class="card mb-5 shadow-sm">
+                                        <div class="card-header bg-info text-white font-weight-bold">
+                                            Détails de l'Exposition
+                                        </div>
+                                        <div class="card-body row">
+                                            {% for field in exposition_form %}
+                                                {% if field.name == "date_exposition" or field.name == "lieu_exposition" or field.name == "exposition_commune" or field.name == "exposition_quartier" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+
+                                        <div class="card-body row">
+                                            <div class="col-12"><h2 class="text-success">Circonstance de
+                                                l'exposition</h2></div>
+                                            {% for field in exposition_form %}
+                                                {% if field.name == "circonstance" or field.name == "attaque_collective" or field.name == "professionnel" or field.name == "type_professionnel" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+
+                                        <div class="card-body row" x-data="{ autreOui: false }">
+                                            <div class="col-12"><h2 class="text-success">Nature de l'exposition</h2>
+                                            </div>
+                                            {% for field in exposition_form %}
+                                                {% if field.name == "morsure" or field.name == "griffure" or field.name == "lechage_lesee"  or field.name == "contactanimalpositif" or field.name == "contactpatientpositif" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <!-- Champ AUTRE -->
+                                            <div class="col-md-2 mb-3">
+                                                <label for="{{ exposition_form.autre.id_for_label }}">{{ exposition_form.autre.label }}</label>
+                                                <select
+                                                        id="{{ exposition_form.autre.id_for_label }}"
+                                                        name="{{ exposition_form.autre.name }}"
+                                                        class="form-control"
+                                                        @change="autreOui = ($event.target.value === 'Oui')"
+                                                >
+                                                    {% for value, label in exposition_form.autre.field.choices %}
+                                                        <option value="{{ value }}"
+                                                                {% if exposition_form.autre.value == value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.autre.errors }}</small>
+                                            </div>
+                                            <!-- Champ AUTRE_NATURE_EXPOSITION -->
+                                            <div class="col-md-4 mb-3" x-show="autreOui" x-transition>
+                                                <label for="{{ exposition_form.autre_nature_exposition.id_for_label }}">
+                                                    {{ exposition_form.autre_nature_exposition.label }}
+                                                </label>
+                                                {{ exposition_form.autre_nature_exposition }}
+                                                <small class="text-danger">{{ exposition_form.autre_nature_exposition.errors }}</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="card-body row" x-data="{
+        tete_cou: '{{ exposition_form.tete_cou.value }}' === 'Oui',
+        membre_superieur: '{{ exposition_form.membre_superieur.value }}' === 'Oui',
+        tronc: '{{ exposition_form.tronc.value }}' === 'Oui',
+        membre_inferieur: '{{ exposition_form.membre_inferieur.value }}' === 'Oui',
+        vetements_presents: '{{ exposition_form.vetements_presents.value }}' === 'Oui',
+
+
+{#        dechires: '{{ exposition_form.traitements_en_cours.value }}' === 'Oui',#}
+     }">
+                                            <div class="col-12"><h2 class="text-success">Siège de l'exposition</h2>
+                                            </div>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.tete_cou.label }}</label>
+                                                <select class="form-control"
+                                                        name="{{ exposition_form.tete_cou.name }}"
+                                                        @change="tete_cou = ($event.target.value === 'Oui')">
+                                                    {% for val, label in exposition_form.tete_cou.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if exposition_form.tete_cou.value == val %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.tete_cou.errors }}</small>
+                                            </div>
+                                            <template x-if="tete_cou">
+                                                <div class="col-md-3 mb-3"
+                                                     x-init="$nextTick(() => { $('#kt_select2_34').select2(); })">
+                                                    <label>{{ exposition_form.preciser_tetecou.label }}</label>
+                                                    {{ exposition_form.preciser_tetecou }}
+                                                    <small class="text-danger">{{ exposition_form.preciser_tetecou.errors }}</small>
+                                                </div>
+                                            </template>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.membre_superieur.label }}</label>
+                                                <select class="form-control"
+                                                        name="{{ exposition_form.membre_superieur.name }}"
+                                                        @change="membre_superieur = ($event.target.value === 'Oui')">
+                                                    {% for val, label in exposition_form.membre_superieur.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if exposition_form.membre_superieur.value == val %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.membre_superieur.errors }}</small>
+                                            </div>
+                                            <template x-if="membre_superieur">
+                                                <div class="col-md-3 mb-3"
+                                                     x-init="$nextTick(() => { $('#kt_select2_3').select2(); })">
+                                                    <label>{{ exposition_form.preciser_membre_sup.label }}</label>
+                                                    {{ exposition_form.preciser_membre_sup }}
+                                                    <small class="text-danger">{{ exposition_form.preciser_membre_sup.errors }}</small>
+                                                </div>
+                                            </template>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.tronc.label }}</label>
+                                                <select class="form-control"
+                                                        name="{{ exposition_form.tronc.name }}"
+                                                        @change="tronc = ($event.target.value === 'Oui')">
+                                                    {% for val, label in exposition_form.tronc.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if exposition_form.tronc.value == val %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.tronc.errors }}</small>
+                                            </div>
+                                            <template x-if="tronc">
+                                                <div class="col-md-3 mb-3"
+                                                     x-init="$nextTick(() => { $('#kt_select2_32').select2(); })">
+                                                    <label>{{ exposition_form.preciser_tronc.label }}</label>
+                                                    {{ exposition_form.preciser_tronc }}
+                                                    <small class="text-danger">{{ exposition_form.preciser_tronc.errors }}</small>
+                                                </div>
+                                            </template>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.membre_inferieur.label }}</label>
+                                                <select class="form-control"
+                                                        name="{{ exposition_form.membre_inferieur.name }}"
+                                                        @change="membre_inferieur = ($event.target.value === 'Oui')">
+                                                    {% for val, label in exposition_form.membre_inferieur.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if exposition_form.membre_inferieur.value == val %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.membre_inferieur.errors }}</small>
+                                            </div>
+                                            <template x-if="membre_inferieur">
+                                                <div class="col-md-3 mb-3"
+                                                     x-init="$nextTick(() => { $('#kt_select2_33').select2(); })">
+                                                    <label>{{ exposition_form.preciser_membre_inf.label }}</label>
+                                                    {{ exposition_form.preciser_membre_inf }}
+                                                    <small class="text-danger">{{ exposition_form.preciser_membre_inf.errors }}</small>
+                                                </div>
+                                            </template>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.vetements_presents.label }}</label>
+                                                <select class="form-control"
+                                                        name="{{ exposition_form.vetements_presents.name }}"
+                                                        @change="vetements_presents = ($event.target.value === 'Oui')">
+                                                    {% for val, label in exposition_form.vetements_presents.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if exposition_form.vetements_presents.value == val %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.vetements_presents.errors }}</small>
+                                            </div>
+                                            <template x-if="vetements_presents">
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.dechires.label }}</label>
+                                                    {{ exposition_form.dechires }}
+                                                    <small class="text-danger">{{ exposition_form.dechires.errors }}</small>
+                                                </div>
+                                            </template>
+
+
+
+                                            {% for field in exposition_form %}
+                                                {% if  field.name == "saignement_immediat"  or field.name == "nbrlesions" or field.name == "organes_genitaux_externes" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                        </div>
+                                    </div>
+
+
+                                    <!-- 4️⃣ Informations Animal -->
+                                    <div class="card mb-5 shadow-sm">
+                                        <div class="card-header bg-danger text-white font-weight-bold">
+                                            Informations Animal
+                                        </div>
+                                        <div class="card-body row"
+                                             x-data="{ especeAutre: '{{ exposition_form.espece.value }}' === 'Autre', updateAutreEspece(e) {
+ this.especeAutre = e.target.value === 'Autre';}}">
+
+                                            <div class="col-12"><h2 class="text-success">Espèce Animal</h2></div>
+
+                                            <!-- Champ 'espece' avec détection de 'Autre' -->
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.espece.label }}</label>
+                                                <select name="{{ exposition_form.espece.name }}"
+                                                        id="{{ exposition_form.espece.id_for_label }}"
+                                                        class="form-control"
+                                                        @change="updateAutreEspece"
+                                                >
+                                                    {% for value, label in exposition_form.espece.field.choices %}
+                                                        <option value="{{ value }}"
+                                                                {% if exposition_form.espece.value == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ exposition_form.espece.errors }}</small>
+                                            </div>
+
+                                            <!-- Champ 'autre_animal' (affiché seulement si espece == Autre) -->
+                                            <div class="col-md-3 mb-3" x-show="especeAutre" x-transition>
+                                                <label>{{ exposition_form.autre_animal.label }}</label>
+                                                {{ exposition_form.autre_animal }}
+                                                <small class="text-danger">{{ exposition_form.autre_animal.errors }}</small>
+                                            </div>
+                                            <!-- Champ 'domestic' -->
+                                            <div class="col-md-3 mb-3">
+                                                <label>{{ exposition_form.domestic.label }}</label>
+                                                {{ exposition_form.domestic }}
+                                                <small class="text-danger">{{ exposition_form.domestic.errors }}</small>
+                                            </div>
+                                            <!-- ... Le reste de la section Statut de l'animal / Propriétaire / Vaccin ... -->
+                                            <div class="col-12"><h2 class="text-success">Statut de l'Animal</h2></div>
+                                            {% for field in exposition_form %}
+                                                {% if field.name == "connu" or field.name == "disponible" or field.name == "errant" or field.name == "disparu" or field.name == "mort" or field.name ==  "abatu" or field.name == "autre_statut" or field.name == "autre_statut_precis" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            <div class="card-body row"
+                                                 x-data="{ connaisProprio: '{{ exposition_form.connais_proprio.value }}' === 'Oui' }"
+                                                 x-show="!estProprietaireAnimal">
+
+                                                <div class="col-12"><h2 class="text-success">Information sur le
+                                                    Propriétaire</h2></div>
+
+                                                <!-- Champ connais_proprio avec binding -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ exposition_form.connais_proprio.label }}</label>
+                                                    <select name="{{ exposition_form.connais_proprio.name }}"
+                                                            id="{{ exposition_form.connais_proprio.id_for_label }}"
+                                                            class="form-control"
+                                                            @change="connaisProprio = ($event.target.value === 'Oui')">
+                                                        {% for value, label in exposition_form.connais_proprio.field.choices %}
+                                                            <option value="{{ value }}"
+                                                                    {% if exposition_form.connais_proprio.value == value %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.connais_proprio.errors }}</small>
+                                                </div>
+
+                                                <!-- Champs affichés uniquement si connaisProprio == 'Oui' -->
+                                                <template x-if="connaisProprio">
+                                                    <div class="col-md-8 row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>{{ exposition_form.nom_proprietaire.label }}</label>
+                                                            {{ exposition_form.nom_proprietaire }}
+                                                            <small class="text-danger">{{ exposition_form.nom_proprietaire.errors }}</small>
+                                                        </div>
+
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>{{ exposition_form.contact_proprietaire.label }}</label>
+                                                            {{ exposition_form.contact_proprietaire }}
+                                                            <small class="text-danger">{{ exposition_form.contact_proprietaire.errors }}</small>
+                                                        </div>
+                                                    </div>
                                                 </template>
-                                            </ul>
-                                        </div>
-                                    </div>
 
-                                    <div class="col-md-6 form-group">
-                                        <label>Quartier</label>
-                                        {{ form.quartier }}
-                                        <small class="text-danger">{{ form.quartier.errors }}</small>
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Village</label>
-                                        {{ form.village }}
-                                        <small class="text-danger">{{ form.village.errors }}</small>
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label>Niveau d'Étude</label>
-                                        {{ form.niveau_etude }}
-                                        <small class="text-danger">{{ form.niveau_etude.errors }}</small>
-                                    </div>
+                                                <!-- Toujours visible -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ exposition_form.info_proprietaire.label }}</label>
+                                                    {{ exposition_form.info_proprietaire }}
+                                                    <small class="text-danger">{{ exposition_form.info_proprietaire.errors }}</small>
+                                                </div>
 
-                                    <!-- Checkbox Patient Mineur -->
-                                    <div class="col-md-6 form-group" x-data="{ checked: false }">
-                                        <label>Le Patient est-il mineur ? (moins de 15 ans)</label>
-                                        <div class="d-flex align-items-center">
-                                            <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>
-                                            <span class="switch switch-lg switch-icon">
-                        <label>
-                            <input type="checkbox" name="patient_mineur" x-model="checked"
-                                   @change="patientMineur = checked">
-                            <span></span>
-                        </label>
-                    </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ exposition_form.retour_info_proprietaire.label }}</label>
+                                                    {{ exposition_form.retour_info_proprietaire }}
+                                                    <small class="text-danger">{{ exposition_form.retour_info_proprietaire.errors }}</small>
+                                                </div>
+                                            </div>
 
-                                <!-- Accompagnateur si Patient Mineur -->
-                                <div class="row" x-show="patientMineur" x-transition>
-                                    <div class="col-md-3 form-group">
-                                        <label>Nom & Prénom de l’Accompagnateur</label>
-                                        {{ form.accompagnateur }}
-                                        <small class="text-danger">{{ form.accompagnateur.errors }}</small>
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Contact</label>
-                                        {{ form.accompagnateur_contact }}
-                                        <small class="text-danger">{{ form.accompagnateur_contact.errors }}</small>
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Adresse</label>
-                                        {{ form.accompagnateur_adresse }}
-                                        <small class="text-danger">{{ form.accompagnateur_adresse.errors }}</small>
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Lien avec Patient </label>
-                                        {{ form.accompagnateur_nature }}
-                                        <small class="text-danger">{{ form.accompagnateur_nature.errors }}</small>
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Niveau d'Étude</label>
-                                        {{ form.accompagnateur_niveau_etude }}
-                                        <small class="text-danger">{{ form.accompagnateur_niveau_etude.errors }}</small>
-                                    </div>
-                                </div>
+                                            <div class="card-body row"
+                                                 x-data="{ correctementVaccine: '{{ exposition_form.correctement_vaccine.value }}' === 'Oui'
+     }">
+                                                <div class="col-12">
+                                                    <h2 class="text-success">Statut vaccinal de l'Animal</h2>
+                                                </div>
 
-                                <!-- Motif de Vaccination -->
-                                <h2 class="mt-4 text-center text-primary">EXPOSITION</h2>
+                                                <!-- Champ correctement_vaccine avec binding -->
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ exposition_form.correctement_vaccine.label }}</label>
+                                                    <select name="{{ exposition_form.correctement_vaccine.name }}"
+                                                            id="{{ exposition_form.correctement_vaccine.id_for_label }}"
+                                                            class="form-control"
+                                                            @change="correctementVaccine = ($event.target.value === 'Oui')">
+                                                        {% for value, label in exposition_form.correctement_vaccine.field.choices %}
+                                                            <option value="{{ value }}"
+                                                                    {% if exposition_form.correctement_vaccine.value == value %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.correctement_vaccine.errors }}</small>
+                                                </div>
 
-
-                                <div class="row">
-
-                                    <div class="col-md-3 form-group">
-                                        <label>Date d'exposition</label>
-                                        {{ form.date_exposition }}
-                                        <small class="text-danger">{{ form.date_exposition.errors }}</small>
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Lieu de l'exposition</label>
-                                        {{ form.lieu_exposition }}
-                                        <small class="text-danger">{{ form.lieu_exposition.errors }}</small>
-                                    </div>
-
-                                    <div x-data="{
-    search: '',
-    options: [],
-    async fetchOptions() {
-        if (this.search.length > 1) {
-            const response = await fetch('/api/communes?query=' + this.search);
-            this.options = await response.json();
-        } else {
-            this.options = [];
-        }
-    }
-}" class="col-md-3 form-group position-relative">
-                                        <label for="commune">Commune</label>
-                                        <input type="text" id="commune" x-model="search" x-on:input="fetchOptions"
-                                               class="form-control" placeholder="Rechercher une commune..."
-                                               autocomplete="off">
-
-                                        <!-- Liste déroulante améliorée -->
-                                        <div class="dropdown w-100 position-absolute" style="z-index: 1000;"
-                                             x-show="options.length" x-on:click.away="options = []">
-                                            <ul class="list-group shadow bg-white w-100">
-                                                <template x-for="option in options" :key="option.id">
-                                                    <li class="list-group-item list-group-item-action"
-                                                        x-text="option.name"
-                                                        x-on:click.prevent="search = option.name; options = []">
-                                                    </li>
+                                                <!-- Champs conditionnels si correctement_vaccine == Oui -->
+                                                <template x-if="correctementVaccine">
+                                                    <div class="col-md-8 row">
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>{{ exposition_form.date_derniere_vaccination.label }}<span
+                                                                    class="text-danger">*</span></label>
+                                                            {{ exposition_form.date_derniere_vaccination }}
+                                                            <small class="text-danger">{{ exposition_form.date_derniere_vaccination.errors }}</small>
+                                                        </div>
+                                                        <div class="col-md-6 mb-3">
+                                                            <label>{{ exposition_form.carnet_Vaccin.label }}<span
+                                                                    class="text-danger">*</span></label>
+                                                            {{ exposition_form.carnet_Vaccin }}
+                                                            <small class="text-danger">{{ exposition_form.carnet_Vaccin.errors }}</small>
+                                                        </div>
+                                                    </div>
                                                 </template>
-                                            </ul>
+
+                                                <!-- Champs toujours visibles -->
+                                                {#    {% for field in exposition_form %}#}
+                                                {#        {% if field.name == "nonajours" or field.name == "non_vaccine" or field.name == "vacinconnu" %}#}
+                                                {#            <div class="col-md-4 mb-3">#}
+                                                {#                <label>{{ field.label|capfirst }}</label>#}
+                                                {#                {{ field }}#}
+                                                {#                <small class="text-danger">{{ field.errors }}</small>#}
+                                                {#            </div>#}
+                                                {#        {% endif %}#}
+                                                {#    {% endfor %}#}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-md-3 form-group">
-                                        <label>Quartier</label>
-                                        {{ form.exposition_quartier }}
-                                        <small class="text-danger">{{ form.exposition_quartier.errors }}</small>
 
-                                    </div>
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Circonstance :</h4></div>
+                                    <!-- 5️⃣ Surveillance vétérinaire -->
 
-                                    {#                                  <div class="col-md-3 form-group">#}
-                                    {#                                        <label>Circonstance de l'exposition : </label>#}
-                                    {#                                        {{ form.circonstance }}#}
-                                    {#                                    </div>#}
-
-
-                                    {% for field in form %}
-                                        {% if field.name in " attaque_provoquee agression attaque_collective professionnel" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Nature de l’exposition
-                                        :</h4></div>
-                                    {% for field in form %}
-                                        {% if field.name in "morsure griffure lechage_saine lechage_lesee contactanimalpositif contactpatientpositif autre" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-3 form-group">
-                                        <label>detail de la nature d'exposition : </label>
-                                        {{ form.autre_nature_exposition }}
-                                    </div>
-
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Siège de l’exposition
-                                        :</h4></div>
-                                    {% for field in form %}
-                                        {% if field.name in "tete cou membre_superieur tronc organes_genitaux_externes membre_inferieur " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Aspect du siège de
-                                        l’exposition :</h4></div>
-
-                                    {% for field in form %}
-                                        {% if field.name in "saignement_immediat vetements_presents dechires " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-
-                                    <div class="col-md-3 form-group">
-                                        <label>Nombre de lésions</label>
-                                        {{ form.nbrlesions }}
-                                    </div>
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Animal:</h4></div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Espèce de l'animal : </label>
-                                        {{ form.espece }}
-                                    </div>
-
-                                    {% for field in form %}
-                                        {% if field.name in "domestic" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Statut de l'animal
-                                        (Mordeur) :</h4></div>
-
-                                    {% for field in form %}
-                                        <!--- Corriger inconnu pour connu et ajouter errant -->
-                                        {% if field.name in "connu disponible disparu mort abatu errant" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"></div>
-
-
-                                    <p class="text-muted col-12">Information sur le propriétaire par la victime : </p>
-                                    {% for field in form %}
-                                        {% if field.name in "connais_proprio" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-
-                                    <p class="text-muted col-12">Retour d’information au propriétaire par le CAR </p>
-                                    {% for field in form %}
-                                        {% if field.name in "avis convocation prophylaxie" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-
-
-                                    <!-- Autre Motif -->
-                                    <div class="form-group" x-show="autre" x-transition>
-                                        <label>Préciser le motif</label>
-                                        {{ form.autre_motif }}
-                                    </div>
-
-                                    <div class="col-md-12 form-group  mb-5 text-success"><h4>Statut Vaccinal de
-                                        l'animal:</h4></div>
-                                    <!-- Retirer inconn n double-->
-                                    {% for field in form %}
-                                        {% if field.name in "correctement_vaccine non_vaccine nonajours vacinconnu" %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-3 form-group">
-                                        <label>Date denier vaccin: </label>
-                                        {{ form.date_derniere_vaccination }}
-                                    </div>
-                                </div>
-                                <!-- Canaux d'Information -->
-                                <h4 class="mt-4  mb-5 text-success">Surveillance vétérinaire : </h4>
-                                <div class="row">
-                                    {% for field in form %}
-                                        {% if field.name in "surveillance_veterinaire prelevement_animal diagnostic_laboratoire " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                                <div class="col-md-3 form-group">
-                                    <label>Date de diagnostique: </label>
-                                    {{ form.date_diagnostic }}
-                                </div>
-
-                                <div class="col-md-3 form-group">
-                                    <label>Gravite OMS </label>
-                                    {{ form.gravite_oms }}
-                                </div>
-
-
-                                <!-- Connaissance et Attitude -->
-                                <h1 class="mt-4 text-center text-primary">DOSSIER MEDICAL</h1>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h4 class="mt-4 mb-5 text-success">Antécédents médicaux : </h4></div>
-
-                                    <div class="col-md-6 form-group">
-                                        <label>Antécédents médicaux : </label>
-                                        {{ form.antecedents_medicaux }}
-                                    </div>
-
-                                    {% for field in form %}
-                                        {% if field.name in " probleme_coagulation  immunodepression  grossesse  vat_dernier_injection vat_rappel vat_lot traitements_en_cours " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-3 form-group">
-                                        <label>detail Probleme : </label>
-                                        {{ form.details_problemes }}
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>detail Immuno : </label>
-                                        {{ form.details_immo }}
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>detail Grosesse : </label>
-                                        {{ form.details_grosesse }}
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>detail Allergies : </label>
-                                        {{ form.allergies }}
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>detail Traitements en cours : </label>
-                                        {{ form.detail_traitements_en_cours }}
-                                    </div>
-
-                                    {#                                 <div class="col-12">#}
-                                    {#                                <h4 class="mt-4  mb-5 text-success">Antécédents vaccinaux : </h4> </div>#}
-
-                                    {#                                <div class="col-md-3 form-group">#}
-                                    {#                                        <label>VAT : Dernière injection le : </label>#}
-                                    {#                                        {{ form.vat_dernier_injection }}#}
-                                    {#                                    </div>#}
-                                    {#                                <div class="col-md-3 form-group">#}
-                                    {#                                        <label>detail Traitements en cours : </label>#}
-                                    {#                                        {{ form.vat_rappel }}#}
-                                    {#                                    </div>#}
-                                    {#                                <div class="col-md-3 form-group">#}
-                                    {#                                        <label>detail Traitements en cours : </label>#}
-                                    {#                                        {{ form.vat_lot }}#}
-                                    {#                                    </div>#}
-                                    {#                                <div class="col-md-3 form-group">#}
-                                    {#                                        <label>detail Traitements en cours : </label>#}
-                                    {#                                        {{ form.carnet_vaccinal }}#}
-                                    {#                                    </div>#}
+                                    {#                                    <div class="card mb-5 shadow-sm">#}
+                                    {#                                        <div class="card-header bg-warning text-white font-weight-bold">#}
+                                    {#                                            Surveillance vétérinaire#}
+                                    {#                                        </div>#}
+                                    {#                                        <div class="card-body row">#}
                                     {##}
-                                    {#                                 {% for field in form %}#}
-                                    {#                                        {% if field.name in "antecedents_medicaux probleme_coagulation details_problemes immunodepression details_immo grossesse details_grosesse allergies traitements_en_cours vat_dernier_injection vat_rappel vat_lot vaccin_antirabique carnet_vaccinal" %}#}
-                                    {#                                            <div class="col-md-3 form-group" x-data="{ checked: false }">#}
-                                    {#                                                <label>{{ field.label }}</label>#}
-                                    {#                                                <div class="d-flex align-items-center">#}
-                                    {#                                                    <span x-text="checked ? 'Oui' : 'Non'"#}
-                                    {#                                                          class="mr-2 font-weight-bold"></span>#}
-                                    {#                                                    <span class="switch switch-lg switch-icon">#}
-                                    {#                                <label>#}
-                                    {#                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">#}
-                                    {#                                    <span></span>#}
-                                    {#                                </label>#}
-                                    {#                            </span>#}
-                                    {#                                                </div>#}
-                                    {#                                            </div>#}
-                                    {#                                        {% endif %}#}
-                                    {#                                    {% endfor %}#}
-
-                                    <div class="col-12">
-                                        <h4 class="mt-4  mb-5 text-success">Episode actuel : </h4></div>
-                                    {% for field in form %}
-                                        {% if field.name in "lavage_plaies desinfection_plaies " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-3 form-group">
-                                        <label>Délai après exposition :</label>
-                                        {{ form.delai_apres_exposition }}
-                                    </div>
-                                    <div class="col-md-3 form-group">
-                                        <label>Produits utilisés</label>
-                                        {{ form.produits_utilises }}
-                                    </div>
-                                    {% for field in form %}
-                                        {% if field.name in "sutures serum_antitetanique antibiotiques " %}
-                                            <div class="col-md-3 form-group" x-data="{ checked: false }">
-                                                <label>{{ field.label }}</label>
-                                                <div class="d-flex align-items-center">
-                                                    <span x-text="checked ? 'Oui' : 'Non'"
-                                                          class="mr-2 font-weight-bold"></span>
-                                                    <span class="switch switch-lg switch-icon">
-                                <label>
-                                    <input type="checkbox" name="{{ field.name }}" x-model="checked">
-                                    <span></span>
-                                </label>
-                            </span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    <div class="col-md-3 form-group">
-                                        <label>Si oui, préciser (dose, durée)</label>
-                                        {{ form.details_antibiotiques }}
-                                    </div>
-
-
-                                    {#                                    <div class="col-md-6 form-group" x-data="{ checked: false }">#}
-                                    {#                                        <label>Aime-t-il les animaux ?</label>#}
-                                    {#                                        <div class="d-flex align-items-center">#}
-                                    {#                                            <span x-text="checked ? 'Oui' : 'Non'" class="mr-2 font-weight-bold"></span>#}
-                                    {#                                            <span class="switch switch-lg switch-icon">#}
-                                    {#                        <label>#}
-                                    {#                            <input type="checkbox" name="aime_animaux" x-model="checked"#}
-                                    {#                                   @change="aimeAnimaux = checked">#}
-                                    {#                            <span></span>#}
-                                    {#                        </label>#}
-                                    {#                    </span>#}
+                                    {#                                            {% for field in exposition_form %}#}
+                                    {#                                                {% if field.name in "surveillance_veterinaire prelevement_animal diagnostic_laboratoire date_diagnostic" %}#}
+                                    {#                                                    <div class="col-md-3 mb-3">#}
+                                    {#                                                        <label>{{ field.label|capfirst }}</label>#}
+                                    {#                                                        {{ field }}#}
+                                    {#                                                        <small class="text-danger">{{ field.errors }}</small>#}
+                                    {#                                                    </div>#}
+                                    {#                                                {% endif %}#}
+                                    {#                                            {% endfor %}#}
+                                    {##}
                                     {#                                        </div>#}
                                     {#                                    </div>#}
-                                </div>
 
-                                <!-- Si Aime les Animaux -->
-                                {#                                <div class="form-group" x-show="aimeAnimaux" x-transition>#}
-                                {#                                    <label>Type d'Animal Aimé</label>#}
-                                {#                                    {{ form.type_animal_aime }}#}
-                                {#                                </div>#}
 
-                                <!-- Soumission -->
-                                <button type="submit" class="btn btn-primary mt-4">Soumettre et envoyer en vaccination
-                                </button>
-                            </form>
+                                    <!-- 6️⃣ Dossier Médical -->
+                                    <div class="card mb-5 shadow-sm">
+                                        <div class="card-header bg-success text-white font-weight-bold">
+                                            Dossier Médical
+                                        </div>
+                                        <div class="card-body row">
+                                            <div class="card-body row"
+                                                 x-data="{
+        antecedentsMedicaux: '{{ exposition_form.antecedents_medicaux.value }}' === 'Oui',
+        coagulation: '{{ exposition_form.probleme_coagulation.value }}' === 'Oui',
+        immuno: '{{ exposition_form.immunodepression.value }}' === 'Oui',
+        grossesse: '{{ exposition_form.grossesse.value }}' === 'Oui',
+        allergies: '{{ exposition_form.allergies.value }}' === 'Oui',
+        traitements: '{{ exposition_form.traitements_en_cours.value }}' === 'Oui',
+     }">
+                                                <div class="col-12"><h2 class="text-success">Antécédents médicaux</h2>
+                                                </div>
+
+                                                <!-- Champ principal: Antécédents médicaux -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.antecedents_medicaux.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.antecedents_medicaux.name }}"
+                                                            @change="antecedentsMedicaux = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.antecedents_medicaux.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.antecedents_medicaux.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.antecedents_medicaux.errors }}</small>
+                                                </div>
+
+                                                <!-- Détails antécédents -->
+                                                <template x-if="antecedentsMedicaux">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_antecedents.label }}</label>
+                                                        {{ exposition_form.details_antecedents }}
+                                                        <small class="text-danger">{{ exposition_form.details_antecedents.errors }}</small>
+                                                    </div>
+                                                </template>
+
+
+                                                <!-- Problème coagulation -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.probleme_coagulation.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.probleme_coagulation.name }}"
+                                                            @change="coagulation = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.probleme_coagulation.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.probleme_coagulation.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.probleme_coagulation.errors }}</small>
+                                                </div>
+
+                                                <template x-if="coagulation">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_problemes.label }}</label>
+                                                        {{ exposition_form.details_problemes }}
+                                                        <small class="text-danger">{{ exposition_form.details_problemes.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Immunodépression -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.immunodepression.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.immunodepression.name }}"
+                                                            @change="immuno = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.immunodepression.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.immunodepression.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.immunodepression.errors }}</small>
+                                                </div>
+
+                                                <template x-if="immuno">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_immo.label }}</label>
+                                                        {{ exposition_form.details_immo }}
+                                                        <small class="text-danger">{{ exposition_form.details_immo.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Grossesse -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.grossesse.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.grossesse.name }}"
+                                                            @change="grossesse = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.grossesse.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.grossesse.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.grossesse.errors }}</small>
+                                                </div>
+
+                                                <template x-if="grossesse">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_grosesse.label }}<span
+                                                                class="text-danger">*</span></label>
+                                                        {{ exposition_form.details_grosesse }}
+                                                        <small class="text-danger">{{ exposition_form.details_grosesse.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Allergies -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.allergies.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.allergies.name }}"
+                                                            @change="allergies = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.allergies.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.allergies.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.allergies.errors }}</small>
+                                                </div>
+
+                                                <template x-if="allergies">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_allergies.label }}</label>
+                                                        {{ exposition_form.details_allergies }}
+                                                        <small class="text-danger">{{ exposition_form.details_allergies.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Traitements en cours -->
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.traitements_en_cours.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.traitements_en_cours.name }}"
+                                                            @change="traitements = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.traitements_en_cours.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.traitements_en_cours.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.traitements_en_cours.errors }}</small>
+                                                </div>
+
+                                                <template x-if="traitements">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_traitements.label }}</label>
+                                                        {{ exposition_form.details_traitements }}
+                                                        <small class="text-danger">{{ exposition_form.details_traitements.errors }}</small>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            {#                                        <div class="col-12"><h2 class="text-success">Antecedents médicaux</h2></div>#}
+                                            {#                                         {% for field in exposition_form %}#}
+                                            {#                                                {% if field.name == "antecedents_medicaux" or field.name == "probleme_coagulation" or field.name == "details_problemes" or field.name ==  "immunodepression" or field.name ==  "details_immo" or field.name ==  "grossesse" or field.name == "details_grosesse" or field.name == "allergies" or field.name == "traitements_en_cours" %}#}
+                                            {#                                                    <div class="col-md-3 mb-3">#}
+                                            {#                                                        <label>{{ field.label|capfirst }}</label>#}
+                                            {#                                                        {{ field }}#}
+                                            {#                                                        <small class="text-danger">{{ field.errors }}</small>#}
+                                            {#                                                    </div>#}
+                                            {#                                                {% endif %}#}
+                                            {#                                            {% endfor %}#}
+
+
+                                            <div class="col-12"><h2 class="text-success">Antécédents vaccinaux </h2>
+                                            </div>
+                                            {% for field in exposition_form %}
+                                                {% if field.name == "vat_dernier_injection" or field.name == "vat_rappel" or field.name == "vat_lot" or field.name == "vaccin_antirabique" or field.name == "carnet_vaccinal" or field.name == "carnet_vaccinal_verso" %}
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ field.label|capfirst }}</label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <div class=" card card-custom"
+                                             x-data="{ lavage: '{{ exposition_form.lavage_plaies.value }}' === 'Oui' ,
+              desinfection: '{{ exposition_form.desinfection_plaies.value }}' === 'Oui',
+              antibiotiques: '{{ exposition_form.antibiotiques.value }}' === 'Oui'
+              }">
+                                            <div class="row ml-7">
+
+                                                <div class="col-12 mt-5"><h2 class="text-success">Épisode actuelle</h2>
+                                                </div>
+                                                {#                                         {% for field in exposition_form %}#}
+                                                {#                                                {% if field.name == "lavage_plaies" or field.name == "desinfection_plaies" or field.name == "delai_apres_exposition" or field.name == "sutures" or field.name == "serum_antitetanique"  or field.name == "antibiotiques" or field.name == "details_antibiotiques" or field.name == "produits_utilises" %}#}
+                                                {#                                                    <div class="col-md-3 mb-3">#}
+                                                {#                                                        <label>{{ field.label|capfirst }}</label>#}
+                                                {#                                                        {{ field }}#}
+                                                {#                                                        <small class="text-danger">{{ field.errors }}</small>#}
+                                                {##}
+                                                {#                                                    </div>#}
+                                                {#                                                {% endif %}#}
+                                                {#                                            {% endfor %}#}
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.lavage_plaies.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.lavage_plaies.name }}"
+                                                            @change="lavage = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.lavage_plaies.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.lavage_plaies.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.lavage_plaies.errors }}</small>
+                                                </div>
+
+                                                <template x-if="lavage">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.delai_apres_exposition.label }}</label>
+                                                        {{ exposition_form.delai_apres_exposition }}
+                                                        <small class="text-danger">{{ exposition_form.delai_apres_exposition.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ exposition_form.desinfection_plaies.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.desinfection_plaies.name }}"
+                                                            @change="desinfection = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.desinfection_plaies.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.desinfection_plaies.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.desinfection_plaies.errors }}</small>
+                                                </div>
+
+                                                <template x-if="desinfection">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.produits_utilises.label }}</label>
+                                                        {{ exposition_form.produits_utilises }}
+                                                        <small class="text-danger">{{ exposition_form.produits_utilises.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <div class="col-md-2 mb-3">
+                                                    <label>{{ exposition_form.antibiotiques.label }}</label>
+                                                    <select class="form-control"
+                                                            name="{{ exposition_form.antibiotiques.name }}"
+                                                            @change="antibiotiques = ($event.target.value === 'Oui')">
+                                                        {% for val, label in exposition_form.antibiotiques.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.antibiotiques.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.antibiotiques.errors }}</small>
+                                                </div>
+
+                                                <template x-if="antibiotiques">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label>{{ exposition_form.details_antibiotiques.label }}</label>
+                                                        {{ exposition_form.details_antibiotiques }}
+                                                        <small class="text-danger">{{ exposition_form.details_antibiotiques.errors }}</small>
+                                                    </div>
+                                                </template>
+
+                                                <div class="col-md-2 mb-3">
+                                                    <label>{{ exposition_form.sutures.label }}</label>
+                                                    <select class="form-control">
+                                                        {% for val, label in exposition_form.sutures.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.sutures.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.sutures.errors }}</small>
+                                                </div>
+
+                                                <div class="col-md-2 mb-3">
+                                                    <label>{{ exposition_form.serum_antitetanique.label }}</label>
+                                                    <select class="form-control">
+                                                        {% for val, label in exposition_form.serum_antitetanique.field.choices %}
+                                                            <option value="{{ val }}"
+                                                                    {% if exposition_form.serum_antitetanique.value == val %}selected{% endif %}>
+                                                                {{ label }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <small class="text-danger">{{ exposition_form.serum_antitetanique.errors }}</small>
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card">
+                                        <div></div>
+
+                                    </div>
+
+                                    <!-- 7️⃣ Issue de la prise en charge -->
+
+
+                                    <!-- 🔵 Bouton Soumettre -->
+                                    <div class="text-center mt-5">
+                                        <button type="submit"
+                                                class="btn btn-primary btn-lg"
+                                                :disabled="loading">
+                                            <span x-show="!loading">Soumettre</span>
+                                            <span x-show="loading">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Envoi en cours...
+    </span>
+                                        </button>
+                                    </div>
+
+
+                                    <!-- 🔁 Overlay de chargement pleine page -->
+                                    <div x-show="loading" x-transition.opacity
+                                         class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90 backdrop-blur-sm">
+                                        <div class="text-center">
+                                            <!-- Logo ou icône -->
+                                            <img src="{% static 'assets/media/logo_inhp.png' %}" width="400px"
+                                                 alt="Logo" class="w-24 mx-auto mb-4 animate-pulse"/>
+
+                                            <!-- Message de chargement -->
+                                            <div class="text-xl font-semibold text-primary">Veuillez patienter...</div>
+                                            <div class="mt-2 text-muted">Nous traitons votre formulaire</div>
+
+                                            <!-- Spinner Bootstrap -->
+                                            <div class="spinner spinner-primary mr-15"></div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
+
 
                         <!--end::Body-->
                     </div>
@@ -664,8 +899,299 @@
             <!--end::Entry-->
         </div>
         <!--end::Content-->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // 🔥 Focus automatique sur le premier champ en erreur
+                const errorField = document.querySelector('.text-danger:has(span)');
+                if (errorField) {
+                    const input = errorField.parentElement.querySelector('input, select, textarea');
+                    if (input) {
+                        input.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        input.focus();
+                        input.classList.add('is-invalid');
+                    }
+                }
+
+                // 🔥 Validation dynamique à chaque frappe
+                document.addEventListener('input', function (e) {
+                    const field = e.target;
+                    if (field.tagName === 'INPUT' || field.tagName === 'SELECT' || field.tagName === 'TEXTAREA') {
+                        if (!field.checkValidity()) {
+                            field.classList.add('is-invalid');
+                            field.classList.remove('is-valid');
+                        } else {
+                            field.classList.remove('is-invalid');
+                            field.classList.add('is-valid');
+                        }
+                    }
+                });
+
+                // 🔥 Blocage du formulaire s'il y a des erreurs
+                const form = document.querySelector('form.needs-validation');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        if (!form.checkValidity()) {
+                            e.preventDefault(); // Stop l'envoi
+                            e.stopPropagation();
+                            form.classList.add('was-validated');
+                            alert('Veuillez corriger les erreurs avant de soumettre. 🚫');
+                        }
+                    }, false);
+                }
+            });
+        </script>
+        <script>
+            function patientFormLogic() {
+                return {
+                    loading: false,
+                    patientMineur: false,
+                    estProprietaireAnimal: false,
+
+                    checkProprioAnimal(value) {
+                        this.estProprietaireAnimal = value === 'Propriétaire animal';
+                    },
+
+                    calculateAge(dateString) {
+                        const today = new Date();
+                        const birthDate = new Date(dateString);
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const m = today.getMonth() - birthDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                        }
+                        return age;
+                    },
+
+                    handleDateChange(event) {
+                        const age = this.calculateAge(event.target.value);
+                        this.patientMineur = age < 21;
+                    }
+                }
+            }
+        </script>
+
+
+{#        <script>#}
+{#            document.addEventListener('alpine:init', () => {#}
+{#                Alpine.data('patientFormLogic', () => ({#}
+{#                    loading: false,#}
+{#                    patientMineur: false,#}
+{#                    estProprietaireAnimal: false,#}
+{##}
+{#                    checkProprioAnimal(value) {#}
+{#                        this.estProprietaireAnimal = value === 'Propriétaire animal';#}
+{#                    },#}
+{##}
+{#                    calculateAge(dateString) {#}
+{#                        const today = new Date();#}
+{#                        const birthDate = new Date(dateString);#}
+{#                        let age = today.getFullYear() - birthDate.getFullYear();#}
+{#                        const m = today.getMonth() - birthDate.getMonth();#}
+{#                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {#}
+{#                            age--;#}
+{#                        }#}
+{#                        return age;#}
+{#                    },#}
+{##}
+{#                    handleDateChange(event) {#}
+{#                        const age = this.calculateAge(event.target.value);#}
+{#                        this.patientMineur = age < 21;#}
+{#                    },#}
+{##}
+{#                    validateAndSubmit(event) {#}
+{#                        const form = event.target;#}
+{#                        const visibleFields = [...form.querySelectorAll('input, select, textarea')]#}
+{#                            .filter(el => el.offsetParent !== null && el.willValidate); // visible & validable#}
+{##}
+{#                        let isValid = true;#}
+{#                        for (let field of visibleFields) {#}
+{#                            if (!field.checkValidity()) {#}
+{#                                field.classList.add('is-invalid');#}
+{#                                isValid = false;#}
+{#                            } else {#}
+{#                                field.classList.remove('is-invalid');#}
+{#                            }#}
+{#                        }#}
+{##}
+{#                        if (!isValid) {#}
+{#                            event.preventDefault();#}
+{#                            event.stopPropagation();#}
+{#                            form.classList.add('was-validated');#}
+{#                            alert('Veuillez corriger les erreurs avant de soumettre.');#}
+{#                            return false;#}
+{#                        }#}
+{##}
+{#                        this.loading = true;#}
+{#                    }#}
+{#                }));#}
+{#            });#}
+{#        </script>#}
+
+    #------Retirer ce code Js ci comportement bizre
+    <script>
+document.addEventListener('alpine:init', () => {
+    // Gestion principale du formulaire
+    Alpine.data('patientForm', () => ({
+        loading: false,
+        processing: false,
+        patientMineur: false,
+        estProprietaireAnimal: false,
+        accompagnateurNature: '',
+        dateNaissance: '',
+
+        initForm() {
+            // Initialisation des valeurs existantes
+            const dateInput = document.getElementById('id_date_naissance');
+            if (dateInput) {
+                this.dateNaissance = dateInput.value;
+                if (this.dateNaissance) this.handleDateChange();
+            }
+
+            // Vérification initiale des erreurs
+            this.checkInitialErrors();
+        },
+
+        checkProprioAnimal() {
+            this.estProprietaireAnimal = this.accompagnateurNature === 'Propriétaire animal';
+        },
+
+        calculateAge(dateString) {
+            if (!dateString) return 0;
+            const today = new Date();
+            const birthDate = new Date(dateString);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        },
+
+        handleDateChange() {
+            const age = this.calculateAge(this.dateNaissance);
+            this.patientMineur = age < 21;
+        },
+
+        checkInitialErrors() {
+            // Focus sur le premier champ invalide
+            const firstError = document.querySelector('.is-invalid, .invalid-feedback');
+            if (firstError) {
+                const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');
+                if (input) {
+                    setTimeout(() => {
+                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        input.focus();
+                    }, 300);
+                }
+            }
+        },
+
+        async validateAndSubmit(event) {
+            this.processing = true;
+            const form = event.target;
+
+            // Validation des champs visibles seulement
+            const visibleFields = Array.from(form.elements)
+                .filter(el => el.offsetParent !== null && el.willValidate);
+
+            let isValid = true;
+            visibleFields.forEach(field => {
+                if (!field.checkValidity()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+
+                    // Scroll vers le premier champ invalide
+                    if (isValid) {
+                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        field.focus();
+                    }
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                form.classList.add('was-validated');
+                this.processing = false;
+                return false;
+            }
+
+            // Soumission du formulaire
+            this.loading = true;
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action || window.location.href, {
+                    method: form.method,
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Erreur réseau');
+
+                // Redirection après succès
+                window.location.href = "{% url 'postexposition_list' %}";
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert("Une erreur est survenue lors de l'envoi du formulaire.");
+            } finally {
+                this.loading = false;
+                this.processing = false;
+            }
+        }
+    }));
+
+    // Sous-composants Alpine.js pour chaque section
+    Alpine.data('expositionDetails', () => ({
+        autreOui: '{{ exposition_form.autre.value }}' === 'Oui',
+        tete_cou: '{{ exposition_form.tete_cou.value }}' === 'Oui',
+        membre_superieur: '{{ exposition_form.membre_superieur.value }}' === 'Oui',
+        // ... autres états pour cette section
+    }));
+
+    Alpine.data('animalInfo', () => ({
+        especeAutre: '{{ exposition_form.espece.value }}' === 'Autre',
+        connaisProprio: '{{ exposition_form.connais_proprio.value }}' === 'Oui',
+        correctementVaccine: '{{ exposition_form.correctement_vaccine.value }}' === 'Oui',
+        // ... autres états pour cette section
+    }));
+
+    Alpine.data('medicalRecord', () => ({
+        antecedentsMedicaux: '{{ exposition_form.antecedents_medicaux.value }}' === 'Oui',
+        coagulation: '{{ exposition_form.probleme_coagulation.value }}' === 'Oui',
+        // ... autres états pour cette section
+    }));
+});
+
+// Validation dynamique améliorée
+document.addEventListener('input', function(e) {
+    const field = e.target;
+    if (field.willValidate) {
+        field.classList.toggle('is-invalid', !field.checkValidity());
+        field.classList.toggle('is-valid', field.checkValidity());
+
+        // Validation en temps réel pour les champs requis
+        if (field.required && field.value.trim() === '') {
+            field.classList.add('is-invalid');
+        }
+    }
+});
+
+// Gestion des changements pour les selects
+document.addEventListener('change', function(e) {
+    if (e.target.tagName === 'SELECT') {
+        e.target.classList.toggle('is-invalid', !e.target.checkValidity());
+    }
+});
+</script>
 
         <!--begin::Footer-->
+        <!-- Tagify JS & CSS -->
+
         <!--doc: add "bg-white" class to have footer with solod background color-->
         {% include 'layout/footer.html' %}
         <!--end::Footer-->

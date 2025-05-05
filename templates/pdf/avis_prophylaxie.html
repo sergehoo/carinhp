@@ -1,0 +1,482 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Avis de Surveillance Rabique</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0.5cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+        .page-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        .avis-copy {
+            width: 48%;
+            height: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+        }
+        h1 {
+            text-align: center;
+            color: #004080;
+            margin: 5px 0;
+            border-bottom: 1px solid #004080;
+            padding-bottom: 3px;
+            font-size: 10px;
+        }
+        .section {
+            margin-top: 8px;
+            padding: 5px;
+            border-left: 2px solid #004080;
+            background-color: #f8f9fa;
+            font-size: 6px;
+        }
+        .important {
+            font-weight: bold;
+            color: #d9534f;
+            background-color: #fff3f3;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        .signature-area {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 55%;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            text-align: center;
+            font-size: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3px 0;
+            font-size: 8px;
+        }
+        table, th, td {
+            border: 1px solid #000000;
+        }
+        th, td {
+            padding: 2px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+            font-size: 8px;
+        }
+        .header-table img {
+            max-height: 30px;
+            width: auto;
+        }
+        .copy-label {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #004080;
+            font-size: 9px;
+        }
+        ul {
+            padding-left: 15px;
+            margin: 3px 0;
+        }
+        li {
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Première copie (A5 portrait) -->
+        <div class="avis-copy">
+{#            <div class="copy-label">EXEMPLAIRE CENTRE</div>#}
+            <table class="header-table" border="1" cellspacing="0" cellpadding="2">
+                <tr>
+                    <td rowspan="4" style="text-align: center; vertical-align: middle; width: 25%;">
+                        <img src="{{ request.build_absolute_uri }}{% static 'assets/media/logo_inhp.png' %}" style="max-height: 30px;" alt="Logo-INHP">
+                    </td>
+                    <td rowspan="2" style="text-align: center; vertical-align: middle; width: 25%; font-weight: bold;">
+                        {{ centre.nom|upper }}<br>
+                        <span style="font-weight: normal;">{{ centre.adresse }}</span>
+                    </td>
+                    <td rowspan="4" style="text-align: center; vertical-align: middle; width: 25%;">
+                        <img src="{{ request.build_absolute_uri }}{% static 'assets/media/logoMSHPCMU.svg' %}" style="max-height: 50px;" alt="Logo Ministère">
+                    </td>
+                    <td style="text-align: center; width: 25%; font-weight: bold;">
+                        Référence : AVR-{{ exposition.id }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">
+                        Date : {{ today|date:"d/m/Y" }}
+                    </td>
+                </tr>
+                <tr>
+                    <td rowspan="2" style="text-align: center; vertical-align: middle; font-weight: bold;">
+                        AVIS
+                    </td>
+                    <td style="text-align: center;">
+                        Patient : {{ exposition.client.nom }} {{ exposition.client.prenoms }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">
+                        Exposition : {{ exposition.date_exposition|date:"d/m/Y" }}
+                    </td>
+                </tr>
+            </table>
+
+            <h1>AVIS </h1>
+
+      <div class="message mt-5" >
+        <p>Mr, Mme, Mlle, <strong>{{ exposition.nom_proprietaire|default:"Non renseigné" }}</strong>,
+        contact : <strong>{{ exposition.contact_proprietaire|default:"Non renseigné" }}</strong>,
+        votre animal ayant {{ exposition.mordu }} , {{ exposition.griffure }},{{ exposition.laichage_lesee }}
+            Mr, Mme, Mlle, {{ exposition.patient }} le,<strong>{{ exposition.date_exposition|date:"d/m/Y" }}</strong>.</p>
+    </div>
+
+    <div class="section">
+        <h3>Caractéristiques de l'animal</h3>
+        <table>
+            <tr>
+                <th>Espèce</th>
+                <td>{{ exposition.get_espece_display }} {% if exposition.autre_animal %}({{ exposition.autre_animal }}){% endif %}</td>
+            </tr>
+            <tr>
+                <th>Statut</th>
+                <td>{% if exposition.domestic == "Oui" %}Domestique{% else %}Non domestique{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Statut vaccinal</th>
+                <td>
+                    {% if exposition.correctement_vaccine == "Oui" %}
+                        Vacciné (dernière injection le {{ exposition.date_derniere_vaccination|date:"d/m/Y"|default:"date inconnue" }})
+                    {% elif exposition.non_vaccine == "Oui" %}
+                        Non vacciné
+                    {% else %}
+                        Statut vaccinal inconnu
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>État actuel</th>
+                <td>
+                    {% if exposition.mort == "Oui" %}
+                        Décédé
+                    {% elif exposition.disparu == "Oui" %}
+                        Disparu
+                    {% else %}
+                        Vivant et disponible pour surveillance
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Détails de l'exposition</h3>
+        <table>
+            <tr>
+                <th>Nature de l'exposition</th>
+                <td>
+                    {% if exposition.morsure == "Oui" %}Morsure{% endif %}
+                    {% if exposition.griffure == "Oui" %}{% if exposition.morsure == "Oui" %}, {% endif %}Griffure{% endif %}
+                    {% if exposition.lechage_lesee == "Oui" %}{% if exposition.morsure == "Oui" or exposition.griffure == "Oui" %}, {% endif %}Léchage peau lésée{% endif %}
+                    {% if exposition.autre == "Oui" %}{% if exposition.morsure == "Oui" or exposition.griffure == "Oui" or exposition.lechage_lesee == "Oui" %}, {% endif %}{{ exposition.autre_nature_exposition }}{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Localisation</th>
+                <td>{{ exposition.siege_exposition|default:"Non précisé" }}</td>
+            </tr>
+            <tr>
+                <th>Gravité OMS</th>
+                <td>
+                    Catégorie {{ exposition.gravite_oms }} -
+                    {% if exposition.gravite_oms == "III" %}
+                        Exposition sévère (risque élevé)
+                    {% elif exposition.gravite_oms == "II" %}
+                        Exposition modérée
+                    {% else %}
+                        Exposition mineure
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Prise en charge médicale</h3>
+        <table>
+            <tr>
+                <th>Immunoglobuline antirabique</th>
+                <td>
+                    {% with last_immuno=exposition.client.patients_immuno.first %}
+                        {% if last_immuno %}
+                            {% if last_immuno.refus_injection %}
+                                <span class="important">REFUSÉ le {{ last_immuno.date_injection|date:"d/m/Y" }}</span><br>
+                                Motif : {{ last_immuno.motif_refus|default:"Non précisé" }}
+                            {% else %}
+                                Administrée le {{ last_immuno.date_injection|date:"d/m/Y" }}<br>
+                                Produit : {{ last_immuno.type_produit }} ({{ last_immuno.dose_ml }} ml)
+                            {% endif %}
+                        {% else %}
+                            Non administrée
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Vaccination antirabique</th>
+                <td>
+                    {% if exposition.protocole_vaccination %}
+                        Protocole {{ exposition.protocole_vaccination.nom }} initié
+                    {% else %}
+                        Non initiée
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section important">
+        <h3>Action vous concernant :</h3>
+        <ul>
+            <li>Présenter l'animal pour surveillance rabique aux jours 0, 7 et 15 auprès d'un vétérinaire ou d'un centre habilité</li>
+            <li>Ne pas déplacer, vendre, céder ou faire disparaître l'animal durant cette période</li>
+            <li>Informer immédiatement le centre antirabique en cas d'apparition de symptômes ou de décès de l'animal</li>
+            <li>Fournir les résultats des examens vétérinaires dans les délais requis</li>
+        </ul>
+        <p>Je suis informé(e) que le non-respect de ces engagements peut entraîner des poursuites conformément à la réglementation en vigueur.</p>
+    </div>
+
+    <div class="signature-area">
+        <div class="signature-box">
+            <p>Fait à {{ centre.ville }}, le {{ today|date:"d/m/Y" }}</p>
+            <p>Signature du propriétaire</p>
+            <p><em>(Précéder la signature de la mention "Lu et approuvé")</em></p>
+        </div>
+        <div class="signature-box">
+            <p>Pour le Centre Antirabique de {{ centre.nom }}</p>
+            <p>Signature et cachet du responsable</p>
+            <p>Nom et qualité : _________________________________</p>
+        </div>
+    </div>
+
+    <div class="footer" style="margin-top: 55px; font-size: 6px; text-align: center; border-top: 1px solid #ddd; padding-top: 5px;">
+    <span>Document établi conformément à l'article L. 223-7 du code de l'INHP</span>
+    <span>Conserver cet avis pendant toute la durée de la surveillance - Numéro de suivi : {{ exposition.id }}</span>
+    <span style="font-weight: bold; color: #004080;">2 exemplaires générés automatiquement)</span>
+</div>
+
+        </div>
+
+        <!-- Deuxième copie (A5 portrait) -->
+        <div class="avis-copy">
+{#            <div class="copy-label">EXEMPLAIRE PROPRIÉTAIRE</div>#}
+            <!-- [Dupliquer ici le même contenu que pour la première copie] -->
+             <table class="header-table" border="1" cellspacing="0" cellpadding="2">
+                <tr>
+                    <td rowspan="4" style="text-align: center; vertical-align: middle; width: 25%;">
+                        <img src="{{ request.build_absolute_uri }}{% static 'assets/media/logo_inhp.png' %}" style="max-height: 30px;" alt="Logo-INHP">
+                    </td>
+                    <td rowspan="2" style="text-align: center; vertical-align: middle; width: 25%; font-weight: bold;">
+                        {{ centre.nom|upper }}<br>
+                        <span style="font-weight: normal;">{{ centre.adresse }}</span>
+                    </td>
+                    <td rowspan="4" style="text-align: center; vertical-align: middle; width: 25%;">
+                        <img src="{{ request.build_absolute_uri }}{% static 'assets/media/logoMSHPCMU.svg' %}" style="max-height: 50px;" alt="Logo Ministère">
+                    </td>
+                    <td style="text-align: center; width: 25%; font-weight: bold;">
+                        Référence : AVR-{{ exposition.id }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">
+                        Date : {{ today|date:"d/m/Y" }}
+                    </td>
+                </tr>
+                <tr>
+                    <td rowspan="2" style="text-align: center; vertical-align: middle; font-weight: bold;">
+                        AVIS
+                    </td>
+                    <td style="text-align: center;">
+                        Patient : {{ exposition.client.nom }} {{ exposition.client.prenoms }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">
+                        Exposition : {{ exposition.date_exposition|date:"d/m/Y" }}
+                    </td>
+                </tr>
+            </table>
+
+            <h1>AVIS </h1>
+
+      <div class="message mt-5" >
+        <p>Mr, Mme, Mlle, <strong>{{ exposition.nom_proprietaire|default:"Non renseigné" }}</strong>,
+        contact : <strong>{{ exposition.contact_proprietaire|default:"Non renseigné" }}</strong>,
+        votre animal ayant {{ exposition.mordu }} , {{ exposition.griffure }},{{ exposition.laichage_lesee }}
+            Mr, Mme, Mlle, {{ exposition.patient }} le,<strong>{{ exposition.date_exposition|date:"d/m/Y" }}</strong>.</p>
+    </div>
+
+    <div class="section">
+        <h3>Caractéristiques de l'animal</h3>
+        <table>
+            <tr>
+                <th>Espèce</th>
+                <td>{{ exposition.get_espece_display }} {% if exposition.autre_animal %}({{ exposition.autre_animal }}){% endif %}</td>
+            </tr>
+            <tr>
+                <th>Statut</th>
+                <td>{% if exposition.domestic == "Oui" %}Domestique{% else %}Non domestique{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Statut vaccinal</th>
+                <td>
+                    {% if exposition.correctement_vaccine == "Oui" %}
+                        Vacciné (dernière injection le {{ exposition.date_derniere_vaccination|date:"d/m/Y"|default:"date inconnue" }})
+                    {% elif exposition.non_vaccine == "Oui" %}
+                        Non vacciné
+                    {% else %}
+                        Statut vaccinal inconnu
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>État actuel</th>
+                <td>
+                    {% if exposition.mort == "Oui" %}
+                        Décédé
+                    {% elif exposition.disparu == "Oui" %}
+                        Disparu
+                    {% else %}
+                        Vivant et disponible pour surveillance
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Détails de l'exposition</h3>
+        <table>
+            <tr>
+                <th>Nature de l'exposition</th>
+                <td>
+                    {% if exposition.morsure == "Oui" %}Morsure{% endif %}
+                    {% if exposition.griffure == "Oui" %}{% if exposition.morsure == "Oui" %}, {% endif %}Griffure{% endif %}
+                    {% if exposition.lechage_lesee == "Oui" %}{% if exposition.morsure == "Oui" or exposition.griffure == "Oui" %}, {% endif %}Léchage peau lésée{% endif %}
+                    {% if exposition.autre == "Oui" %}{% if exposition.morsure == "Oui" or exposition.griffure == "Oui" or exposition.lechage_lesee == "Oui" %}, {% endif %}{{ exposition.autre_nature_exposition }}{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Localisation</th>
+                <td>{{ exposition.siege_exposition|default:"Non précisé" }}</td>
+            </tr>
+            <tr>
+                <th>Gravité OMS</th>
+                <td>
+                    Catégorie {{ exposition.gravite_oms }} -
+                    {% if exposition.gravite_oms == "III" %}
+                        Exposition sévère (risque élevé)
+                    {% elif exposition.gravite_oms == "II" %}
+                        Exposition modérée
+                    {% else %}
+                        Exposition mineure
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Prise en charge médicale</h3>
+        <table>
+            <tr>
+                <th>Immunoglobuline antirabique</th>
+                <td>
+                    {% with last_immuno=exposition.client.patients_immuno.first %}
+                        {% if last_immuno %}
+                            {% if last_immuno.refus_injection %}
+                                <span class="important">REFUSÉ le {{ last_immuno.date_injection|date:"d/m/Y" }}</span><br>
+                                Motif : {{ last_immuno.motif_refus|default:"Non précisé" }}
+                            {% else %}
+                                Administrée le {{ last_immuno.date_injection|date:"d/m/Y" }}<br>
+                                Produit : {{ last_immuno.type_produit }} ({{ last_immuno.dose_ml }} ml)
+                            {% endif %}
+                        {% else %}
+                            Non administrée
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+            <tr>
+                <th>Vaccination antirabique</th>
+                <td>
+                    {% if exposition.protocole_vaccination %}
+                        Protocole {{ exposition.protocole_vaccination.nom }} initié
+                    {% else %}
+                        Non initiée
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section important">
+        <h3>Action vous concernant :</h3>
+        <ul>
+            <li>Présenter l'animal pour surveillance rabique aux jours 0, 7 et 15 auprès d'un vétérinaire ou d'un centre habilité</li>
+            <li>Ne pas déplacer, vendre, céder ou faire disparaître l'animal durant cette période</li>
+            <li>Informer immédiatement le centre antirabique en cas d'apparition de symptômes ou de décès de l'animal</li>
+            <li>Fournir les résultats des examens vétérinaires dans les délais requis</li>
+        </ul>
+        <p>Je suis informé(e) que le non-respect de ces engagements peut entraîner des poursuites conformément à la réglementation en vigueur.</p>
+    </div>
+
+    <div class="signature-area">
+        <div class="signature-box">
+            <p>Fait à {{ centre.ville }}, le {{ today|date:"d/m/Y" }}</p>
+            <p>Signature du propriétaire</p>
+            <p><em>(Précéder la signature de la mention "Lu et approuvé")</em></p>
+        </div>
+        <div class="signature-box">
+            <p>Pour le Centre Antirabique de {{ centre.nom }}</p>
+            <p>Signature et cachet du responsable</p>
+            <p>Nom et qualité : _________________________________</p>
+        </div>
+    </div>
+
+<div class="footer" style="margin-top: 55px; font-size: 6px; text-align: center; border-top: 1px solid #ddd; padding-top: 5px;">
+    <span>Document établi conformément à l'article L. 223-7 du code de l'INHP</span>
+    <span>Conserver cet avis pendant toute la durée de la surveillance - Numéro de suivi : {{ exposition.id }}</span>
+    <span style="font-weight: bold; color: #004080;">2 exemplaires générés automatiquement)</span>
+</div>
+
+        </div>
+    </div>
+</body>
+</html>

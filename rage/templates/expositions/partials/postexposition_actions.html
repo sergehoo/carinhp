@@ -2,3 +2,8 @@
 <a href="{% url 'postexposition_edit' record.pk %}" class="btn btn-warning btn-icon btn-xs"><i class="fa fa-edit"></i></a>
 <a href="{% url 'postexposition_delete' record.pk %}" class="btn btn-danger btn-icon btn-xs"><i class="fa fa-trash"></i></a>
 <a href="{% url 'fichepostexpoPDF' record.pk %}" class="btn btn-dark btn-icon btn-xs"><i class="fa fa-file-pdf"></i></a>
+{% if record.retour_info_proprietaire == 'Oui' %}
+<a href="{% url 'generate_avis_surveillance' exposition_id=record.pk %}" class="btn btn-outline-danger btn-icon btn-sm">
+    🐕 Avis
+</a>
+{% endif %}

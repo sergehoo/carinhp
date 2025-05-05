@@ -1,0 +1,124 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!-- Content Section -->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        <!-- Custom Subheader Component -->
+        {% include 'layout/header-title.html' with title="Détails du Vaccin" subtitle=object.nom %}
+
+        <!-- Main Content Area -->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <!-- Vaccin Detail Card -->
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Informations du vaccin
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'vaccin_update' object.pk %}"
+                               class="btn btn-sm btn-primary font-weight-bold">
+                                <i class="flaticon2-edit"></i> Modifier
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Nom</span>
+                                    <span class="text-dark">{{ object.nom }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Nombre de doses</span>
+                                    <span class="text-dark">{{ object.nbr_dose|default:"Non spécifié" }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Unité</span>
+                                    <span class="text-dark">{{ object.get_unite_display }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Prix</span>
+                                    <span class="text-dark">{{ object.prix|default:"Non spécifié" }} FCFA</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lots de ce vaccin -->
+                <div class="card card-custom mt-6">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Lots disponibles
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Liste des lots de ce vaccin dans votre centre
+                                </span>
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'lot_vaccin_create' %}?vaccin={{ object.pk }}"
+                               class="btn btn-sm btn-primary font-weight-bold">
+                                <i class="flaticon2-add"></i> Ajouter un lot
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro de lot</th>
+                                        <th>Date fabrication</th>
+                                        <th>Date expiration</th>
+                                        <th>Quantité disponible</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lot in object.lotsvaccin.all %}
+                                    <tr>
+                                        <td>{{ lot.numero_lot }}</td>
+                                        <td>{{ lot.date_fabrication|date:"d/m/Y" }}</td>
+                                        <td>{{ lot.date_expiration|date:"d/m/Y" }}</td>
+                                        <td>{{ lot.quantite_disponible }} {{ object.get_unite_display }}</td>
+                                        <td nowrap>
+                                            <a href="{% url 'lot_vaccin_detail' lot.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon"
+                                               title="Détails">
+                                                <i class="flaticon-eye"></i>
+                                            </a>
+                                            <a href="{% url 'lot_vaccin_update' lot.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon"
+                                               title="Modifier">
+                                                <i class="flaticon2-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aucun lot disponible pour ce vaccin</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

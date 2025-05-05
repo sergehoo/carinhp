@@ -1,0 +1,62 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <!-- Content Section -->
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title=form_title|default:"Formulaire Utilisateur" subtitle="Gestion des comptes utilisateurs" %}
+
+
+        <!-- Main Content Area -->
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-body p-0">
+                        <!-- Error Content -->
+                            <div class="d-flex flex-column flex-row-fluid text-center">
+                                <p class="display-4 font-weight-bold text-dark mb-8">
+                                    Accès non autorisé
+                                </p>
+                                <p class="font-size-h3 line-height-md">
+                                    Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+                                </p>
+                                <div class="text-center mb-10">
+                                    <img src="{% static '403.svg' %}" alt="403 error" class="mw-100 mh-200px">
+                                </div>
+                                <div class="text-center mb-5">
+                                    <a href="{% url 'home' %}" class="btn btn-primary font-weight-bold px-6 py-3">
+                                        <i class="flaticon2-home"></i> Retour à l'accueil
+                                    </a>
+                                    {% if not request.user.is_authenticated %}
+                                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-light-primary font-weight-bold px-6 py-3 ml-3">
+                                        <i class="flaticon2-login"></i> Se connecter
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    {% include 'layout/footer.html' %}
+</div>
+
+<style>
+    .error-6 {
+        background-color: #f8f9fa;
+    }
+    .error-title {
+        font-size: 10rem !important;
+    }
+    @media (max-width: 568px) {
+        .error-title {
+            font-size: 5rem !important;
+        }
+    }
+</style>
+{% endblock %}

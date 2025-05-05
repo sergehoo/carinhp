@@ -1,0 +1,107 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title="Gestion des Utilisateurs" subtitle="Administration des comptes utilisateurs" %}
+
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Liste des Utilisateurs
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Gestion des accès au système
+                                </span>
+                            </h3>
+                        </div>
+
+                        <div class="card-toolbar">
+                            <!-- Filtre par rôle -->
+                            <div class="dropdown dropdown-inline mr-2">
+                                <button type="button" class="btn btn-light-primary dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="flaticon2-filter-1"></i> Filtre par rôle
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="?role=National">National</a>
+                                    <a class="dropdown-item" href="?role=Regional">Régional</a>
+                                    <a class="dropdown-item" href="?role=DistrictSanitaire">District Sanitaire</a>
+                                    <a class="dropdown-item" href="?role=CentreAntirabique">Centre Antirabique</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="?">Tous les rôles</a>
+                                </div>
+                            </div>
+
+                            <!-- Bouton d'ajout -->
+                            {% if perms.rage.add_employeeuser %}
+                            <a href="{% url 'employeeuser_create' %}" class="btn btn-primary font-weight-bolder">
+                                <i class="flaticon2-add"></i> Nouvel Utilisateur
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center">
+                                <thead>
+                                    <tr>
+                                        <th>Nom d'utilisateur</th>
+                                        <th>Nom complet</th>
+                                        <th>Rôle</th>
+                                        <th>Centre</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.get_full_name }}</td>
+                                        <td>{{ user.get_roleemployee_display }}</td>
+                                        <td>{{ user.centre|default:"-" }}</td>
+                                        <td>
+                                            <span class="label label-{% if user.is_active %}success{% else %}danger{% endif %} label-inline">
+                                                {% if user.is_active %}Actif{% else %}Inactif{% endif %}
+                                            </span>
+                                        </td>
+                                        <td nowrap>
+                                            <a href="{% url 'employeeuser_detail' user.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Détails">
+                                                <i class="flaticon-eye"></i>
+                                            </a>
+                                            {% if perms.rage.change_employeeuser %}
+                                            <a href="{% url 'employeeuser_update' user.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Modifier">
+                                                <i class="flaticon2-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if perms.rage.delete_employeeuser and not user == request.user %}
+                                            <a href="{% url 'employeeuser_delete' user.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Supprimer">
+                                                <i class="flaticon2-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">Aucun utilisateur trouvé</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'layout/footer.html' %}
+</div>
+{% endblock %}

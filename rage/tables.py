@@ -4,7 +4,8 @@ from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from django_tables2 import A
 
-from rage.models import RendezVousVaccination, Facture, Preexposition, PostExposition, RageHumaineNotification
+from rage.models import RendezVousVaccination, Facture, Preexposition, PostExposition, RageHumaineNotification, \
+    InjectionImmunoglobuline
 from rage_INHP.forms import VaccinationForm, PaiementForm
 
 from datetime import datetime, timedelta, date, time
@@ -66,7 +67,64 @@ class PreExpositionTable(tables.Table):
 
 class RendezVousTable(tables.Table):
     date_rendez_vous = tables.Column(verbose_name="Date")
-    patient = tables.Column(verbose_name="Patient", accessor="patient.nom")
+    # patient = tables.Column(verbose_name="Patient", accessor="patient.nom")
+    patient = tables.TemplateColumn(
+        template_code="""
+            {% with last_expo=record.patient.patientpep.last injections=record.patient.patients_immuno.all %}
+    {% if last_expo %}
+        {% if last_expo.gravite_oms == "III" and injections.count == 0 %}
+            <!-- Cas 1: Gravité III sans injection -->
+            <a href="{% url 'patient_detail' record.patient.pk %}">{{ record.patient.nom }} {{ record.patient.prenoms }}</a>
+            <a href="{% url 'injection_immuno_add' record.patient.pk %}" 
+               class="btn btn-icon btn-sm" 
+               data-toggle="popover" 
+               title="Alerte" 
+               data-content="⚠️ Exposition de gravité OMS III - Immunoglobuline requise">
+                <img src="/static/icons/alerte.gif" alt="⚠️" width="20">
+            </a>
+            
+        {% elif injections.count > 0 %}
+            <!-- Cas 2: Patient avec historique d'injection/refus -->
+            <a href="{% url 'patient_detail' record.patient.pk %}">{{ record.patient.nom }} {{ record.patient.prenoms }}</a>
+            
+            {% with last_injection=injections.first %}
+                {% if last_injection.refus_injection %}
+                    <!-- Sous-cas: Refus d'injection -->
+                    <a href="#" 
+                       class="btn btn-icon btn-sm" 
+                       data-toggle="popover" 
+                       title="Refus enregistré" 
+                       data-content="❌ Refus d'immunoglobuline le {{ last_injection.date_injection|date:'d/m/Y' }}. Motif: {{ last_injection.motif_refus|default:'non précisé' }}">
+                        <img src="/static/icons/danger-biologique.gif" alt="❌" width="20">
+                    </a>
+                {% else %}
+                    <!-- Sous-cas: Injection effectuée -->
+                    <a href="#" 
+                       class="btn btn-icon btn-sm" 
+                       data-toggle="popover" 
+                       title="Injection effectuée" 
+                       data-content="✔️ Immunoglobuline injectée le {{ last_injection.date_injection|date:'d/m/Y' }} ({{ last_injection.type_produit }})">
+                        <img src="/static/icons/info.gif" alt="💉" width="20">
+                    </a>
+                {% endif %}
+            {% endwith %}
+            
+        {% else %}
+            <!-- Cas 3: Autres cas -->
+            <a href="{% url 'patient_detail' record.patient.pk %}">
+                {{ record.patient.nom }} {{ record.patient.prenoms }}
+            </a>
+        {% endif %}
+    {% else %}
+        <!-- Cas 4: Pas d'exposition enregistrée -->
+        {{ record.patient.nom }} {{ record.patient.prenoms }}
+    {% endif %}
+{% endwith %}
+        """,
+        verbose_name="Nom du Patient",
+        orderable=True
+    )
+
     protocole = tables.Column(verbose_name="Protocole", accessor="protocole")
 
     # dose_numero = tables.Column(verbose_name="Numeros RDV #")
@@ -84,9 +142,9 @@ class RendezVousTable(tables.Table):
         extra_context={"vaccination_form": VaccinationForm()}
     )
 
-    def render_patient(self, record):
-        """ Affiche Nom + Prénom du patient """
-        return f"{record.patient.nom} {record.patient.prenoms}"
+    # def render_patient(self, record):
+    #     """ Affiche Nom + Prénom du patient """
+    #     return f"{record.patient.nom}{record.patient.prenoms}"
 
     # def render_dose_numero(self, value):
     #     """ Affiche le numéro de dose avec un suffixe en exposant """
@@ -107,7 +165,7 @@ class RendezVousTable(tables.Table):
         """ Affichage dynamique du statut du rendez-vous (Passé, Aujourd'hui, À venir) """
         today = date.today()
         if record.date_rendez_vous < today:
-            return format_html('<span class="badge badge-danger">Passé</span>')
+            return format_html('<span class="badge badge-secondary">Passé</span>')
         elif record.date_rendez_vous == today:
             return format_html('<span class="badge badge-primary">Aujourd\'hui</span>')
         else:
@@ -230,13 +288,65 @@ class FactureTable(tables.Table):
 
 
 class PostExpositionTable(tables.Table):
-    nom = tables.LinkColumn("postexposition_detail", args=[A("pk")], accessor="client.nom",
-                            verbose_name="Nom du Patient")
+    immunoglobuline = InjectionImmunoglobuline.objects.filter()
+    # nom = tables.LinkColumn("postexposition_detail", args=[A("pk")], accessor="client.nom",
+    #                         verbose_name="Nom du Patient")
+    nom = tables.TemplateColumn(
+        template_code="""
+{% with injections=record.client.patients_immuno.all %}
+    {% if record.gravite_oms == "III" and injections.count == 0 %}
+        <!-- Cas 1: Gravité III sans injection -->
+        <a href="{% url 'patient_detail' record.client.pk %}">{{ record.client.nom }}</a>
+        <a href="{% url 'injection_immuno_add' record.client.pk %}" 
+           class="btn btn-icon btn-sm" 
+           data-toggle="popover" 
+           title="Action requise" 
+           data-content="⚠️ Exposition gravité OMS III - Injection d'immunoglobuline nécessaire">
+           <img src="/static/icons/alerte.gif" alt="⚠️" width="20">
+        </a>
+    
+    {% elif injections.count > 0 %}
+        <!-- Cas 2: Historique d'injection/refus existant -->
+        <a href="{% url 'patient_detail' record.client.pk %}">{{ record.client.nom }}</a>
+        
+        {% with last_injection=injections.first %}
+            {% if last_injection.refus_injection %}
+                <!-- Sous-cas: Refus enregistré -->
+                <span class="btn btn-icon btn-sm" 
+                      data-toggle="popover" 
+                      title="Refus documenté" 
+                      data-content="❌ Refus d'immunoglobuline le {{ last_injection.date_injection|date:'d/m/Y' }} , Motif: {{ last_injection.motif_refus|default:'non précisé' }}">
+                    <img src="/static/icons/danger-biologique.gif" alt="❌" width="20">
+                </span>
+            {% else %}
+                <!-- Sous-cas: Injection effectuée -->
+                <span class="btn btn-icon btn-sm" 
+                      data-toggle="popover" 
+                      title="Immunoglobuline administrée" 
+                      data-content="✔️ Injecté le {{ last_injection.date_injection|date:'d/m/Y' }}, Produit: {{ last_injection.type_produit|default:'non précisé' }}">
+                    <img src="/static/icons/info.gif" alt="💉" width="20">
+                </span>
+            {% endif %}
+        {% endwith %}
+        
+    {% else %}
+        <!-- Cas 3: Aucune injection requise ou enregistrée -->
+        <a href="{% url 'patient_detail' record.client.pk %}">
+            {{ record.client.nom }}
+        </a>
+    {% endif %}
+{% endwith %}
+
+                
+            """,
+        verbose_name="Nom du Patient",
+        orderable=True
+    )
     prenoms = tables.Column(accessor="client.prenoms", verbose_name="Prénom")
     age = tables.Column(accessor="client.calculate_age", verbose_name="Âge")
     date_naissance = tables.Column(accessor="client.date_naissance", verbose_name="Date de naissance")
     sexe = tables.Column(accessor="client.sexe", verbose_name="Sexe")
-    residence_commune = tables.Column(accessor="client.residence_commune", verbose_name="Commune de résidence")
+    residence_commune = tables.Column(accessor="client.commune", verbose_name="Commune de résidence")
     date_exposition = tables.DateColumn(format="d/m/Y", verbose_name="Date Exposition")
     gravite_oms = tables.Column(verbose_name="Gravité OMS")
 
@@ -250,7 +360,7 @@ class PostExpositionTable(tables.Table):
         model = PostExposition
         template_name = "django_tables2/bootstrap4.html"
         fields = (
-            "nom", "prenoms", "date_naissance", "age", "sexe", "date_exposition", "residence_commune", "gravite_oms")
+            "nom", "prenoms", "date_naissance", "age", "sexe", "date_exposition", "gravite_oms",)
 
 
 class RageHumaineNotificationTable(tables.Table):

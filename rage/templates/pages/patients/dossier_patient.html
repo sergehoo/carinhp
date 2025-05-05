@@ -349,7 +349,7 @@
                             <li class="nav-item">
                                 <a class="nav-link active" data-toggle="tab" href="#post_expositions">
                                     <span class="nav-icon"><i class="flaticon-danger"></i></span>
-                                    <span class="nav-text">Post-Expositions ({{ patientdossier.postexposition_set.count }})</span>
+                                    <span class="nav-text">Post-Expositions ({{ patientdossier.patientpep.count }})</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -363,7 +363,7 @@
                         <div class="tab-content mt-5">
                             <!-- Tab Post-Expositions -->
                             <div class="tab-pane fade show active" id="post_expositions" role="tabpanel">
-                                {% with post_expos=patientdossier.postexposition_set.all %}
+                                {% with post_expos=patientdossier.patientpep.all %}
                                 {% if post_expos %}
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-hover">
@@ -676,49 +676,236 @@
                             </div>
                         </div>
                     </div>
+<!-- Section Immunoglobulines -->
+{% with immunoglobulines=patientdossier.patients_immuno.all %}
+{% if immunoglobulines %}
+<div class="mb-10">
+    <h4 class="text-dark font-weight-bold mb-4">Injections d'Immunoglobulines ({{ immunoglobulines.count }})</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr class="text-center">
+                    <th>Date</th>
+                    <th>Type de produit</th>
+                    <th>Dose (ml)</th>
+                    <th>Voie</th>
+                    <th>Site d'injection</th>
+                    <th>N° lot</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for immuno in immunoglobulines %}
+                <tr>
+                    <td class="text-center">{{ immuno.date_injection|date:"d/m/Y H:i" }}</td>
+                    <td>{{ immuno.type_produit }}</td>
+                    <td class="text-center">{{ immuno.dose_ml }}</td>
+                    <td class="text-center">{{ immuno.get_voie_injection_display }}</td>
+                    <td>{{ immuno.site_injection|default:"-" }}</td>
+                    <td class="text-center">
+                        {% if immuno.numero_lot %}
+                        {{ immuno.numero_lot }}
+                        {% if immuno.date_peremption %}
+                        (Péremption: {{ immuno.date_peremption|date:"d/m/Y" }})
+                        {% endif %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-icon btn-light-primary mr-2"
+                                data-toggle="modal" data-target="#immunoModal{{ immuno.id }}" title="Détails">
+                            <i class="flaticon-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-                    <!-- Section Effets secondaires (MAPI) -->
-                    {% with mapis=patientdossier.mapi.all %}
-                    {% if mapis %}
-                    <div class="mb-10">
-                        <h4 class="text-dark font-weight-bold mb-4">Effets secondaires (MAPI)</h4>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                    <tr class="text-center">
-                                        <th>Date</th>
-                                        <th>Vaccination</th>
-                                        <th>Symptômes</th>
-                                        <th>Gravité</th>
-                                        <th>Évolution</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for mapi in mapis %}
-                                    <tr>
-                                        <td class="text-center">{{ mapi.date_apparition|date:"d/m/Y" }}</td>
-                                        <td>
-                                            {{ mapi.vaccination.protocole }} ({{ mapi.vaccination.date_effective|date:"d/m/Y" }})
-                                        </td>
-                                        <td>{{ mapi.description }}</td>
-                                        <td class="text-center">
-                                            <span class="badge badge-{% if mapi.gravite == 'sévère' %}danger{% elif mapi.gravite == 'modéré' %}warning{% else %}info{% endif %}">
-                                                {{ mapi.get_gravite_display }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'complications' %}danger{% else %}warning{% endif %}">
-                                                {{ mapi.get_evolution_display }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+<!-- Modals pour les détails des immunoglobulines -->
+{% for immuno in immunoglobulines %}
+<div class="modal fade" id="immunoModal{{ immuno.id }}" tabindex="-1" role="dialog" aria-labelledby="immunoModalLabel{{ immuno.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="immunoModalLabel{{ immuno.id }}">
+                    Détails de l'injection du {{ immuno.date_injection|date:"d/m/Y" }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i aria-hidden="true" class="ki ki-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Type de produit:</label>
+                            <p class="form-control-plaintext">{{ immuno.type_produit }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Dose administrée:</label>
+                            <p class="form-control-plaintext">{{ immuno.dose_ml }} ml</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Voie d'injection:</label>
+                            <p class="form-control-plaintext">{{ immuno.get_voie_injection_display }}</p>
                         </div>
                     </div>
-                    {% endif %}
-                    {% endwith %}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Site(s) d'injection:</label>
+                            <p class="form-control-plaintext">{{ immuno.site_injection|default:"Non précisé" }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Numéro de lot:</label>
+                            <p class="form-control-plaintext">{{ immuno.numero_lot|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Laboratoire fabricant:</label>
+                            <p class="form-control-plaintext">{{ immuno.laboratoire_fabricant|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% if immuno.commentaire %}
+                <div class="form-group">
+                    <label>Commentaires:</label>
+                    <p class="form-control-plaintext">{{ immuno.commentaire }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Amélioration de la section MAPI existante -->
+{% with mapis=patientdossier.mapi.all %}
+{% if mapis %}
+<div class="mb-10">
+    <h4 class="text-dark font-weight-bold mb-4">Effets secondaires (MAPI) ({{ mapis.count }})</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr class="text-center">
+                    <th>Date</th>
+                    <th>Titre</th>
+                    <th>Vaccination</th>
+                    <th>Symptômes</th>
+                    <th>Gravité</th>
+                    <th>Évolution</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mapi in mapis %}
+                <tr>
+                    <td class="text-center">{{ mapi.date_apparition|date:"d/m/Y" }}</td>
+                    <td>{{ mapi.titre|default:"-" }}</td>
+                    <td>
+                        {{ mapi.vaccination.protocole }} ({{ mapi.vaccination.date_effective|date:"d/m/Y" }})
+                    </td>
+                    <td>{{ mapi.description|truncatechars:50 }}</td>
+                    <td class="text-center">
+                        <span class="badge badge-{% if mapi.gravite == 'sévère' %}danger{% elif mapi.gravite == 'modéré' %}warning{% else %}info{% endif %}">
+                            {{ mapi.get_gravite_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'complications' %}danger{% else %}warning{% endif %}">
+                            {{ mapi.get_evolution_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-icon btn-light-primary mr-2"
+                                data-toggle="modal" data-target="#mapiModal{{ mapi.id }}" title="Détails">
+                            <i class="flaticon-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modals pour les détails des MAPI -->
+{% for mapi in mapis %}
+<div class="modal fade" id="mapiModal{{ mapi.id }}" tabindex="-1" role="dialog" aria-labelledby="mapiModalLabel{{ mapi.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapiModalLabel{{ mapi.id }}">
+                    Détails MAPI du {{ mapi.date_apparition|date:"d/m/Y" }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i aria-hidden="true" class="ki ki-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Titre:</label>
+                            <p class="form-control-plaintext">{{ mapi.titre|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Vaccination associée:</label>
+                            <p class="form-control-plaintext">
+                                {{ mapi.vaccination.protocole }} ({{ mapi.vaccination.date_effective|date:"d/m/Y" }})
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label>Date d'apparition:</label>
+                            <p class="form-control-plaintext">{{ mapi.date_apparition|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Gravité:</label>
+                            <p class="form-control-plaintext">
+                                <span class="badge badge-{% if mapi.gravite == 'sévère' %}danger{% elif mapi.gravite == 'modéré' %}warning{% else %}info{% endif %}">
+                                    {{ mapi.get_gravite_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Évolution:</label>
+                            <p class="form-control-plaintext">
+                                <span class="badge badge-{% if mapi.evolution == 'guéri' %}success{% elif mapi.evolution == 'complications' %}danger{% else %}warning{% endif %}">
+                                    {{ mapi.get_evolution_display }}
+                                </span>
+                            </p>
+                        </div>
+                        {% if mapi.traitement_administre %}
+                        <div class="form-group">
+                            <label>Traitement administré:</label>
+                            <p class="form-control-plaintext">{{ mapi.traitement_administre }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description des symptômes:</label>
+                    <p class="form-control-plaintext">{{ mapi.description }}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
                 </div>
             </div>
         </div>

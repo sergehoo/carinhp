@@ -1,20 +1,26 @@
-from datetime import timedelta, datetime
+import os
+import tempfile
+from datetime import timedelta, datetime, date
 from io import BytesIO
 from venv import logger
 
+import qrcode
 import requests
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.serializers import serialize
 from django.db import transaction, IntegrityError
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -24,13 +30,17 @@ from django_filters.views import FilterView
 from django_tables2 import tables, SingleTableView, SingleTableMixin
 from import_export.admin import ExportMixin
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.colors import lightgrey
+from reportlab.lib.pagesizes import A4, A6
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+
+from weasyprint import HTML
 from xhtml2pdf import pisa
 
 from rage.models import HealthRegion, PolesRegionaux, Patient, ProtocoleVaccination, Vaccination, Animal, \
     RendezVousVaccination, Facture, Preexposition, PostExposition, Commune, RageHumaineNotification, CentreAntirabique, \
-    DistrictSanitaire, LotVaccin, Vaccins
+    DistrictSanitaire, LotVaccin, Vaccins, EmployeeUser, InjectionImmunoglobuline
 from rage.tables import RendezVousTable, FactureTable, PreExpositionTable, PostExpositionTable, \
     RageHumaineNotificationTable
 from rage_INHP.decorators import role_required
@@ -39,8 +49,16 @@ from rage_INHP.filters import RendezVousFilter, RageHumaineNotificationFilter
 from rage_INHP.forms import EchantillonForm, SymptomForm, \
     VaccinationForm, PaiementForm, ClientForm, PreExpositionForm, PostExpositionForm, ClientPreExpositionForm, \
     ClientPostExpositionForm, PatientRageNotificationForm, RageHumaineNotificationForm, PreExpositionUpdateForm, \
-    MAPIForm
+    MAPIForm, VaccinForm, LotVaccinForm, EmployeeUserForm, EmployeeUserUpdateForm, CentreAntirabiqueForm, \
+    InjectionImmunoglobulineForm
 from rage_INHP.services import synchroniser_avec_mpi
+from rage_INHP.utils.whatsapp_service import WhatsAppService
+
+EmployeeUser = get_user_model()
+
+
+def permission_denied_view(request, exception=None):
+    return render(request, '403.html', status=403)
 
 
 @login_required
@@ -69,6 +87,7 @@ def menu_view(request):
     return render(request, 'layout/aside.html', {'poles': poles})
 
 
+@login_required
 def patients_geojson(request):
     patients = Patient.objects.filter(commune__isnull=False, commune__geom__isnull=False)
     data = {
@@ -141,6 +160,22 @@ def synchroniser_patients_mpi(request):
     return JsonResponse({"résultats": résultats})
 
 
+def count_cases(model, sexe, min_age, max_age):
+    """
+    Compte les instances de `model` pour un sexe donné et une tranche d'âge [min_age, max_age].
+    """
+    today = date.today()
+    # date la plus ancienne = aujourd'hui moins max_age années
+    start_dob = today - relativedelta(years=max_age)
+    # date la plus récente = aujourd'hui moins min_age années
+    end_dob = today - relativedelta(years=min_age)
+    return model.objects.filter(
+        client__sexe=sexe,
+        client__date_naissance__gte=start_dob,
+        client__date_naissance__lte=end_dob,
+    ).count()
+
+
 class CADashborad(LoginRequiredMixin, TemplateView):
     template_name = "pages/dahboard-centres.html"
     login_url = '/accounts/login/'
@@ -183,53 +218,62 @@ class CADashborad(LoginRequiredMixin, TemplateView):
         }
         # Définition des tranches d'âge
         age_ranges = {
-            "0-5 ans": (0, 5),
-            "6-11 ans": (6, 11),
-            "12-17 ans": (12, 17),
-            "18-25 ans": (18, 25),
-            "26-31 ans": (26, 31),
-            "32-40 ans": (32, 40),
-            "41 ans et plus": (41, 150),
+            "0-4 ans": (0, 4),
+            "5-14 ans": (5, 14),
+            "15-30 ans": (15, 30),
+            "31-45 ans": (31, 45),
+            "46-60 ans": (46, 60),
+            "61-80 ans": (61, 80),
+            # "41 ans et plus": (41, 150),
         }
         # Statistiques par tranche d'âge, sexe et type de cas
         age_stats = {}
         for label, (min_age, max_age) in age_ranges.items():
             age_stats[label] = {
-                "M": {
-                    "postexposition": PostExposition.objects.filter(
-                        client__sexe="M",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                    "preexposition": Preexposition.objects.filter(
-                        client__sexe="M",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                    "notification": RageHumaineNotification.objects.filter(
-                        client__sexe="M",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                },
-                "F": {
-                    "postexposition": PostExposition.objects.filter(
-                        client__sexe="F",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                    "preexposition": Preexposition.objects.filter(
-                        client__sexe="F",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                    "notification": RageHumaineNotification.objects.filter(
-                        client__sexe="F",
-                        client__date_naissance__lte=today - timedelta(days=min_age * 365),
-                        client__date_naissance__gt=today - timedelta(days=max_age * 365),
-                    ).count(),
-                },
+                sexe: {
+                    "postexposition": count_cases(PostExposition, sexe, min_age, max_age),
+                    "preexposition": count_cases(Preexposition, sexe, min_age, max_age),
+                    "notification": count_cases(RageHumaineNotification, sexe, min_age, max_age),
+                }
+                for sexe in ("M", "F")
             }
+        # for label, (min_age, max_age) in age_ranges.items():
+        #     age_stats[label] = {
+        #         "M": {
+        #             "postexposition": PostExposition.objects.filter(
+        #                 client__sexe="M",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #             "preexposition": Preexposition.objects.filter(
+        #                 client__sexe="M",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #             "notification": RageHumaineNotification.objects.filter(
+        #                 client__sexe="M",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #         },
+        #         "F": {
+        #             "postexposition": PostExposition.objects.filter(
+        #                 client__sexe="F",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #             "preexposition": Preexposition.objects.filter(
+        #                 client__sexe="F",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #             "notification": RageHumaineNotification.objects.filter(
+        #                 client__sexe="F",
+        #                 client__date_naissance__lte=today - timedelta(days=min_age * 365),
+        #                 client__date_naissance__gt=today - timedelta(days=max_age * 365),
+        #             ).count(),
+        #         },
+        #     }
 
         # Comptage des patients enregistrés ce mois
         patients_this_month = {
@@ -312,67 +356,9 @@ class CADashborad(LoginRequiredMixin, TemplateView):
             "notification": notification_data
         }
 
-        # Statistiques par niveau géographique
-        # def get_stats_by_level(model, date_field):
-        #     stats = {
-        #         'poles': list(
-        #             model.objects.values('client__centre_ar__district__region__poles__name')
-        #             .annotate(count=Count('id'))
-        #             .order_by('client__centre_ar__district__region__poles__name')
-        #         ) or [],
-        #         'regions': list(
-        #             model.objects.values('client__centre_ar__district__region__name')
-        #             .annotate(count=Count('id'))
-        #             .order_by('client__centre_ar__district__region__name')
-        #         ) or [],
-        #         'districts': list(
-        #             model.objects.values('client__centre_ar__district__nom')
-        #             .annotate(count=Count('id'))
-        #             .order_by('client__centre_ar__district__nom')
-        #         ) or [],
-        #         'centres': list(
-        #             model.objects.values('client__centre_ar__nom')
-        #             .annotate(count=Count('id'))
-        #             .order_by('client__centre_ar__nom')
-        #         ) or []
-        #     }
-        #     return stats
-        #
-        # context['stats_geo'] = {
-        #     'preexposition': get_stats_by_level(Preexposition, 'created_at'),
-        #     'postexposition': get_stats_by_level(PostExposition, 'date_exposition'),
-        #     'notification': get_stats_by_level(RageHumaineNotification, 'date_notification')
-        # }
-        #
-        # # Statistiques détaillées par centre
-        # centres = CentreAntirabique.objects.all()
-        # centre_stats = []
-        # for centre in centres:
-        #     district_name = centre.district.nom if centre.district else "N/A"
-        #
-        #     stats = {
-        #
-        #         'centre': centre.nom,
-        #         'district': centre.district.nom if centre.district else '',
-        #         'region': centre.district.region.name if centre.district and centre.district.region else '',
-        #         'pole': centre.district.region.poles.name if centre.district and centre.district.region and centre.district.region.poles else '',
-        #         'preexposition': Preexposition.objects.filter(client__centre_ar=centre).count(),
-        #         'postexposition': PostExposition.objects.filter(client__centre_ar=centre).count(),
-        #         'notification': RageHumaineNotification.objects.filter(client__centre_ar=centre).count(),
-        #         'total': Preexposition.objects.filter(client__centre_ar=centre).count() +
-        #                  PostExposition.objects.filter(client__centre_ar=centre).count() +
-        #                  RageHumaineNotification.objects.filter(client__centre_ar=centre).count()
-        #     }
-        #     centre_stats.append(stats)
-        #
-        #
-        # context['centre_stats'] = sorted(centre_stats, key=lambda x: x['total'], reverse=True)
-
-        # context["stats_exposition"] = stats_exposition
-        # debut stat par centre
         centres = CentreAntirabique.objects.annotate(
             total_preexposition=Count('patient__preexposition', distinct=True),
-            total_postexposition=Count('patient__postexposition', distinct=True),
+            total_postexposition=Count('patient__patientpep', distinct=True),
             total_notifications=Count('patient__notifications_rage', distinct=True),
             total_vaccinations=Count('patient__vaccination', distinct=True),
             total_mapis=Count('patient__mapi', distinct=True),
@@ -384,7 +370,7 @@ class CADashborad(LoginRequiredMixin, TemplateView):
         # debut stat par  districts
         districts = DistrictSanitaire.objects.annotate(
             total_preexposition=Count('centres__patient__preexposition', distinct=True),
-            total_postexposition=Count('centres__patient__postexposition', distinct=True),
+            total_postexposition=Count('centres__patient__patientpep', distinct=True),
             total_notifications=Count('centres__patient__notifications_rage', distinct=True),
             total_vaccinations=Count('centres__patient__vaccination', distinct=True),
             total_mapis=Count('centres__patient__mapi', distinct=True),
@@ -395,7 +381,7 @@ class CADashborad(LoginRequiredMixin, TemplateView):
         # debut stat par  regions
         regions = HealthRegion.objects.annotate(
             total_preexposition=Count('districts__centres__patient__preexposition', distinct=True),
-            total_postexposition=Count('districts__centres__patient__postexposition', distinct=True),
+            total_postexposition=Count('districts__centres__patient__patientpep', distinct=True),
             total_notifications=Count('districts__centres__patient__notifications_rage', distinct=True),
             total_vaccinations=Count('districts__centres__patient__vaccination', distinct=True),
             total_mapis=Count('districts__centres__patient__mapi', distinct=True),
@@ -408,7 +394,7 @@ class CADashborad(LoginRequiredMixin, TemplateView):
         # debut stat par  pres
         poles = PolesRegionaux.objects.annotate(
             total_preexposition=Count('regions__districts__centres__patient__preexposition', distinct=True),
-            total_postexposition=Count('regions__districts__centres__patient__postexposition', distinct=True),
+            total_postexposition=Count('regions__districts__centres__patient__patientpep', distinct=True),
             total_notifications=Count('regions__districts__centres__patient__notifications_rage', distinct=True),
             total_vaccinations=Count('regions__districts__centres__patient__vaccination', distinct=True),
             total_mapis=Count('regions__districts__centres__patient__mapi', distinct=True),
@@ -425,7 +411,181 @@ class CADashborad(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DistrictDashborad(TemplateView):
+class CartographieDataView(LoginRequiredMixin, View):
+    """
+    Retourne les données des cas et des districts en GeoJSON pour l'ajax,
+    avec application des filtres 'type', 'start_date', 'end_date'.
+    """
+
+    def get(self, request, *args, **kwargs):
+        # Récupération des filtres de zone
+        pole_id = request.GET.get('pole')
+        region_id = request.GET.get('region')
+        district_id = request.GET.get('district')
+        # Récupération des filtres métier
+        case_type = request.GET.get('type')  # 'pre', 'post', 'notification'
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        # Filtrage géographique
+        zone_filters = {}
+        if district_id:
+            zone_filters['pk'] = district_id
+        elif region_id:
+            zone_filters['region__pk'] = region_id
+        elif pole_id:
+            zone_filters['region__poles__pk'] = pole_id
+
+        districts_qs = DistrictSanitaire.objects.filter(**zone_filters)
+
+        # Sérialisation conditionnelle selon le type
+        features = []
+        if not case_type or case_type in ['all', 'pre']:
+            features += self.serialize_cases(Preexposition, districts_qs, 'pre', start_date, end_date)
+        if not case_type or case_type in ['all', 'post']:
+            features += self.serialize_cases(PostExposition, districts_qs, 'post', start_date, end_date)
+        if not case_type or case_type in ['all', 'notification']:
+            features += self.serialize_cases(RageHumaineNotification, districts_qs, 'notification', start_date,
+                                             end_date)
+
+        # GeoJSON des districts
+        districts_geojson = CartographieView().get_districts_geojson()
+
+        return JsonResponse({'features': features, 'districts': districts_geojson})
+
+    def serialize_cases(self, model, districts, case_type, start_date=None, end_date=None):
+        """
+        Sérialise les cas en GeoJSON en utilisant client.commune.geom,
+        et applique date range selon le case_type.
+        """
+        # Choix du champ date selon le type
+        date_field = {
+            'pre': 'created_at__date',
+            'post': 'date_exposition',
+            'notification': 'date_notification'
+        }[case_type]
+
+        # Construction du filtre
+        filters = {'client__commune__district__in': districts}
+        if start_date:
+            filters[f'{date_field}__gte'] = start_date
+        if end_date:
+            filters[f'{date_field}__lte'] = end_date
+
+        qs = model.objects.filter(**filters).select_related('client', 'client__commune')
+        result = []
+        for case in qs:
+            loc = getattr(case.client, 'commune', None)
+            if not loc or not getattr(loc, 'geom', None):
+                continue
+            result.append({
+                'type': 'Feature',
+                'geometry': {'type': 'Point', 'coordinates': [loc.geom.x, loc.geom.y]},
+                'properties': self.get_case_properties(case, loc, case_type)
+            })
+        return result
+
+    def get_case_properties(self, case, location, case_type):
+        """
+        Construit les propriétés communes et spécifiques selon le type,
+        sans lever d'erreur si date absente.
+        """
+        props = {
+            'id': case.id,
+            'type': case_type,
+            'patient': f"{case.client.nom} {case.client.prenoms}",
+            'commune': location.name,
+            'district': location.district.nom if location.district else None,
+            'region': location.district.region.name if location.district and location.district.region else None,
+        }
+        # Date selon le type
+        date_val = None
+        if case_type == 'pre':
+            date_val = getattr(case, 'created_at', None)
+        elif case_type == 'post':
+            date_val = getattr(case, 'date_exposition', None)
+        else:
+            date_val = getattr(case, 'date_notification', None)
+        props['date'] = date_val.isoformat() if date_val else None
+
+        # Attributs métier
+        if case_type == 'pre':
+            props['nature'] = 'Pré-exposition'
+            props['gravite'] = None
+        elif case_type == 'post':
+            props['nature'] = self.get_exposition_nature(case)
+            props['gravite'] = getattr(case, 'gravite_oms', None)
+        else:
+            props['nature'] = getattr(case, 'nature_exposition', None)
+            props['gravite'] = getattr(case, 'categorie_lesion', None)
+
+        return props
+
+    def get_exposition_nature(self, exposition):
+        if exposition.morsure == 'Oui':            return 'Morsure'
+        if exposition.griffure == 'Oui':           return 'Griffure'
+        if exposition.lechage_lesee == 'Oui':      return 'Léchage lésé'
+        if exposition.contactanimalpositif == 'Oui': return 'Contact animal positif'
+        return 'Autre'
+
+
+class CartographieView(LoginRequiredMixin, TemplateView):
+    template_name = "pages/cartographie.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({
+            'districts_geojson': self.get_districts_geojson(),
+            'poles': PolesRegionaux.objects.all().order_by('name'),
+            'regions': HealthRegion.objects.select_related('poles').order_by('name'),
+            'districts': DistrictSanitaire.objects.select_related('region').order_by('nom'),
+        })
+        return ctx
+
+    def get_districts_geojson(self):
+        qs = DistrictSanitaire.objects.annotate(
+            pre_count=self._case_count_subquery(Preexposition, 'client__commune__district'),
+            post_count=self._case_count_subquery(PostExposition, 'client__commune__district'),
+            notif_count=self._case_count_subquery(RageHumaineNotification, 'client__commune__district')
+        ).annotate(
+            total_cases=Coalesce('pre_count', 0) + Coalesce('post_count', 0) + Coalesce('notif_count', 0)
+        ).select_related('region')
+
+        features = []
+        for d in qs:
+            if not d.geom:
+                continue
+            features.append({
+                'type': 'Feature',
+                'geometry': {'type': d.geom.geom_type, 'coordinates': list(d.geom.coords)},
+                'properties': {
+                    'id': d.id,
+                    'nom': d.nom,
+                    'region': d.region.name if d.region else None,
+                    'case_count': d.total_cases,
+                    'color': self.get_color_for_count(d.total_cases)
+                }
+            })
+        return {'type': 'FeatureCollection', 'features': features}
+
+    def _case_count_subquery(self, model, path):
+        return Coalesce(
+            Subquery(
+                model.objects.filter(**{path: OuterRef('pk')})
+                .values(path)
+                .annotate(count=Count('pk'))
+                .values('count')[:1]
+            ), 0
+        )
+
+    def get_color_for_count(self, count):
+        if count == 0:    return '#f8f9fa'
+        if count <= 3:    return '#ffeda0'
+        if count <= 10:   return '#feb24c'
+        return '#f03b20'
+
+
+class DistrictDashborad(LoginRequiredMixin, TemplateView):
     template_name = "pages/index.html"
 
     @method_decorator(role_required('DistrictSanitaire'))
@@ -433,7 +593,7 @@ class DistrictDashborad(TemplateView):
         return super().dispatch(*args, **kwargs)
 
 
-class RegionDashborad(TemplateView):
+class RegionDashborad(LoginRequiredMixin, TemplateView):
     template_name = "pages/index.html"
 
     @method_decorator(role_required('Regional'))
@@ -441,7 +601,7 @@ class RegionDashborad(TemplateView):
         return super().dispatch(*args, **kwargs)
 
 
-class NationalDashborad(TemplateView):
+class NationalDashborad(LoginRequiredMixin, TemplateView):
     template_name = "pages/index.html"
 
     @method_decorator(role_required('National'))
@@ -465,9 +625,11 @@ class PatientListView(LoginRequiredMixin, TemplateView):
         genre = self.request.GET.get('genre', '')
         nationalite = self.request.GET.get('nationalite', '')
         status = self.request.GET.get('status', '')
+        # Filtrer les patients du même centre que l'employé connecté
+        user_centre = self.request.user.centre  # ⚡ Ici on récupère le centre de l'employé
 
+        queryset = Patient.objects.filter(centre_ar=user_centre)
         # Filtrer les patients
-        queryset = Patient.objects.all()
 
         if search:
             queryset = queryset.filter(Q(nom__icontains=search) | Q(prenoms__icontains=search))
@@ -517,7 +679,7 @@ class PatientUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('patient_list')
 
 
-class PatientDeleteView(DeleteView):
+class PatientDeleteView(LoginRequiredMixin, DeleteView):
     model = Patient
     template_name = 'patients/patient_confirm_delete.html'
     success_url = reverse_lazy('patient_list')
@@ -578,7 +740,7 @@ class PatientDeleteView(DeleteView):
 
 #------------------------------ Fin Donnees des patients ----------------------------------------------------------
 
-class DeclarationTemplate(TemplateView):
+class DeclarationTemplate(LoginRequiredMixin, TemplateView):
     template_name = 'pages/expositions/declaration.html'
 
     def get_context_data(self, **kwargs):
@@ -637,6 +799,7 @@ class DeclarationTemplate(TemplateView):
     #     ))
 
 
+@login_required
 def verifier_patient_mpi(patient_temp):
     return Patient.objects.filter(
         nom__iexact=patient_temp.nom,
@@ -646,6 +809,7 @@ def verifier_patient_mpi(patient_temp):
     ).first()
 
 
+@login_required
 def comparer_patients(patient_local, patient_mpi):
     champs = ['contact', 'cni_num', 'cni_nni', 'commune_id', 'quartier', 'village']
     differences = {}
@@ -657,89 +821,50 @@ def comparer_patients(patient_local, patient_mpi):
     return differences
 
 
+# @method_decorator(login_required, name='dispatch')
 class PreExpositionCreateView(View):
     template_name = "pages/expositions/preexposition_form.html"
 
     def get(self, request):
-        form = ClientPreExpositionForm()
-        return render(request, self.template_name, {"form": form})
+        patient_form = ClientForm()
+        exposition_form = PreExpositionForm()
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "exposition_form": exposition_form
+        })
 
     def post(self, request):
-        form = ClientPreExpositionForm(request.POST)
+        patient_form = ClientForm(request.POST)
+        exposition_form = PreExpositionForm(request.POST)
 
-        if form.is_valid():
+        if patient_form.is_valid() and exposition_form.is_valid():
             try:
                 with transaction.atomic():
-                    # Création du patient
-                    patient = form.save(commit=False)
+                    # 🎯 Création du Patient
+                    patient = patient_form.save(commit=False)
                     patient.created_by = request.user
                     if hasattr(request.user, 'centre'):
                         patient.centre_ar = request.user.centre
+                    patient.save()
 
-                        # Si l'utilisateur a confirmé via le formulaire de comparaison
-                        # if request.POST.get("forcer_mpi") and request.POST.get("mpi_upi"):
-                        #     patient.mpi_upi = request.POST.get("mpi_upi")
-                        #     patient.save()
-                        # else:
-                        #     # Vérifier dans MPI si ce patient existe déjà
-                        #     patient_mpi = verifier_patient_mpi(patient)
-                        #     if patient_mpi:
-                        #         differences = comparer_patients(patient, patient_mpi)
-                        #         if differences:
-                        #             return render(request, "pages/expositions/comparer_patient_mpi.html", {
-                        #                 "form": form,
-                        #                 "patient_mpi": patient_mpi,
-                        #                 "differences": differences
-                        #             })
-                        #         else:
-                        #             patient.mpi_upi = patient_mpi.mpi_upi
-                    try:
-                        patient.save()
-                    except IntegrityError as e:
-                        if 'mpi_upi' in str(e):
-                            messages.error(request,
-                                           "❌ Le patient est déjà synchronisé avec le système MPI. Veuillez vérifier son identité.")
-                            return render(request, self.template_name, {"form": form})
-                        raise  # Autre erreur
+                    # 🎯 Création de la Pré-Exposition
+                    preexposition = exposition_form.save(commit=False)
+                    preexposition.client = patient
+                    preexposition.created_by = request.user
+                    preexposition.save()
 
-                    # Pré-exposition
-                    preexposition = Preexposition.objects.create(
-                        client=patient,
-                        voyage=form.cleaned_data['voyage'],
-                        mise_a_jour=form.cleaned_data['mise_a_jour'],
-                        protection_rage=form.cleaned_data['protection_rage'],
-                        chien_voisin=form.cleaned_data['chien_voisin'],
-                        chiens_errants=form.cleaned_data['chiens_errants'],
-                        autre=form.cleaned_data['autre'],
-                        autre_motif=form.cleaned_data['autre_motif'],
-                        tele=form.cleaned_data['tele'],
-                        radio=form.cleaned_data['radio'],
-                        sensibilisation=form.cleaned_data['sensibilisation'],
-                        proche=form.cleaned_data['proche'],
-                        presse=form.cleaned_data['presse'],
-                        passage_car=form.cleaned_data['passage_car'],
-                        diff_canal=form.cleaned_data['diff_canal'],
-                        canal_infos=form.cleaned_data['canal_infos'],
-                        aime_animaux=form.cleaned_data['aime_animaux'],
-                        type_animal_aime=form.cleaned_data['type_animal_aime'],
-                        connait_protocole_var=form.cleaned_data['connait_protocole_var'],
-                        dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
-                        dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
-                        mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
-                        appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
-                        created_by=request.user,
-                    )
-
-                    # Protocole et génération RDV
-                    protocole = form.cleaned_data.get('protocole_vaccination') or ProtocoleVaccination.objects.filter(
-                        nom="Pré-Exposition-ID").first()
+                    # 🎯 Gestion du protocole et création des rendez-vous
+                    protocole = exposition_form.cleaned_data.get(
+                        'protocole_vaccination') or ProtocoleVaccination.objects.filter(
+                        nom="ID-PrEP"
+                    ).first()
 
                     if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
                         intervals_raw = [
                             protocole.intervale_visite1_2,
                             protocole.intervale_visite2_3,
                             protocole.intervale_visite3_4,
-                            protocole.intervale_visite4_5
+                            protocole.intervale_visite4_5,
                         ]
 
                         try:
@@ -783,140 +908,28 @@ class PreExpositionCreateView(View):
                                 date_rdv += timedelta(days=intervals[interval_index])
                             interval_index += 1
 
-                    messages.success(request,
-                                     "✅ Le patient, la pré-exposition et les rendez-vous ont été enregistrés avec succès.")
+                    messages.success(request, "✅ Patient, pré-exposition et rendez-vous enregistrés avec succès.")
                     return redirect(reverse("preexposition_list"))
 
             except Exception as e:
                 messages.error(request, f"❌ Une erreur est survenue : {str(e)}")
-                return render(request, self.template_name, {"form": form})
 
-        # Gestion erreurs de formulaire (cas form.is_valid() == False)
-        error_messages = [
-            f"<strong>{form.fields[field].label if field in form.fields else field}</strong> : {', '.join(errors)}"
-            for field, errors in form.errors.items()
-        ]
-        error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
-        messages.error(request, error_text)
-        return render(request, self.template_name, {"form": form})
+        else:
+            # Si erreurs de formulaire
+            error_messages = [
+                                 f"<strong>{field.label if hasattr(field, 'label') else field}</strong> : {', '.join(errors)}"
+                                 for field, errors in patient_form.errors.items()
+                             ] + [
+                                 f"<strong>{field.label if hasattr(field, 'label') else field}</strong> : {', '.join(errors)}"
+                                 for field, errors in exposition_form.errors.items()
+                             ]
+            error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
+            messages.error(request, error_text)
 
-
-# class PreExpositionCreateView(View):
-#     template_name = "pages/expositions/preexposition_form.html"
-#
-#     def get(self, request):
-#         form = ClientPreExpositionForm()
-#         return render(request, self.template_name, {"form": form})
-#
-#     def post(self, request):
-#         form = ClientPreExpositionForm(request.POST)
-#
-#         if form.is_valid():
-#             try:
-#                 with transaction.atomic():
-#                     # Sauvegarde du patient
-#                     patient = form.save(commit=False)
-#                     patient.created_by = request.user
-#                     if hasattr(request.user, 'centre'):
-#                         patient.centre_ar = request.user.centre
-#                     try:
-#                         patient.save()
-#                     except IntegrityError as e:
-#                         if 'mpi_upi' in str(e):
-#                             messages.error(request,
-#                                            "❌ Le patient est déjà synchronisé avec le système MPI. Veuillez vérifier son identité.")
-#                             return render(request, self.template_name, {"form": form})
-#                         raise  # autre IntegrityError = remonter
-#
-#                     # Sauvegarde des données de pré-exposition
-#                     preexposition = Preexposition.objects.create(
-#                         client=patient,
-#                         voyage=form.cleaned_data['voyage'],
-#                         mise_a_jour=form.cleaned_data['mise_a_jour'],
-#                         protection_rage=form.cleaned_data['protection_rage'],
-#                         chien_voisin=form.cleaned_data['chien_voisin'],
-#                         chiens_errants=form.cleaned_data['chiens_errants'],
-#                         autre=form.cleaned_data['autre'],
-#                         autre_motif=form.cleaned_data['autre_motif'],
-#                         tele=form.cleaned_data['tele'],
-#                         radio=form.cleaned_data['radio'],
-#                         sensibilisation=form.cleaned_data['sensibilisation'],
-#                         proche=form.cleaned_data['proche'],
-#                         presse=form.cleaned_data['presse'],
-#                         passage_car=form.cleaned_data['passage_car'],
-#                         diff_canal=form.cleaned_data['diff_canal'],
-#                         canal_infos=form.cleaned_data['canal_infos'],
-#                         aime_animaux=form.cleaned_data['aime_animaux'],
-#                         type_animal_aime=form.cleaned_data['type_animal_aime'],
-#                         connait_protocole_var=form.cleaned_data['connait_protocole_var'],
-#                         dernier_var_animal_type=form.cleaned_data['dernier_var_animal_type'],
-#                         dernier_var_animal_date=form.cleaned_data['dernier_var_animal_date'],
-#                         mesures_elimination_rage=form.cleaned_data['mesures_elimination_rage'],
-#                         appreciation_cout_var=form.cleaned_data['appreciation_cout_var'],
-#                         created_by=request.user,
-#                     )
-#
-#                     protocole = form.cleaned_data.get('protocole_vaccination')
-#                     if not protocole:
-#                         protocole = ProtocoleVaccination.objects.filter(nom="Pré-Exposition-ID").first()
-#
-#                     if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
-#                         intervals_raw = [
-#                             protocole.intervale_visite1_2,
-#                             protocole.intervale_visite2_3,
-#                             protocole.intervale_visite3_4,
-#                             protocole.intervale_visite4_5
-#                         ]
-#
-#                         try:
-#                             intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
-#                         except ValueError:
-#                             intervals = [None] * 4
-#
-#                         date_rdv = now().date()
-#                         dose_numero = 1
-#                         doses_restantes = protocole.nombre_doses
-#                         visites_max = protocole.nombre_visite
-#                         dose_par_rdv = protocole.nbr_dose_par_rdv or 1
-#                         duree_max = timedelta(days=protocole.duree) if protocole.duree else None
-#                         date_limite = date_rdv + duree_max if duree_max else None
-#
-#                         visites_creees = 0
-#                         interval_index = 0
-#
-#                         while doses_restantes > 0 and visites_creees < visites_max:
-#                             if date_limite and date_rdv > date_limite:
-#                                 break
-#
-#                             doses_a_admin = min(dose_par_rdv, doses_restantes)
-#
-#                             RendezVousVaccination.objects.create(
-#                                 patient=patient,
-#                                 preexposition=preexposition,
-#                                 protocole=protocole,
-#                                 date_rendez_vous=date_rdv,
-#                                 dose_numero=dose_numero,
-#                                 ordre_rdv=visites_creees + 1,
-#                                 est_effectue=False,
-#                                 created_by=request.user
-#                             )
-#
-#                             dose_numero += doses_a_admin
-#                             doses_restantes -= doses_a_admin
-#                             visites_creees += 1
-#
-#                             if interval_index < len(intervals) and intervals[interval_index]:
-#                                 date_rdv += timedelta(days=intervals[interval_index])
-#                             interval_index += 1
-#
-#                     messages.success(request,
-#                                      "Le dossier de vaccination, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
-#             return redirect(reverse("preexposition_list"))
-#             error_messages = [f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
-#             for field, errors in form.errors.items()]
-#         error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
-#         messages.error(request, error_text)
-#         return render(request, self.template_name, {"form": form})
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "exposition_form": exposition_form
+        })
 
 
 @login_required
@@ -1070,7 +1083,7 @@ class PreExpositionUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_invalid(form)
 
 
-class PreExpositionDeleteView(DeleteView):
+class PreExpositionDeleteView(LoginRequiredMixin, DeleteView):
     model = Preexposition
     template_name = "pages/expositions/preexposition_confirm_delete.html"
     success_url = reverse_lazy("preexposition_list")
@@ -1080,17 +1093,31 @@ class PreExpositionDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-# ------- Fin Pre Expo
+@login_required
+def add_injection_immunoglobuline(request, patient_id):
+    patient = get_object_or_404(Patient, pk=patient_id)
+    if request.method == 'POST':
+        form = InjectionImmunoglobulineForm(request.POST)
+        if form.is_valid():
+            injection = form.save(commit=False)
+            injection.created_by = request.user
+            injection.patient = patient
+            injection.save()
+            messages.success(request, "Informations enregistree avec success")
+            return redirect('vaccin-rdv-list')  # Ou Ajax/hx-trigger sur succès
+    else:
+        messages.error(request, "Un probleme est survenu")
+        form = InjectionImmunoglobulineForm(initial={'patient': patient})
 
-# --------- Post-Exposition
-import django_tables2 as tables
+    return redirect('vaccin-rdv-list')
 
 
 # ✅ Vue Liste des PostExposition avec django-tables2
-class PostExpositionListView(SingleTableView):
+class PostExpositionListView(SingleTableView, LoginRequiredMixin):
     model = PostExposition
     table_class = PostExpositionTable
     template_name = "pages/postexposition/postexposition_list.html"
+    qs = PostExposition.objects.select_related('client').prefetch_related('client__patients_immuno')
 
 
 def get_communes(request):
@@ -1099,136 +1126,195 @@ def get_communes(request):
     return JsonResponse(list(communes), safe=False)
 
 
+def commune_autocomplete(request):
+    query = request.GET.get('q', '')
+    results = Commune.objects.filter(name__icontains=query).values('id', 'name')[:10]
+    formatted = [{'id': r['id'], 'text': r['name']} for r in results]
+    return JsonResponse({'results': formatted})
+
+
+def generate_avis_surveillance(request, exposition_id):
+    exposition = PostExposition.objects.select_related('client', 'created_by').get(id=exposition_id)
+    patient = exposition.client
+    centre = request.user.centre
+
+    html_string = render_to_string("pdf/avis_prophylaxie.html", {
+        "exposition": exposition,
+        "centre": centre,
+        "proprio_nom": exposition.nom_proprietaire or patient.accompagnateur,
+        "proprio_contact": exposition.contact_proprietaire or patient.accompagnateur_contact,
+        "today": date.today()
+    })
+
+    html = HTML(string=html_string, base_url=request.build_absolute_uri('/'))
+    result = tempfile.NamedTemporaryFile(delete=True)
+    html.write_pdf(target=result.name)
+
+    with open(result.name, 'rb') as pdf:
+        response = HttpResponse(pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="avis_surveillance_{patient.nom}.pdf"'
+        return response
+
+
+# @method_decorator(login_required, name='dispatch')
 class PostExpositionCreateView(View):
     template_name = "pages/expositions/postexposition_form.html"
 
     def get(self, request):
-        form = ClientPostExpositionForm()
-        return render(request, self.template_name, {"form": form})
+        patient_form = ClientForm()
+        exposition_form = PostExpositionForm()
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "exposition_form": exposition_form
+        })
 
     def post(self, request):
-        form = ClientPostExpositionForm(request.POST)
-        with transaction.atomic():
-            if not request.user.is_authenticated:
-                messages.error(request, "Vous devez être connecté pour effectuer cette action.")
-                return redirect("account-login")  # Remplace "login" par ton URL de connexion
+        patient_form = ClientForm(request.POST)
+        exposition_form = PostExpositionForm(request.POST, request.FILES)
 
-        if form.is_valid():
+        if not request.user.is_authenticated or not isinstance(request.user, EmployeeUser):
+            messages.error(request, "Vous devez être connecté avec un compte employé pour effectuer cette action.")
+            return redirect('account_login')  # 🔥 Mets ici ton URL de login
+
+        if patient_form.is_valid() and exposition_form.is_valid():
+
             with transaction.atomic():
+                # 🎯 Gérer la commune (si nouvelle)
+                commune_field = patient_form.cleaned_data.get('commune')
+
+                if isinstance(commune_field, str) and commune_field.strip() != "":
+                    commune, created = Commune.objects.get_or_create(
+                        name=commune_field.strip(),
+                        defaults={'type': 'Commune'}
+                    )
+                    patient_form.instance.commune = commune
+
                 # ✅ Vérifier si le patient existe déjà
                 patient = Patient.objects.filter(
-                    nom=form.cleaned_data['nom'],
-                    prenoms=form.cleaned_data['prenoms'],
-                    date_naissance=form.cleaned_data['date_naissance'],
-                    # sexe=form.cleaned_data['sexe'],
-                    # contact=form.cleaned_data['contact']
+                    nom=patient_form.cleaned_data['nom'],
+                    prenoms=patient_form.cleaned_data['prenoms'],
+                    date_naissance=patient_form.cleaned_data['date_naissance'],
                 ).first()
 
                 if not patient:
-                    # ✅ Création du patient seulement s'il n'existe pas
-                    patient = form.save()
+                    # 🚀 Création du patient
+                    patient = patient_form.save(commit=False)
+                    patient.created_by = request.user
+                    patient.centre_ar = request.user.centre
+                    patient = patient_form.save()
+                else:
+                    # 🚨 Patient existant, on update les infos s'il faut
+                    patient_form.instance = patient
+                    updated_patient = patient_form.save(commit=False)
+                    updated_patient.centre_ar = updated_patient.centre_ar or request.user.centre
+                    patient = patient_form.save()
 
-                # ✅ Création de la post-exposition
-                postexposition = PostExposition.objects.create(
-                    client=patient,
-                    date_exposition=form.cleaned_data['date_exposition'],
-                    lieu_exposition=form.cleaned_data['lieu_exposition'],
-                    exposition_quartier=form.cleaned_data['exposition_quartier'],
-                    attaque_provoquee=form.cleaned_data['attaque_provoquee'],
-                    agression=form.cleaned_data['agression'],
-                    attaque_collective=form.cleaned_data['attaque_collective'],
-                    professionnel=form.cleaned_data['professionnel'],
-                    type_professionnel=form.cleaned_data['type_professionnel'],
-                    morsure=form.cleaned_data['morsure'],
-                    griffure=form.cleaned_data['griffure'],
-                    lechage_saine=form.cleaned_data['lechage_saine'],
-                    contactanimalpositif=form.cleaned_data['contactanimalpositif'],
-                    contactpatientpositif=form.cleaned_data['contactpatientpositif'],
-                    autre=form.cleaned_data['autre'],
-                    autre_nature_exposition=form.cleaned_data['autre_nature_exposition'],
-                    created_by=request.user,
-                )
+                # ✅ Création de la PostExposition
+                postexposition = exposition_form.save(commit=False)
+                postexposition.client = patient
+                postexposition.created_by = request.user
+                # 🎯 Injection automatique si "Propriétaire animal" sélectionné
+                accompagnateur_nature = patient_form.cleaned_data.get("accompagnateur_nature", "")
+                if accompagnateur_nature.strip() == "Propriétaire animal":
+                    exposition_form.data = exposition_form.data.copy()
+                    exposition_form.data["connais_proprio"] = "Oui"
+                    exposition_form.data["retour_info_proprietaire"] = "Oui"
+                    exposition_form.data["nom_proprietaire"] = patient_form.cleaned_data.get("accompagnateur", "")
+                    exposition_form.data["contact_proprietaire"] = patient_form.cleaned_data.get(
+                        "accompagnateur_contact", "")
+                    exposition_form = PostExpositionForm(exposition_form.data,
+                                                         request.FILES)  # rebind avec les nouvelles données
 
-                # ✅ Récupération du protocole de vaccination (ou "IPC" par défaut)
-                protocole = form.cleaned_data.get('protocole_vaccination')
-                if not protocole:
-                    protocole = ProtocoleVaccination.objects.filter(nom="IPC").first()
+                    if not exposition_form.is_valid():  # vérifier à nouveau après modification
+                        messages.error(request, "Le formulaire a échoué après injection automatique.")
+                        return render(request, self.template_name, {
+                            "patient_form": patient_form,
+                            "exposition_form": exposition_form
+                        })
+                postexposition.save()
 
-                if protocole:
-                    # ✅ Définition des intervalles des visites
-                    intervals = [
+                # Protocole et génération RDV
+                protocole = exposition_form.cleaned_data.get(
+                    'protocole_vaccination') or ProtocoleVaccination.objects.filter(
+                    nom="ID-PEP").first()
+
+                if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
+                    intervals_raw = [
                         protocole.intervale_visite1_2,
                         protocole.intervale_visite2_3,
                         protocole.intervale_visite3_4,
                         protocole.intervale_visite4_5
                     ]
 
-                    # ✅ Transformation des intervalles en entiers (Gestion des erreurs)
                     try:
-                        intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals]
+                        intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals_raw]
                     except ValueError:
-                        intervals = [None] * 4  # Gérer les erreurs de conversion
+                        intervals = [None] * 4
 
-                    # ✅ Définition des paramètres du protocole
-                    date_rdv = now().date()  # Premier rendez-vous = aujourd'hui
-                    doses_restantes = protocole.nombre_doses
-                    visites_restantes = protocole.nombre_visite
+                    date_rdv = now().date()
                     dose_numero = 1
+                    doses_restantes = protocole.nombre_doses
+                    visites_max = protocole.nombre_visite
+                    dose_par_rdv = protocole.nbr_dose_par_rdv or 1
                     duree_max = timedelta(days=protocole.duree) if protocole.duree else None
-                    date_fin_max = date_rdv + duree_max if duree_max else None
+                    date_limite = date_rdv + duree_max if duree_max else None
 
-                    # ✅ Création des rendez-vous post-exposition
-                    for i in range(visites_restantes):
-                        if doses_restantes <= 0:
-                            break  # Stop si toutes les doses ont été administrées
+                    visites_creees = 0
+                    interval_index = 0
 
-                        if date_fin_max and date_rdv > date_fin_max:
-                            break  # Ne pas créer de rendez-vous après la durée max
+                    while doses_restantes > 0 and visites_creees < visites_max:
+                        if date_limite and date_rdv > date_limite:
+                            break
 
-                        # ✅ Calcul des doses pour ce rendez-vous
-                        doses_pour_ce_rdv = min(doses_restantes, protocole.nbr_dose_par_rdv or 1)
+                        doses_a_admin = min(dose_par_rdv, doses_restantes)
 
-                        # ✅ Création du rendez-vous
                         RendezVousVaccination.objects.create(
                             patient=patient,
                             postexposition=postexposition,
                             protocole=protocole,
                             date_rendez_vous=date_rdv,
                             dose_numero=dose_numero,
+                            ordre_rdv=visites_creees + 1,
                             est_effectue=False,
                             created_by=request.user
                         )
 
-                        # Mise à jour des doses et de la prochaine date
-                        doses_restantes -= doses_pour_ce_rdv
-                        dose_numero += doses_pour_ce_rdv
+                        dose_numero += doses_a_admin
+                        doses_restantes -= doses_a_admin
+                        visites_creees += 1
 
-                        if i < len(intervals) and intervals[i]:
-                            date_rdv += timedelta(days=intervals[i])
+                        if interval_index < len(intervals) and intervals[interval_index]:
+                            date_rdv += timedelta(days=intervals[interval_index])
+                        interval_index += 1
 
                 messages.success(request,
-                                 "Le dossier de post-exposition, le patient et les rendez-vous ont été enregistrés avec succès ! ✅")
+                                 "✅ Le patient, la post-exposition et les rendez-vous ont été enregistrés avec succès.")
+
                 return redirect(reverse("postexposition_list"))
 
-        # ✅ Gestion des erreurs du formulaire
-        error_messages = [
-            f"<strong>{form.fields[field].label if field in form.fields else field}</strong>: {', '.join(errors)}"
-            for field, errors in form.errors.items()
-        ]
-        error_text = "Veuillez corriger les erreurs du formulaire :<br>" + "<br>".join(error_messages)
+        else:
+            # 🐞 Débogage: afficher les erreurs dans la console
+            print("--- Patient Form Errors ---")
+            print(patient_form.errors)
+            print("--- Exposition Form Errors ---")
+            print(exposition_form.errors)
 
-        messages.error(request, error_text)
-        return render(request, self.template_name, {"form": form})
+            messages.error(request, "Erreur lors de l'enregistrement. Merci de corriger les erreurs ci-dessous.")
+
+        return render(request, self.template_name, {
+            "patient_form": patient_form,
+            "exposition_form": exposition_form
+        })
 
 
 # ✅ Vue Détail
-class PostExpositionDetailView(DetailView):
+class PostExpositionDetailView(LoginRequiredMixin, DetailView):
     model = PostExposition
     template_name = "pages/postexposition/postexposition_detail.html"
 
 
 # ✅ Vue Mise à Jour
-class PostExpositionUpdateView(UpdateView):
+class PostExpositionUpdateView(LoginRequiredMixin, UpdateView):
     model = PostExposition
     form_class = PostExpositionForm
     template_name = "pages/postexposition/postexposition_form.html"
@@ -1244,7 +1330,7 @@ class PostExpositionUpdateView(UpdateView):
 
 
 # ✅ Vue Suppression
-class PostExpositionDeleteView(DeleteView):
+class PostExpositionDeleteView(LoginRequiredMixin, DeleteView):
     model = PostExposition
     template_name = "pages/postexposition/postexposition_confirm_delete.html"
     success_url = reverse_lazy("postexposition_list")
@@ -1363,7 +1449,7 @@ class PostExpositionDeleteView(DeleteView):
 #     else:
 #         messages.warning(request, 'Un probleme est survenue dans la requete')
 #     return redirect('exposition_detail', exposition.pk)
-class RageHumaineNotificationListView(FilterView, SingleTableView):
+class RageHumaineNotificationListView(FilterView, LoginRequiredMixin, SingleTableView):
     model = RageHumaineNotification
     table_class = RageHumaineNotificationTable
     template_name = "pages/rage_notification/rage_notification_list.html"
@@ -1378,25 +1464,26 @@ class RageHumaineNotificationListView(FilterView, SingleTableView):
         return context
 
 
-class RageHumaineNotificationDetailView(DetailView):
+class RageHumaineNotificationDetailView(LoginRequiredMixin, DetailView):
     model = RageHumaineNotification
     template_name = "pages/rage_notification/rage_notification_detail.html"
     context_object_name = "notification"
 
 
-class RageHumaineNotificationUpdateView(UpdateView):
+class RageHumaineNotificationUpdateView(LoginRequiredMixin, UpdateView):
     model = RageHumaineNotification
     form_class = RageHumaineNotificationForm
     template_name = "pages/rage_notification/rage_notification_update.html"
     success_url = reverse_lazy("notification_rage_liste")
 
 
-class RageHumaineNotificationDeleteView(DeleteView):
+class RageHumaineNotificationDeleteView(LoginRequiredMixin, DeleteView):
     model = RageHumaineNotification
     template_name = "pages/rage_notification/rage_notification_confirm_delete.html"
     success_url = reverse_lazy("notification_rage_liste")
 
 
+@login_required()
 class RageNotificationCreateView(View):
     template_name = "pages/rage_notification/rage_notification_form.html"
 
@@ -1629,7 +1716,23 @@ def effectuer_paiement(request, facture_id):
     return redirect('liste_factures', )
 
 
-class RendezVousListView(SingleTableMixin, FilterView):
+def confirm_rdv_to_patient(rdv):
+    if not rdv.patient.contact:
+        return False
+
+    phone_number = str(rdv.patient.contact).replace("+", "")
+    message = (
+        f"📅 Rendez-vous vaccination\n"
+        f"Patient: {rdv.patient.nom}\n"
+        f"Date: {rdv.date_rendez_vous.strftime('%d/%m/%Y à %H:%M')}\n"
+        f"Dose: {rdv.dose_numero}/{rdv.protocole.nombre_doses}\n"
+        f"Lieu: {rdv.patient.centre_ar.nom}"
+    )
+
+    return WhatsAppService.send_custom_message(phone_number, message)
+
+
+class RendezVousListView(SingleTableMixin, LoginRequiredMixin, FilterView):
     model = RendezVousVaccination
     table_class = RendezVousTable
     template_name = "pages/rendez_vous/rendez_vous_list.html"
@@ -1645,10 +1748,11 @@ class RendezVousListView(SingleTableMixin, FilterView):
         context["filter"] = self.get_filterset(
             self.filterset_class)  # Utiliser get_filterset() au lieu de self.filterset
         context["vaccins"] = Vaccins.objects.all()
+        context["igform"] = InjectionImmunoglobulineForm()
         return context
 
 
-class FactureListView(SingleTableMixin, FilterView):
+class FactureListView(SingleTableMixin, LoginRequiredMixin, FilterView):
     model = Facture
     table_class = FactureTable
     template_name = "pages/factures/facture_list.html"
@@ -1656,7 +1760,7 @@ class FactureListView(SingleTableMixin, FilterView):
     paginate_by = 10  # Pagination : 10 factures par page
 
 
-class RendezVousDetailView(DetailView):
+class RendezVousDetailView(LoginRequiredMixin, DetailView):
     model = RendezVousVaccination
     template_name = 'pages/rendez_vous/rendez_vous_detail.html'
     context_object_name = 'details_rdv'
@@ -1713,27 +1817,27 @@ class RendezVousDetailView(DetailView):
 
 #----------------------------------- Animal ------------------------------------------------------
 
-class AnimalListView(ListView):
+class AnimalListView(LoginRequiredMixin, ListView):
     model = Animal
     template_name = 'animaux/animal_list.html'
     context_object_name = 'animaux'
     ordering = ['-created_at']
 
 
-class AnimalDetailView(DetailView):
+class AnimalDetailView(LoginRequiredMixin, DetailView):
     model = Animal
     template_name = 'animaux/animal_detail.html'
     context_object_name = 'animal'
 
 
-class AnimalUpdateView(UpdateView):
+class AnimalUpdateView(LoginRequiredMixin, UpdateView):
     model = Animal
     template_name = 'animaux/animal_form.html'
     fields = '__all__'
     success_url = reverse_lazy('animal_list')
 
 
-class AnimalDeleteView(DeleteView):
+class AnimalDeleteView(LoginRequiredMixin, DeleteView):
     model = Animal
     template_name = 'animaux/animal_confirm_delete.html'
     success_url = reverse_lazy('animal_list')
@@ -1741,26 +1845,26 @@ class AnimalDeleteView(DeleteView):
 
 #-------------------- Protocole de Vaccinantion ------------------------------------#
 
-class ProtocoleVaccinationListView(ListView):
+class ProtocoleVaccinationListView(LoginRequiredMixin, ListView):
     model = ProtocoleVaccination
     template_name = 'protocoles/protocole_list.html'
     context_object_name = 'protocoles'
 
 
-class ProtocoleVaccinationDetailView(DetailView):
+class ProtocoleVaccinationDetailView(LoginRequiredMixin, DetailView):
     model = ProtocoleVaccination
     template_name = 'protocoles/protocole_detail.html'
     context_object_name = 'protocole'
 
 
-class ProtocoleVaccinationUpdateView(UpdateView):
+class ProtocoleVaccinationUpdateView(LoginRequiredMixin, UpdateView):
     model = ProtocoleVaccination
     template_name = 'protocoles/protocole_form.html'
     fields = '__all__'
     success_url = reverse_lazy('protocole_list')
 
 
-class ProtocoleVaccinationDeleteView(DeleteView):
+class ProtocoleVaccinationDeleteView(LoginRequiredMixin, DeleteView):
     model = ProtocoleVaccination
     template_name = 'protocoles/protocole_confirm_delete.html'
     success_url = reverse_lazy('protocole_list')
@@ -1771,31 +1875,197 @@ class ProtocoleVaccinationDeleteView(DeleteView):
 def attestation_vaccination(request, vaccination_id):
     vaccination = get_object_or_404(Vaccination, id=vaccination_id)
 
+    # Création du buffer et du canvas en format A6 (105 x 148 mm)
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    width, height = A6
+    p = canvas.Canvas(buffer, pagesize=A6)
 
-    p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(width / 2, height - 100, "ATTESTATION DE VACCINATION")
+    # Chemins des logos (ajuster selon votre structure de fichiers)
+    logo_ministere = os.path.join(settings.STATIC_ROOT, 'assets/media/certificat.jpg')
+    logo_hopital = os.path.join(settings.STATIC_ROOT, 'assets/logo_hopital.png')
 
-    p.setFont("Helvetica", 12)
-    p.drawString(100, height - 150, f"Nom du patient : {vaccination.patient.nom} {vaccination.patient.prenoms}")
-    p.drawString(100, height - 170, f"Date de vaccination : {vaccination.date_effective.strftime('%d/%m/%Y')}")
-    p.drawString(100, height - 190, f"Protocole : {vaccination.protocole.nom}")
-    p.drawString(100, height - 210, f"Vaccin : {vaccination.vaccin.nom}")
-    p.drawString(100, height - 230, f"Vaccin : {vaccination.vaccin.nom}")
-    p.drawString(100, height - 250, f"Lot : {vaccination.dose_numero} - Volume : {vaccination.dose_ml} ml")
-    p.drawString(100, height - 280, f"Voie d'injection : {vaccination.get_voie_injection_display()}")
+    # Ajout du filigrane
+    p.setFillColor(lightgrey)
+    p.setFont("Helvetica-Bold", 40)
+    p.rotate(45)
+    p.drawString(50, -100, "CERTIFICAT OFFICIEL")
+    p.rotate(-45)
+    p.setFillColorRGB(0, 0, 0)  # Retour à la couleur noire
 
-    p.drawString(100, height - 320, f"Fait le : {datetime.now().strftime('%d/%m/%Y')}")
-    p.drawString(100, height - 350, "Signature du responsable : ________________________")
+    # En-tête
+
+    # En-tête avec logos
+    logo_height = 15  # Hauteur en mm
+    logo_width = 30  # Largeur en mm (sera ajustée pour conserver les proportions)
+
+    # Logo ministère (gauche)
+    if os.path.exists(logo_ministere):
+        img = ImageReader(logo_ministere)
+        img_width, img_height = img.getSize()
+        aspect = img_height / float(img_width)
+        p.drawImage(img, 5, height - logo_height - 15,
+                    width=logo_width, height=logo_width * aspect,
+                    preserveAspectRatio=True, mask='auto')
+
+    # Logo hôpital (droite)
+    if os.path.exists(logo_hopital):
+        img = ImageReader(logo_hopital)
+        img_width, img_height = img.getSize()
+        aspect = img_height / float(img_width)
+        p.drawImage(img, width - logo_width - 10, height - logo_height - 15,
+                    width=logo_width, height=logo_width * aspect,
+                    preserveAspectRatio=True, mask='auto')
+
+    p.setFont("Helvetica", 5)
+    p.drawCentredString(width / 4, height - 20, "Ministère de la Santé de l'hygiène publique")
+    p.drawCentredString(width / 4, height - 25, " et de la couverture Maladie Universelle")
+
+    p.drawCentredString(width / 1.2, height - 20, "République de Côte d'Ivoire")
+    p.drawCentredString(width / 1.2, height - 25, "Union-Discipline-Travail")
+
+    p.setFont("Helvetica-Bold", 12)
+    p.drawCentredString(width / 2, height - 40, "ATTESTATION DE VACCINATION")
+
+    # Informations patient
+    y_position = height - 50
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(10, y_position, "INFORMATIONS DU PATIENT:")
+    p.setFont("Helvetica", 9)
+    y_position -= 15
+    p.drawString(15, y_position, f"Nom: {vaccination.patient.nom} {vaccination.patient.prenoms}")
+    y_position -= 12
+    p.drawString(15, y_position, f"Date de naissance: {vaccination.patient.date_naissance.strftime('%d/%m/%Y')}")
+
+    # Détails vaccination
+    y_position -= 20
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(10, y_position, "DÉTAILS DE LA VACCINATION:")
+    p.setFont("Helvetica", 9)
+    y_position -= 15
+    p.drawString(15, y_position, f"Date: {vaccination.date_effective.strftime('%d/%m/%Y %H:%M')}")
+    y_position -= 12
+    p.drawString(15, y_position, f"Vaccin: {vaccination.vaccin.nom}")
+    y_position -= 12
+    p.drawString(15, y_position, f"Lot: {vaccination.lot.numero_lot if vaccination.lot else 'N/A'}")
+    y_position -= 12
+    p.drawString(15, y_position, f"Dose: {vaccination.dose_numero}/{vaccination.nombre_dose}")
+    y_position -= 12
+    p.drawString(15, y_position, f"Volume: {vaccination.dose_ml} ml")
+    y_position -= 12
+    p.drawString(15, y_position, f"Voie: {vaccination.get_voie_injection_display()}")
+
+    # Génération du QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=2,
+        border=2,
+    )
+    qr_data = f"""
+Patient: {vaccination.patient.nom} {vaccination.patient.prenoms}
+Date: {vaccination.date_effective.strftime('%d/%m/%Y')}
+Vaccin: {vaccination.vaccin.nom}
+Lot: {vaccination.lot.numero_lot if vaccination.lot else 'N/A'}
+Dose: {vaccination.dose_numero}/{vaccination.nombre_dose}
+ID: {vaccination.id}
+    """
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+
+    # Sauvegarde du QR code dans un buffer temporaire
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+
+    # Ajout du QR code au PDF
+    qr_size = 30  # Taille en points (environ 10mm)
+    p.drawImage(ImageReader(qr_buffer), width - qr_size - 10, 20,
+                width=qr_size, height=qr_size)
+
+    # Pied de page
+    p.setFont("Helvetica", 8)
+    p.drawString(10, 30, f"Certificat généré le: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    p.drawString(10, 20, "Signature du responsable: ________________")
 
     p.showPage()
     p.save()
-
     buffer.seek(0)
 
-    return HttpResponse(buffer, content_type='application/pdf')
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="attestation_vaccination_{vaccination.id}.pdf"'
+    return response
+
+
+class GenerateVaccinationCertificatePDF(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        vaccination_id = kwargs.get('pk')
+        try:
+            vaccination = Vaccination.objects.get(pk=vaccination_id)
+        except Vaccination.DoesNotExist:
+            return HttpResponse("Vaccination non trouvée", status=404)
+
+        # Création du contexte pour le template
+        context = {
+            'vaccination': vaccination,
+            'date_emission': datetime.now().strftime("%d/%m/%Y %H:%M"),
+            'qr_code_data': self.generate_qr_code_data(vaccination),
+        }
+
+        # Chargement du template HTML
+        template = get_template('pages/vaccinations/certificate_pdf.html')
+        html = template.render(context)
+
+        # Création du PDF
+        response = HttpResponse(content_type='application/pdf')
+        response[
+            'Content-Disposition'] = f'attachment; filename="certificat_vaccination_{vaccination.patient.nom}_{vaccination.id}.pdf"'
+
+        # Génération du PDF
+        pisa_status = pisa.CreatePDF(
+            html, dest=response, encoding='utf-8')
+
+        if pisa_status.err:
+            return HttpResponse('Erreur lors de la génération du PDF', status=500)
+        return response
+
+    def generate_qr_code_data(self, vaccination):
+        """Génère les données pour le QR code"""
+        data = {
+            "patient": {
+                "nom": vaccination.patient.nom,
+                "prenom": vaccination.patient.prenoms,
+                "date_naissance": str(vaccination.patient.date_naissance),
+            },
+            "vaccination": {
+                "date": str(vaccination.date_effective),
+                "vaccin": vaccination.vaccin.nom if vaccination.vaccin else "",
+                "lot": vaccination.lot.numero_lot if vaccination.lot else "",
+                "dose": f"{vaccination.dose_numero}/{vaccination.nombre_dose}",
+                "protocole": vaccination.protocole.nom,
+            },
+            "centre": {
+                "nom": vaccination.lieu,
+            }
+        }
+        return data
+
+    def generate_qr_code(self, data):
+        """Génère un QR code à partir des données"""
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(str(data))
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        img_buffer = BytesIO()
+        img.save(img_buffer, format="PNG")
+        img_buffer.seek(0)
+        return img_buffer
 
 
 class VaccinationListView(LoginRequiredMixin, ListView):
@@ -1811,15 +2081,290 @@ class VaccinationDetailView(LoginRequiredMixin, DetailView):
     template_name = 'pages/vaccinations/vaccination_detail.html'
     context_object_name = 'vaccination'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["mapi_form"] = MAPIForm()
+        return context
 
-class VaccinationUpdateView(UpdateView):
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = MAPIForm(request.POST)
+
+        if form.is_valid():
+            mapi = form.save(commit=False)
+            mapi.vaccination = self.object
+            mapi.patient = self.object.patient  # si `Vaccination` a un lien vers `Patient`
+            mapi.created_by = request.user
+            mapi.save()
+            messages.success(request, "✅ Symptôme MAPI enregistré avec succès.")
+            return redirect("vaccination_detail", pk=self.object.pk)
+
+        context = self.get_context_data()
+        context["mapi_form"] = form
+        return self.render_to_response(context)
+
+
+class VaccinationUpdateView(LoginRequiredMixin, UpdateView):
     model = Vaccination
     template_name = 'vaccinations/vaccination_form.html'
     fields = '__all__'
     success_url = reverse_lazy('vaccination_list')
 
 
-class VaccinationDeleteView(DeleteView):
+class VaccinationDeleteView(LoginRequiredMixin, DeleteView):
     model = Vaccination
     template_name = 'vaccinations/vaccination_confirm_delete.html'
     success_url = reverse_lazy('vaccination_list')
+
+
+class InjectionImmunoglobulineCreateView(LoginRequiredMixin, CreateView):
+    model = InjectionImmunoglobuline
+    form_class = InjectionImmunoglobulineForm
+    template_name = "pages/immunoglobuline/injection_form.html"
+    success_url = reverse_lazy('injection_list')  # À adapter à ton URL
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        messages.success(self.request, "✅ Injection enregistrée avec succès.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, "❌ Erreur lors de l’enregistrement. Veuillez corriger les champs.")
+        return super().form_invalid(form)
+
+
+#--------------------------------------------------------Parametres---------------------------------------------------#
+
+
+#----------Vaccins------------------#
+
+class VaccinListView(LoginRequiredMixin, ListView):
+    model = Vaccins
+    template_name = 'parametres/vaccins/vaccin_list.html'
+    context_object_name = 'vaccins'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrage par nom si un paramètre de recherche est présent
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(nom__icontains=search_query)
+        return queryset
+
+
+class VaccinCreateView(LoginRequiredMixin, CreateView):
+    model = Vaccins
+    form_class = VaccinForm
+    template_name = 'parametres/vaccins/vaccin_form.html'
+    success_url = reverse_lazy('vaccin_list')
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
+
+class VaccinUpdateView(LoginRequiredMixin, UpdateView):
+    model = Vaccins
+    form_class = VaccinForm
+    template_name = 'parametres/vaccins/vaccin_form.html'
+    success_url = reverse_lazy('vaccin_list')
+
+
+class VaccinDetailView(LoginRequiredMixin, DetailView):
+    model = Vaccins
+    template_name = 'parametres/vaccins/vaccin_detail.html'
+    context_object_name = 'vaccin'
+
+
+class LotVaccinListView(LoginRequiredMixin, ListView):
+    model = LotVaccin
+    template_name = 'parametres/vaccins/lot_vaccin_list.html'
+    context_object_name = 'lots'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrage par centre de l'utilisateur connecté
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(centre=self.request.user.centre)
+
+        # Filtrage par vaccin si spécifié
+        vaccin_id = self.request.GET.get('vaccin')
+        if vaccin_id:
+            queryset = queryset.filter(vaccin_id=vaccin_id)
+
+        # Filtrage par date d'expiration
+        expiration = self.request.GET.get('expiration')
+        if expiration == 'soon':
+            from django.utils import timezone
+            from datetime import timedelta
+            soon_date = timezone.now().date() + timedelta(days=30)
+            queryset = queryset.filter(date_expiration__lte=soon_date)
+
+        return queryset.order_by('date_expiration')
+
+
+class LotVaccinCreateView(LoginRequiredMixin, CreateView):
+    model = LotVaccin
+    form_class = LotVaccinForm
+    template_name = 'parametres/vaccins/lot_vaccin_form.html'
+    success_url = reverse_lazy('lot_vaccin_list')
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.centre = self.request.user.centre
+        form.instance.quantite_disponible = form.instance.quantite_initiale
+        return super().form_valid(form)
+
+
+class LotVaccinUpdateView(LoginRequiredMixin, UpdateView):
+    model = LotVaccin
+    form_class = LotVaccinForm
+    template_name = 'parametres/vaccins/lot_vaccin_form.html'
+    success_url = reverse_lazy('lot_vaccin_list')
+
+
+class LotVaccinDetailView(LoginRequiredMixin, DetailView):
+    model = LotVaccin
+    template_name = 'parametres/vaccins/lot_vaccin_detail.html'
+    context_object_name = 'lot'
+
+
+#--------------------Employee Mnagement--------------------------------
+
+class EmployeeUserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = EmployeeUser
+    template_name = 'parametres/users/employeeuser_list.html'
+    context_object_name = 'users'
+    permission_required = 'rage.view_employeeuser'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrage par rôle si spécifié
+        role = self.request.GET.get('role')
+        if role:
+            queryset = queryset.filter(roleemployee=role)
+
+        # Filtrage par centre pour les non-superusers
+        if not self.request.user.is_superuser and self.request.user.centre:
+            queryset = queryset.filter(centre=self.request.user.centre)
+
+        return queryset.order_by('username')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['centres'] = CentreAntirabique.objects.all()
+        return context
+
+
+class EmployeeUserCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = EmployeeUser
+    form_class = EmployeeUserForm
+    template_name = 'parametres/users/employeeuser_form.html'
+    success_url = reverse_lazy('employeeuser_list')
+    permission_required = 'rage.add_employeeuser'
+
+    def form_valid(self, form):
+        user = self.request.user
+
+        # Si le créateur n'est PAS superuser et a un centre
+        if not user.is_superuser and hasattr(user, 'centre') and user.centre:
+            form.instance.centre = user.centre
+
+        return super().form_valid(form)
+
+
+class EmployeeUserUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = EmployeeUser
+    form_class = EmployeeUserUpdateForm
+    template_name = 'parametres/users/employeeuser_form.html'
+    success_url = reverse_lazy('employeeuser_list')
+    permission_required = 'rage.change_employeeuser'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Limiter les choix de centre pour les non-superusers
+        if not self.request.user.is_superuser:
+            kwargs['centre_queryset'] = CentreAntirabique.objects.filter(pk=self.request.user.centre.pk)
+        return kwargs
+
+
+class EmployeeUserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    model = EmployeeUser
+    template_name = 'parametres/users/employeeuser_detail.html'
+    context_object_name = 'user'
+    permission_required = 'rage.view_employeeuser'
+
+
+class EmployeeUserDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = EmployeeUser
+    template_name = 'parametres/users/employeeuser_confirm_delete.html'
+    success_url = reverse_lazy('employeeuser_list')
+    permission_required = 'rage.delete_employeeuser'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Empêcher la suppression de soi-même
+        if self.get_object() == request.user:
+            messages.error(request, "Vous ne pouvez pas supprimer votre propre compte.")
+            return redirect('employeeuser_list')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class CentreAntirabiqueListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = CentreAntirabique
+    template_name = 'parametres/centres/centreantirabique_list.html'
+    context_object_name = 'centres'
+    permission_required = 'rage.view_centreantirabique'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrage par district si spécifié
+        district = self.request.GET.get('district')
+        if district:
+            queryset = queryset.filter(district_id=district)
+        return queryset.order_by('nom')
+
+
+class CentreAntirabiqueCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = CentreAntirabique
+    form_class = CentreAntirabiqueForm
+    template_name = 'parametres/centres/centreantirabique_form.html'
+    success_url = reverse_lazy('centreantirabique_list')
+    permission_required = 'rage.add_centreantirabique'
+
+
+class CentreAntirabiqueUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = CentreAntirabique
+    form_class = CentreAntirabiqueForm
+    template_name = 'parametres/centres/centreantirabique_form.html'
+    success_url = reverse_lazy('centreantirabique_list')
+    permission_required = 'rage.change_centreantirabique'
+
+
+class CentreAntirabiqueDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    model = CentreAntirabique
+    template_name = 'parametres/centres/centreantirabique_detail.html'
+    context_object_name = 'centre'
+    permission_required = 'rage.view_centreantirabique'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['users'] = self.object.employeeuser_set.all()
+        return context
+
+
+class CentreAntirabiqueDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = CentreAntirabique
+    template_name = 'parametres/centres/centreantirabique_confirm_delete.html'
+    success_url = reverse_lazy('centreantirabique_list')
+    permission_required = 'rage.delete_centreantirabique'
+
+    def delete(self, request, *args, **kwargs):
+        centre = self.get_object()
+        if centre.employeeuser_set.exists():
+            messages.error(request, "Impossible de supprimer ce centre car il a des utilisateurs associés.")
+            return redirect('centreantirabique_list')
+        return super().delete(request, *args, **kwargs)

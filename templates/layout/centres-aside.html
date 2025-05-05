@@ -22,6 +22,13 @@
                         <span class="menu-text">Dashboard</span>
                     </a>
                 </li>
+
+                 <li class="menu-item menu-item-active" aria-haspopup="true">
+                    <a href="{% url 'cartographie' %}" class="menu-link">
+                        <i class="menu-icon flaticon2-map"></i>
+                        <span class="menu-text">Cartographie</span>
+                    </a>
+                </li>
                 
                 <!-- Patients Section -->
                 <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
@@ -141,11 +148,50 @@
                         <span class="menu-text">Rapports</span>
                     </a>
                 </li>
-                <li class="menu-item" aria-haspopup="true">
-                    <a href="#" class="menu-link">
-                        <i class="menu-icon flaticon2-console"></i>
-                        <span class="menu-text">Parametres</span>
+               <li class="menu-item menu-item-submenu" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:;" class="menu-link menu-toggle">
+                        <i class="menu-icon flaticon2-settings"></i>
+                        <span class="menu-text">Paramètres</span>
+                        <i class="menu-arrow"></i>
                     </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item menu-item-parent" aria-haspopup="true">
+                                <span class="menu-link"><span class="menu-text">Reports</span></span>
+                            </li>
+                            <li class="menu-item" aria-haspopup="true">
+                                <a href="{% url 'vaccin_list' %}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Vaccins</span>
+                                </a>
+                            </li>
+                            <li class="menu-item" aria-haspopup="true">
+                                <a href="{% url 'lot_vaccin_list' %}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Lots vaccins</span>
+                                </a>
+                            </li>
+                            <li class="menu-item" aria-haspopup="true">
+                                <a href="{% url 'centreantirabique_list' %}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">CAR</span>
+                                </a>
+                            </li>
+                            <li class="menu-item" aria-haspopup="true">
+                                <a href="{% url 'employeeuser_list' %}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text"> Utilisateurs  </span>
+                                </a>
+                            </li>
+                            <li class="menu-item" aria-haspopup="true">
+                                <a href="#" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">FAQ</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
                 <li class="menu-item" aria-haspopup="true">
                     <a href="#" class="menu-link">

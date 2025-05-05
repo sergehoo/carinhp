@@ -118,4 +118,144 @@
 <a href="{% url 'detail_rendez_vous' record.pk %}" class="btn btn-icon btn-info btn-xs">
     <i class="fa fa-list-alt"></i>
 </a>
+{# <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#injectionModal{{ record.patient.pk }}">IG</a>#}
 
+{% with last_expo=record.patient.patientpep.last injections=record.patient.patients_immuno.all %}
+    {% if last_expo and last_expo.gravite_oms == "III" %}
+        {% if injections.count == 0 %}
+            <!-- Aucun enregistrement = afficher bouton -->
+            <a href="#" class="btn btn-icon btn-xs btn-danger" data-toggle="modal" data-target="#injectionModal{{ record.patient.pk }}">
+                IG
+            </a>
+        {% else %}
+            {% with last_injection=injections.0 %}
+                {% if last_injection.refus_injection %}
+                    <span class="badge badge-warning"></span>
+                {% endif %}
+                <!-- Sinon injection normale, donc rien -->
+            {% endwith %}
+        {% endif %}
+    {% endif %}
+{% endwith %}
+
+
+<div class="modal fade" id="injectionModal{{ record.patient.pk }}" tabindex="-1" role="dialog" aria-labelledby="injectionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="injectionModalLabel{{ record.patient.pk }}">
+            <i class="flaticon-injection text-danger mr-2"></i>
+            Injection d'Immunoglobuline pour {{ record.patient.nom }} {{ record.patient.prenoms }}
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="{% url 'injection_immuno_add' patient_id=record.patient.pk %}">
+          {% csrf_token %}
+
+          <!-- Section Refus -->
+          <div class="form-group row align-items-center mb-5">
+            <label class="col-form-label col-4">Refus d'immunoglobuline ?</label>
+            <div class="col-8">
+              <span class="switch switch-outline switch-icon switch-danger">
+                <label>
+                  {{ igform.refus_injection }}
+                  <span></span>
+                </label>
+              </span>
+              <small class="form-text text-muted">Cocher si le patient refuse l'injection d'immunoglobuline</small>
+            </div>
+          </div>
+
+          <!-- Motif de refus (visible seulement si refus) -->
+          <div id="motifRefusContainer" class="form-group row mb-5" style="display: none;">
+            <label for="motifRefusField" class="col-form-label col-4">Motif du refus</label>
+            <div class="col-8">
+              {{ igform.motif_refus }}
+              {% if igform.motif_refus.errors %}
+                <div class="alert alert-danger mt-2">
+                  {{ igform.motif_refus.errors }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Champs du formulaire (masqués si refus) -->
+          <div id="fields-container">
+            <div class="row">
+              {% for field in igform %}
+                {% if field.name != "refus_injection" and field.name != "motif_refus" %}
+                <div class="col-md-6 field-wrapper" data-field-name="{{ field.name }}">
+                  <div class="form-group">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                      <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                      <div class="alert alert-danger mt-2">
+                        {{ field.errors }}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">
+              <i class="flaticon-close mr-2"></i>Annuler
+            </button>
+            <button type="submit" class="btn btn-primary font-weight-bold">
+              <i class="flaticon2-check-mark mr-2"></i>Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Sélectionne tous les modals d'injection
+    const injectionModals = document.querySelectorAll('[id^="injectionModal"]');
+
+    injectionModals.forEach(modal => {
+        // Trouve les éléments spécifiques à ce modal
+        const refusCheckbox = modal.querySelector('input[name="refus_injection"]');
+        const motifField = modal.querySelector('#motifRefusContainer');
+        const allFields = modal.querySelectorAll(".field-wrapper");
+        const motifRefusInput = modal.querySelector('[name="motif_refus"]');
+
+        function toggleFields() {
+            const isRefused = refusCheckbox?.checked;
+
+            // Afficher/masquer le motif de refus
+            if (motifField) {
+                motifField.style.display = isRefused ? "flex" : "none";
+            }
+
+            // Afficher/masquer les autres champs
+            allFields.forEach(field => {
+                field.style.display = isRefused ? "none" : "block";
+            });
+
+            // Si refus, rendre le motif obligatoire
+            if (motifRefusInput) {
+                motifRefusInput.required = isRefused;
+            }
+        }
+
+        if (refusCheckbox) {
+            refusCheckbox.addEventListener("change", toggleFields);
+            // Initialise l'état au chargement
+            toggleFields();
+        }
+    });
+});
+</script>

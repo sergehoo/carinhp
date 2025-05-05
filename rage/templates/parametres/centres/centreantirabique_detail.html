@@ -1,0 +1,152 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+        {% include 'layout/header-title.html' with title="Détails du Centre" subtitle=centre.nom %}
+
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Informations du Centre
+                            </h3>
+                        </div>
+                        <div class="card-toolbar">
+                            {% if perms.management.change_centreantirabique %}
+                            <a href="{% url 'centreantirabique_update' centre.pk %}"
+                               class="btn btn-sm btn-primary font-weight-bold">
+                                <i class="flaticon2-edit"></i> Modifier
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Nom</span>
+                                    <span class="text-dark">{{ centre.nom }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Type</span>
+                                    <span class="text-dark">{{ centre.type|default:"Non spécifié" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">District</span>
+                                    <span class="text-dark">{{ centre.district|default:"Non spécifié" }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Source</span>
+                                    <span class="text-dark">{{ centre.source|default:"Non spécifié" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">What3Words</span>
+                                    <span class="text-dark">{{ centre.what3words|default:"Non spécifié" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mb-10">
+                                    <span class="text-dark-50 font-weight-bold mb-2">Dernière modification</span>
+                                    <span class="text-dark">{{ centre.date_modified|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Localisation -->
+                        <div class="separator separator-dashed my-5"></div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4 class="text-dark font-weight-bold mb-5">Localisation</h4>
+                                {% if centre.geom %}
+                                <div id="map" style="height: 400px; width: 100%;"></div>
+                                {% else %}
+                                <div class="alert alert-warning">
+                                    Aucune localisation géographique n'a été enregistrée pour ce centre.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utilisateurs du centre -->
+                <div class="card card-custom mt-6">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <h3 class="card-label">
+                                Utilisateurs associés
+                                <span class="d-block text-muted pt-2 font-size-sm">
+                                    Liste des utilisateurs affectés à ce centre
+                                </span>
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom table-vertical-center">
+                                <thead>
+                                    <tr>
+                                        <th>Nom d'utilisateur</th>
+                                        <th>Nom complet</th>
+                                        <th>Rôle</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in centre.employeeuser_set.all %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.get_full_name }}</td>
+                                        <td>{{ user.get_roleemployee_display }}</td>
+                                        <td>
+                                            <span class="label label-{% if user.is_active %}success{% else %}danger{% endif %} label-inline">
+                                                {% if user.is_active %}Actif{% else %}Inactif{% endif %}
+                                            </span>
+                                        </td>
+                                        <td nowrap>
+                                            <a href="{% url 'employeeuser_detail' user.pk %}"
+                                               class="btn btn-sm btn-clean btn-icon" title="Détails">
+                                                <i class="flaticon-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aucun utilisateur associé à ce centre</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'layout/footer.html' %}
+</div>
+
+<!-- Map Integration -->
+{% if centre.geom %}
+<script>
+    $(document).ready(function() {
+        var coords = '{{ centre.geom }}'.match(/POINT\(([^)]+)\)/)[1].split(' ');
+        var map = L.map('map').setView([parseFloat(coords[1]), parseFloat(coords[0])], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        L.marker([parseFloat(coords[1]), parseFloat(coords[0])]).addTo(map)
+            .bindPopup('{{ centre.nom }}');
+    });
+</script>
+{% endif %}
+{% endblock %}
