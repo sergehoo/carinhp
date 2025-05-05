@@ -10,21 +10,45 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip
 
 # Install system dependencies including g++ and GDAL
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends \
+#    g++ \
+#    gcc \
+#    gdal-bin \
+#    libgdal-dev \
+#    libpq-dev \
+#    software-properties-common \
+#    ca-certificates \
+#    dirmngr \
+#    gnupg2 \
+#    lsb-release \
+#    postgresql-client && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/*
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    g++ \
-    gcc \
-    gdal-bin \
-    libgdal-dev \
-    libpq-dev \
-    software-properties-common \
-    ca-certificates \
-    dirmngr \
-    gnupg2 \
-    lsb-release \
-    postgresql-client && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+      # compilateurs et GDAL pour GIS
+      g++ \
+      gcc \
+      gdal-bin \
+      libgdal-dev \
+      # client PostgreSQL et headers
+      postgresql-client \
+      libpq-dev \
+      # utilitaires divers
+      ca-certificates \
+      dirmngr \
+      gnupg2 \
+      lsb-release \
+      # **les bibliothèques Pango/Cairo pour WeasyPrint**
+      libcairo2 \
+      libpango-1.0-0 \
+      libpangocairo-1.0-0 \
+      libgdk-pixbuf2.0-0 \
+      libffi7 \
+      shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set GDAL environment variables
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
