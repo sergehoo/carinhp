@@ -23,6 +23,12 @@ RUN apt-get update && \
     gnupg2 \
     lsb-release \
     postgresql-client && \
+    libcairo2 \
+      libpango-1.0-0 \
+      libpangocairo-1.0-0 \
+      libgdk-pixbuf2.0-0 \
+      libffi7 \
+      shared-mime-info \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
