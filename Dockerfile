@@ -12,25 +12,28 @@ RUN pip install --upgrade pip
 # Install system dependencies including g++ and GDAL
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    g++ \
-    gcc \
-    gdal-bin \
-    libgdal-dev \
-    libpq-dev \
-    software-properties-common \
-    ca-certificates \
-    dirmngr \
-    gnupg2 \
-    lsb-release \
-    postgresql-client && \
-    libcairo2 \
-      libpango-1.0-0 \
-      libpangocairo-1.0-0 \
-      libgdk-pixbuf2.0-0 \
-      libffi7 \
-      shared-mime-info \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        # compilateurs & GDAL/PQ pour vos dépendances GIS/DB
+        g++ \
+        gcc \
+        gdal-bin \
+        libgdal-dev \
+        libpq-dev \
+        postgresql-client \
+        # utilitaires système
+        software-properties-common \
+        ca-certificates \
+        dirmngr \
+        gnupg2 \
+        lsb-release \
+        # bibliothèques nécessaires à WeasyPrint
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi7 \
+        shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set GDAL environment variables
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
