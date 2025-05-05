@@ -45,7 +45,8 @@ Faker==37.0.0
 fonttools==4.56.0
 html5lib==1.1
 idna==3.10
-kombu==5.5.3
+
+kombu<5.5.3
 lxml==5.3.1
 numpy==2.0.2
 orjson==3.10.15
@@ -83,7 +84,8 @@ tinycss2==1.4.0
 tinyhtml5==2.0.0
 tqdm==4.67.1
 typing_extensions==4.12.2
-tzdata==2025.1
+
+tzdata>=2025.2
 tzlocal==5.3.1
 uritools==4.0.3
 urllib3==2.3.0
