@@ -1,0 +1,468 @@
+{% extends 'layout/centre-base.html' %}
+{% load static %}
+{% load django_tables2 %}
+
+
+
+{% block content %}
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+    <!--begin::Wrapper-->
+    <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--begin::Content-->
+        <div class="content  d-flex flex-column flex-column-fluid" id="kt_content">
+            <!--begin::Subheader-->
+            {% include 'layout/header-title.html' %}
+            <!--end::Subheader-->
+
+            <!--begin::Entry-->
+            <div class="d-flex flex-column-fluid">
+                <!--begin::Container-->
+                <div class=" container ">
+                    <!--begin::Card-->
+                    <div class="card card-custom">
+                        <!--begin::Header-->
+                        <div class="card-header flex-wrap border-0 pt-6 pb-0">
+                            <div class="card-title">
+                                <h3 class="card-label">
+                                    Formulaire de Post-Exposition
+                                    <span class="d-block text-muted pt-2 font-size-sm">Donnees en Post-Exposition</span>
+                                </h3>
+                            </div>
+
+                        </div>
+                        <!--end::Header-->
+
+                        <!--begin::Body-->
+                       <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Veuillez corriger les erreurs ci-dessous :</strong>
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }} :</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <hr class="my-4">
+
+                <div class="row">
+                   <!-- Tous les champs patient -->
+{% for field in patient_form %}
+    <div class="col-md-2 mb-3">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        <small class="text-danger">{{ field.errors }}</small>
+    </div>
+{% endfor %}
+
+<!-- Tous les champs exposition -->
+{% for field in exposition_form %}
+    <div class="col-md-2 mb-3">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        <small class="text-danger">{{ field.errors }}</small>
+    </div>
+{% endfor %}
+                </div>
+
+                {# Ajoute ici d'autres champs comme pour le formulaire de création #}
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Enregistrer les modifications</button>
+                    <a href="{% url 'postexposition_list' %}" class="btn btn-secondary ml-2">Annuler</a>
+                </div>
+            </form>
+        </div>
+
+
+                        <!--end::Body-->
+                    </div>
+                    <!--end::Card-->
+                </div>
+                <!--end::Container-->
+            </div>
+            <!--end::Entry-->
+        </div>
+        <!--end::Content-->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // 🔥 Focus automatique sur le premier champ en erreur
+                const errorField = document.querySelector('.text-danger:has(span)');
+                if (errorField) {
+                    const input = errorField.parentElement.querySelector('input, select, textarea');
+                    if (input) {
+                        input.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        input.focus();
+                        input.classList.add('is-invalid');
+                    }
+                }
+
+                // 🔥 Validation dynamique à chaque frappe
+                document.addEventListener('input', function (e) {
+                    const field = e.target;
+                    if (field.tagName === 'INPUT' || field.tagName === 'SELECT' || field.tagName === 'TEXTAREA') {
+                        if (!field.checkValidity()) {
+                            field.classList.add('is-invalid');
+                            field.classList.remove('is-valid');
+                        } else {
+                            field.classList.remove('is-invalid');
+                            field.classList.add('is-valid');
+                        }
+                    }
+                });
+
+                // 🔥 Blocage du formulaire s'il y a des erreurs
+                const form = document.querySelector('form.needs-validation');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        if (!form.checkValidity()) {
+                            e.preventDefault(); // Stop l'envoi
+                            e.stopPropagation();
+                            form.classList.add('was-validated');
+                            alert('Veuillez corriger les erreurs avant de soumettre. 🚫');
+                        }
+                    }, false);
+                }
+            });
+        </script>
+{#        <script>#}
+{#            function patientFormLogic() {#}
+{#                return {#}
+{#                    loading: false,#}
+{#                    patientMineur: false,#}
+{#                    estProprietaireAnimal: false,#}
+{##}
+{#                    checkProprioAnimal(value) {#}
+{#                        this.estProprietaireAnimal = value === 'Propriétaire animal';#}
+{#                    },#}
+{##}
+{#                    calculateAge(dateString) {#}
+{#                        const today = new Date();#}
+{#                        const birthDate = new Date(dateString);#}
+{#                        let age = today.getFullYear() - birthDate.getFullYear();#}
+{#                        const m = today.getMonth() - birthDate.getMonth();#}
+{#                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {#}
+{#                            age--;#}
+{#                        }#}
+{#                        return age;#}
+{#                    },#}
+{##}
+{#                    handleDateChange(event) {#}
+{#                        const age = this.calculateAge(event.target.value);#}
+{#                        this.patientMineur = age < 21;#}
+{#                    }#}
+{#                }#}
+{#            }#}
+{#        </script>#}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('patientForm', () => ({
+            // États principaux
+            loading: false,
+            processing: false,
+            patientMineur: false,
+            estProprietaireAnimal: false,
+            accompagnateurNature: '',
+            dateNaissance: '',
+
+            // ✅ Appelée au chargement pour initialiser les champs
+            initForm() {
+                const dateInput = document.getElementById('id_date_naissance');
+                if (dateInput) {
+                    this.dateNaissance = dateInput.value;
+                    if (this.dateNaissance) this.handleDateChange({ target: { value: this.dateNaissance } });
+                }
+
+                const selectNature = document.querySelector('[name="{{ patient_form.accompagnateur_nature.name }}"]');
+                if (selectNature) {
+                    this.checkProprioAnimal(selectNature.value);
+                }
+
+                this.checkInitialErrors();
+            },
+
+            // ✅ Détecte si l’accompagnateur est le propriétaire de l’animal
+            checkProprioAnimal(value) {
+                this.estProprietaireAnimal = value === 'Propriétaire animal';
+            },
+
+            // ✅ Calcule l’âge à partir de la date de naissance
+            calculateAge(dateString) {
+                const today = new Date();
+                const birthDate = new Date(dateString);
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                return age;
+            },
+
+            // ✅ Gère le changement de date de naissance
+            handleDateChange(event) {
+                const date = event?.target?.value || this.dateNaissance;
+                const age = this.calculateAge(date);
+                this.patientMineur = age < 21;
+            },
+
+            // ✅ Fait le focus sur le premier champ invalide s’il y a une erreur
+            checkInitialErrors() {
+                const firstError = document.querySelector('.is-invalid, .invalid-feedback');
+                if (firstError) {
+                    const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');
+                    if (input) {
+                        setTimeout(() => {
+                            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            input.focus();
+                        }, 300);
+                    }
+                }
+            },
+
+            // ✅ Soumission et validation du formulaire
+            async validateAndSubmit(event) {
+                this.processing = true;
+                const form = event.target;
+                const visibleFields = Array.from(form.elements).filter(el => el.offsetParent !== null && el.willValidate);
+
+                let isValid = true;
+                for (let field of visibleFields) {
+                    if (!field.checkValidity()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                }
+
+                if (!isValid) {
+                    form.classList.add('was-validated');
+                    this.processing = false;
+                    return false;
+                }
+
+                this.loading = true;
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action || window.location.href, {
+                        method: form.method,
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        if (result.success) {
+                            window.location.href = "{% url 'postexposition_list' %}";
+                        } else {
+                            throw new Error(result.message || 'Erreur lors de la soumission');
+                        }
+                    } else {
+                        window.location.href = response.url;
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    alert("Une erreur est survenue lors de l'envoi du formulaire.");
+                } finally {
+                    this.loading = false;
+                    this.processing = false;
+                }
+            }
+        }));
+    });
+</script>
+
+
+{#    <script>#}
+{#document.addEventListener('alpine:init', () => {#}
+{#    // Gestion principale du formulaire#}
+{#    Alpine.data('patientForm', () => ({#}
+{#        loading: false,#}
+{#        processing: false,#}
+{#        patientMineur: false,#}
+{#        estProprietaireAnimal: false,#}
+{#        accompagnateurNature: '',#}
+{#        dateNaissance: '',#}
+{##}
+{#        initForm() {#}
+{#            // Initialisation des valeurs existantes#}
+{#            const dateInput = document.getElementById('id_date_naissance');#}
+{#            if (dateInput) {#}
+{#                this.dateNaissance = dateInput.value;#}
+{#                if (this.dateNaissance) this.handleDateChange();#}
+{#            }#}
+{##}
+{#            // Vérification initiale des erreurs#}
+{#            this.checkInitialErrors();#}
+{#        },#}
+{##}
+{#        checkProprioAnimal() {#}
+{#            this.estProprietaireAnimal = this.accompagnateurNature === 'Propriétaire animal';#}
+{#        },#}
+{##}
+{#        calculateAge(dateString) {#}
+{#            if (!dateString) return 0;#}
+{#            const today = new Date();#}
+{#            const birthDate = new Date(dateString);#}
+{#            let age = today.getFullYear() - birthDate.getFullYear();#}
+{#            const m = today.getMonth() - birthDate.getMonth();#}
+{#            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {#}
+{#                age--;#}
+{#            }#}
+{#            return age;#}
+{#        },#}
+{##}
+{#        handleDateChange() {#}
+{#            const age = this.calculateAge(this.dateNaissance);#}
+{#            this.patientMineur = age < 21;#}
+{#        },#}
+{##}
+{#        checkInitialErrors() {#}
+{#            // Focus sur le premier champ invalide#}
+{#            const firstError = document.querySelector('.is-invalid, .invalid-feedback');#}
+{#            if (firstError) {#}
+{#                const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');#}
+{#                if (input) {#}
+{#                    setTimeout(() => {#}
+{#                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });#}
+{#                        input.focus();#}
+{#                    }, 300);#}
+{#                }#}
+{#            }#}
+{#        },#}
+{##}
+{#        async validateAndSubmit(event) {#}
+{#            this.processing = true;#}
+{#            const form = event.target;#}
+{##}
+{#            // Validation des champs visibles seulement#}
+{#            const visibleFields = Array.from(form.elements)#}
+{#                .filter(el => el.offsetParent !== null && el.willValidate);#}
+{##}
+{#            let isValid = true;#}
+{#            visibleFields.forEach(field => {#}
+{#                if (!field.checkValidity()) {#}
+{#                    field.classList.add('is-invalid');#}
+{#                    isValid = false;#}
+{##}
+{#                    // Scroll vers le premier champ invalide#}
+{#                    if (isValid) {#}
+{#                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });#}
+{#                        field.focus();#}
+{#                    }#}
+{#                } else {#}
+{#                    field.classList.remove('is-invalid');#}
+{#                }#}
+{#            });#}
+{##}
+{#            if (!isValid) {#}
+{#                form.classList.add('was-validated');#}
+{#                this.processing = false;#}
+{#                return false;#}
+{#            }#}
+{##}
+{#            // Soumission du formulaire#}
+{#            this.loading = true;#}
+{#            try {#}
+{#                const formData = new FormData(form);#}
+{#                const response = await fetch(form.action || window.location.href, {#}
+{#                    method: form.method,#}
+{#                    body: formData,#}
+{#                    headers: {#}
+{#                        'X-Requested-With': 'XMLHttpRequest',#}
+{#                        'X-CSRFToken': '{{ csrf_token }}'#}
+{#                    }#}
+{#                });#}
+{##}
+{#                if (!response.ok) throw new Error('Erreur réseau');#}
+{##}
+{#                // Redirection après succès#}
+{#                window.location.href = "{% url 'postexposition_list' %}";#}
+{##}
+{#            } catch (error) {#}
+{#                console.error('Erreur:', error);#}
+{#                alert("Une erreur est survenue lors de l'envoi du formulaire.");#}
+{#            } finally {#}
+{#                this.loading = false;#}
+{#                this.processing = false;#}
+{#            }#}
+{#        }#}
+{#    }));#}
+{##}
+{#    // Sous-composants Alpine.js pour chaque section#}
+{#    Alpine.data('expositionDetails', () => ({#}
+{#        autreOui: '{{ exposition_form.autre.value }}' === 'Oui',#}
+{#        tete_cou: '{{ exposition_form.tete_cou.value }}' === 'Oui',#}
+{#        membre_superieur: '{{ exposition_form.membre_superieur.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{##}
+{#    Alpine.data('animalInfo', () => ({#}
+{#        especeAutre: '{{ exposition_form.espece.value }}' === 'Autre',#}
+{#        connaisProprio: '{{ exposition_form.connais_proprio.value }}' === 'Oui',#}
+{#        correctementVaccine: '{{ exposition_form.correctement_vaccine.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{##}
+{#    Alpine.data('medicalRecord', () => ({#}
+{#        antecedentsMedicaux: '{{ exposition_form.antecedents_medicaux.value }}' === 'Oui',#}
+{#        coagulation: '{{ exposition_form.probleme_coagulation.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{#});#}
+{##}
+{#// Validation dynamique améliorée#}
+{#document.addEventListener('input', function(e) {#}
+{#    const field = e.target;#}
+{#    if (field.willValidate) {#}
+{#        field.classList.toggle('is-invalid', !field.checkValidity());#}
+{#        field.classList.toggle('is-valid', field.checkValidity());#}
+{##}
+{#        // Validation en temps réel pour les champs requis#}
+{#        if (field.required && field.value.trim() === '') {#}
+{#            field.classList.add('is-invalid');#}
+{#        }#}
+{#    }#}
+{#});#}
+{##}
+{#// Gestion des changements pour les selects#}
+{#document.addEventListener('change', function(e) {#}
+{#    if (e.target.tagName === 'SELECT') {#}
+{#        e.target.classList.toggle('is-invalid', !e.target.checkValidity());#}
+{#    }#}
+{#});#}
+{#</script>#}
+
+        <!--begin::Footer-->
+        <!-- Tagify JS & CSS -->
+
+        <!--doc: add "bg-white" class to have footer with solod background color-->
+        {% include 'layout/footer.html' %}
+        <!--end::Footer-->
+    </div>
+    <!--end::Wrapper-->
+{% endblock %}
+

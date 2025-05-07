@@ -1292,7 +1292,6 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
         })
 
 
-
 # ✅ Vue Détail
 class PostExpositionDetailView(LoginRequiredMixin, DetailView):
     model = PostExposition
@@ -1303,16 +1302,29 @@ class PostExpositionDetailView(LoginRequiredMixin, DetailView):
 class PostExpositionUpdateView(LoginRequiredMixin, UpdateView):
     model = PostExposition
     form_class = PostExpositionForm
-    template_name = "pages/postexposition/postexposition_form.html"
+    template_name = "pages/postexposition/postexposition__update_form.html"  # ⚠️ nouveau template
     success_url = reverse_lazy("postexposition_list")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'patient_form' not in context:
+            context['patient_form'] = ClientForm(instance=self.object.client)
+        context['exposition_form'] = context.get('form')
+        return context
+
     def form_valid(self, form):
-        messages.success(self.request, "Le dossier post-exposition a été mis à jour avec succès ! ✅")
-        return super().form_valid(form)
+        # Enregistre d’abord le patient s’il a été modifié
+        patient_form = ClientForm(self.request.POST, self.request.FILES, instance=self.object.client)
+        if patient_form.is_valid():
+            patient_form.save()
+            messages.success(self.request, "Le dossier post-exposition a été mis à jour avec succès ! ✅")
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def form_invalid(self, form):
         messages.error(self.request, "Veuillez corriger les erreurs du formulaire.")
-        return super().form_invalid(form)
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 # ✅ Vue Suppression
