@@ -1,3 +1,5 @@
+import inspect
+import json
 import random
 import string
 import uuid
@@ -22,7 +24,8 @@ from tinymce.models import HTMLField
 from datetime import datetime, date
 from rage_INHP.services import synchroniser_avec_mpi
 from rage_INHP.utils.phone import nettoyer_numero, formater_numero_local
-
+import logging
+logger = logging.getLogger(__name__)
 # Create your models here.
 # User = get_user_model()
 
@@ -479,7 +482,7 @@ class Patient(models.Model):
     patient_mineur = models.BooleanField(default=False)
     accompagnateur = models.CharField(max_length=255, blank=True, null=True)
 
-    accompagnateur_contact = PhoneNumberField(region='CI', blank=True, null=True)
+    accompagnateurcontact = PhoneNumberField(region='CI', blank=True, null=True)
 
     accompagnateur_adresse = models.CharField(max_length=255, blank=True, null=True)
     accompagnateur_nature = models.CharField(choices=nature_acompagnateur_CHOICES, max_length=255, blank=True,
@@ -505,7 +508,7 @@ class Patient(models.Model):
     def save(self, *args, **kwargs):
         # Nettoyage des numéros avant sauvegarde
         self.contact = nettoyer_numero(self.contact)
-        self.accompagnateur_contact = nettoyer_numero(self.accompagnateur_contact)
+        self.accompagnateurcontact = nettoyer_numero(self.accompagnateurcontact)
 
         # Générer un code_patient unique constitué de chiffres et de caractères alphabétiques
         if not self.code_patient:
@@ -530,8 +533,8 @@ class Patient(models.Model):
         return formater_numero_local(self.contact)
 
     @property
-    def accompagnateur_contact_formatte(self):
-        return formater_numero_local(self.accompagnateur_contact)
+    def accompagnateurcontact_formatte(self):
+        return formater_numero_local(self.accompagnateurcontact)
 
     @property
     def calculate_age(self):
@@ -801,71 +804,57 @@ class PostExposition(models.Model):
     history = HistoricalRecords()
 
     def determiner_gravite_oms(self):
-        # Cas grave immédiat (catégorie III)
-        if (
-                self.saignement_immediat == "Oui"
-                # self.morsure == "Oui" and self.saignement_immediat == "Oui"
-                or self.tete_cou == "Oui"
-                or self.organes_genitaux_externes == "Oui"
-                # or self.nbrlesions in ["2 à 5 lésions", "Plus de 5 lésions"]
-                # or self.contactanimalpositif == "Oui"
-                or self.espece == "Chauve-souris"
-                or self.membre_superieur == "main"
-        ):
+        # Catégorie III - Risque grave
+        if (self.saignement_immediat == "Oui" or
+                self.tete_cou == "Oui" or
+                self.organes_genitaux_externes == "Oui" or
+                self.espece == "Chauve-souris"):
             return "III"
 
-        # Catégorie II : contact avec risque modéré
-        elif (
-                self.griffure == "Oui"
-                or self.lechage_lesee == "Oui"
-                or self.contactpatientpositif == "Oui"
-        ):
+        # Catégorie II - Risque modéré
+        if (self.griffure == "Oui" or
+                self.lechage_lesee == "Oui" or
+                self.contactpatientpositif == "Oui"):
             return "II"
 
-        # Catégorie I : pas de risque
-        elif (
-                self.lechage_saine == "Oui"
-                or self.autre == "Oui" and self.autre_nature_exposition == "léchage peau saine"
-        ):
+        # Catégorie I - Pas de risque
+        if self.lechage_saine == "Oui":
             return "I"
 
-        return None  # Si les conditions sont incohérentes ou incomplètes
+        return None
 
     def save(self, *args, **kwargs):
-        # Détermine automatiquement la gravité OMS si non fournie
-        self.gravite_oms = self.determiner_gravite_oms()
+        for field in ['preciser_tetecou', 'preciser_membre_sup', 'preciser_tronc', 'preciser_membre_inf']:
+            value = getattr(self, field)
+            if isinstance(value, str):
+                try:
+                    setattr(self, field, json.loads(value))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        # First determine gravity before any save operation
+        if not self.gravite_oms:
+            self.gravite_oms = self.determiner_gravite_oms()
 
-        # 🎯 Injection automatique des infos propriétaire à partir du patient
-        if self.client:
-            if not self.connais_proprio and self.client.accompagnateur_nature == 'Propriétaire animal':
-                self.connais_proprio = "Oui"
-                self.retour_info_proprietaire = "Oui"
-                self.avis = True
+        # Only set these fields if they're not already set
+        if self.client and not self.connais_proprio and self.client.accompagnateur_nature == 'Propriétaire animal':
+            self.connais_proprio = "Oui"
+            self.retour_info_proprietaire = "Oui"
+            self.avis = True
 
-            if not self.nom_proprietaire and self.client.accompagnateur:
-                self.nom_proprietaire = self.client.accompagnateur
+        if self.client and not self.nom_proprietaire and self.client.accompagnateur:
+            self.nom_proprietaire = self.client.accompagnateur
 
-            if not self.contact_proprietaire and self.client.accompagnateur_contact:
-                self.contact_proprietaire = self.client.accompagnateur_contact
+        if self.client and not self.contact_proprietaire and self.client.accompagnateurcontact:
+            self.contact_proprietaire = self.client.accompagnateurcontact
+
+        # Use force_insert or force_update if needed
+        if 'force_insert' not in kwargs and 'force_update' not in kwargs:
+            if self.pk:
+                kwargs['force_update'] = True
+            else:
+                kwargs['force_insert'] = True
+
         super().save(*args, **kwargs)
-
-    def clean_preciser_tetecou(self):
-        data = self.cleaned_data.get("preciser_tetecou")
-        if isinstance(data, list):
-            return data  # JSONField accepte une liste Python
-        return []
-
-    def clean_preciser_membre_sup(self):
-        data = self.cleaned_data.get("preciser_membre_sup")
-        return data if isinstance(data, list) else []
-
-    def clean_preciser_tronc(self):
-        data = self.cleaned_data.get("preciser_tronc")
-        return data if isinstance(data, list) else []
-
-    def clean_preciser_membre_inf(self):
-        data = self.cleaned_data.get("preciser_membre_inf")
-        return data if isinstance(data, list) else []
 
     def __str__(self):
         return f"{self.client.nom} {self.client.prenoms} - {self.date_exposition}"

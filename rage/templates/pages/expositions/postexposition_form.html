@@ -38,7 +38,7 @@
 
                         <!--begin::Body-->
                         <div class="card-body">
-                            <div class="container mt-5" x-data="patientFormLogic()">
+                            <div class="container mt-5" >
                                 <h1 class="text-center text-primary mb-4">Création d'un Dossier de Post-Exposition</h1>
 
                                 {% if patient_form.errors or exposition_form.errors %}
@@ -67,8 +67,8 @@
                                 {% endif %}
 
 
-                                <form method="post" enctype="multipart/form-data" class="needs-validation"
-                                      @submit="if ($event.target.checkValidity()) { loading = true } else { $event.target.reportValidity(); }">
+                                <form x-data="patientForm" x-init="initForm()" @submit="loading = true" method="post" enctype="multipart/form-data" class="needs-validation">
+
                                     {% csrf_token %}
                                     <!-- 1️⃣ Informations Principales du Patient -->
 
@@ -111,9 +111,9 @@
                                                 </div>
                                                 <h1> Informations Accompagnateur (seulement si Patient Mineur)</h1>
                                                 {% for field in patient_form %}
-                                                    {% if field.name == "accompagnateur" or field.name == "accompagnateur_contact" or field.name == "accompagnateur_niveau_etude" %}
+                                                    {% if field.name == "accompagnateur" or field.name == "accompagnateurcontact" or field.name == "accompagnateur_niveau_etude" %}
                                                         <div class="col-md-6 mb-3">
-                                                            <label>{{ field.label|capfirst }} <span class="text-danger">*</span></label>
+                                                            <label>{{ field.label|capfirst }}<span style='color:red;'>*</span></label>
                                                             {{ field }}
                                                             <small class="text-danger">{{ field.errors }}</small>
                                                         </div>
@@ -574,7 +574,13 @@
 
                                                 <!-- Détails antécédents -->
                                                 <template x-if="antecedentsMedicaux">
-                                                    <div class="col-md-3 mb-3">
+                                                    <div class="col-md-3 mb-3"  x-init="$nextTick(() => {
+             const input = document.getElementById('kt_tagify_1');
+             if (input && !input.classList.contains('tagify-initialized')) {
+                 new Tagify(input);
+                 input.classList.add('tagify-initialized');
+             }
+         })">
                                                         <label>{{ exposition_form.details_antecedents.label }}</label>
                                                         {{ exposition_form.details_antecedents }}
                                                         <small class="text-danger">{{ exposition_form.details_antecedents.errors }}</small>
@@ -599,7 +605,13 @@
                                                 </div>
 
                                                 <template x-if="coagulation">
-                                                    <div class="col-md-3 mb-3">
+                                                    <div class="col-md-3 mb-3" x-init="$nextTick(() => {
+             const input = document.getElementById('kt_tagify_12');
+             if (input && !input.classList.contains('tagify-initialized')) {
+                 new Tagify(input);
+                 input.classList.add('tagify-initialized');
+             }
+         })">
                                                         <label>{{ exposition_form.details_problemes.label }}</label>
                                                         {{ exposition_form.details_problemes }}
                                                         <small class="text-danger">{{ exposition_form.details_problemes.errors }}</small>
@@ -623,7 +635,13 @@
                                                 </div>
 
                                                 <template x-if="immuno">
-                                                    <div class="col-md-3 mb-3">
+                                                    <div class="col-md-3 mb-3" x-init="$nextTick(() => {
+             const input = document.getElementById('kt_tagify_13');
+             if (input && !input.classList.contains('tagify-initialized')) {
+                 new Tagify(input);
+                 input.classList.add('tagify-initialized');
+             }
+         })">
                                                         <label>{{ exposition_form.details_immo.label }}</label>
                                                         {{ exposition_form.details_immo }}
                                                         <small class="text-danger">{{ exposition_form.details_immo.errors }}</small>
@@ -672,7 +690,13 @@
                                                 </div>
 
                                                 <template x-if="allergies">
-                                                    <div class="col-md-3 mb-3">
+                                                    <div class="col-md-3 mb-3" x-init="$nextTick(() => {
+             const input = document.getElementById('kt_tagify_14');
+             if (input && !input.classList.contains('tagify-initialized')) {
+                 new Tagify(input);
+                 input.classList.add('tagify-initialized');
+             }
+         })">
                                                         <label>{{ exposition_form.details_allergies.label }}</label>
                                                         {{ exposition_form.details_allergies }}
                                                         <small class="text-danger">{{ exposition_form.details_allergies.errors }}</small>
@@ -696,7 +720,13 @@
                                                 </div>
 
                                                 <template x-if="traitements">
-                                                    <div class="col-md-3 mb-3">
+                                                    <div class="col-md-3 mb-3" x-init="$nextTick(() => {
+             const input = document.getElementById('kt_tagify_15');
+             if (input && !input.classList.contains('tagify-initialized')) {
+                 new Tagify(input);
+                 input.classList.add('tagify-initialized');
+             }
+         })">
                                                         <label>{{ exposition_form.details_traitements.label }}</label>
                                                         {{ exposition_form.details_traitements }}
                                                         <small class="text-danger">{{ exposition_form.details_traitements.errors }}</small>
@@ -857,14 +887,9 @@
 
                                     <!-- 🔵 Bouton Soumettre -->
                                     <div class="text-center mt-5">
-                                        <button type="submit"
-                                                class="btn btn-primary btn-lg"
-                                                :disabled="loading">
+                                        <button type="submit" class="btn btn-primary btn-lg" :disabled="loading">
                                             <span x-show="!loading">Soumettre</span>
-                                            <span x-show="loading">
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Envoi en cours...
-    </span>
+                                            <span x-show="loading"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Envoi en cours...</span>
                                         </button>
                                     </div>
 
@@ -941,40 +966,9 @@
                 }
             });
         </script>
-        <script>
-            function patientFormLogic() {
-                return {
-                    loading: false,
-                    patientMineur: false,
-                    estProprietaireAnimal: false,
-
-                    checkProprioAnimal(value) {
-                        this.estProprietaireAnimal = value === 'Propriétaire animal';
-                    },
-
-                    calculateAge(dateString) {
-                        const today = new Date();
-                        const birthDate = new Date(dateString);
-                        let age = today.getFullYear() - birthDate.getFullYear();
-                        const m = today.getMonth() - birthDate.getMonth();
-                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                            age--;
-                        }
-                        return age;
-                    },
-
-                    handleDateChange(event) {
-                        const age = this.calculateAge(event.target.value);
-                        this.patientMineur = age < 21;
-                    }
-                }
-            }
-        </script>
-
-
 {#        <script>#}
-{#            document.addEventListener('alpine:init', () => {#}
-{#                Alpine.data('patientFormLogic', () => ({#}
+{#            function patientFormLogic() {#}
+{#                return {#}
 {#                    loading: false,#}
 {#                    patientMineur: false,#}
 {#                    estProprietaireAnimal: false,#}
@@ -997,197 +991,292 @@
 {#                    handleDateChange(event) {#}
 {#                        const age = this.calculateAge(event.target.value);#}
 {#                        this.patientMineur = age < 21;#}
-{#                    },#}
-{##}
-{#                    validateAndSubmit(event) {#}
-{#                        const form = event.target;#}
-{#                        const visibleFields = [...form.querySelectorAll('input, select, textarea')]#}
-{#                            .filter(el => el.offsetParent !== null && el.willValidate); // visible & validable#}
-{##}
-{#                        let isValid = true;#}
-{#                        for (let field of visibleFields) {#}
-{#                            if (!field.checkValidity()) {#}
-{#                                field.classList.add('is-invalid');#}
-{#                                isValid = false;#}
-{#                            } else {#}
-{#                                field.classList.remove('is-invalid');#}
-{#                            }#}
-{#                        }#}
-{##}
-{#                        if (!isValid) {#}
-{#                            event.preventDefault();#}
-{#                            event.stopPropagation();#}
-{#                            form.classList.add('was-validated');#}
-{#                            alert('Veuillez corriger les erreurs avant de soumettre.');#}
-{#                            return false;#}
-{#                        }#}
-{##}
-{#                        this.loading = true;#}
 {#                    }#}
-{#                }));#}
-{#            });#}
+{#                }#}
+{#            }#}
 {#        </script>#}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('patientForm', () => ({
+            // États principaux
+            loading: false,
+            processing: false,
+            patientMineur: false,
+            estProprietaireAnimal: false,
+            accompagnateurNature: '',
+            dateNaissance: '',
 
-    #------Retirer ce code Js ci comportement bizre
-    <script>
-document.addEventListener('alpine:init', () => {
-    // Gestion principale du formulaire
-    Alpine.data('patientForm', () => ({
-        loading: false,
-        processing: false,
-        patientMineur: false,
-        estProprietaireAnimal: false,
-        accompagnateurNature: '',
-        dateNaissance: '',
+            // ✅ Appelée au chargement pour initialiser les champs
+            initForm() {
+                const dateInput = document.getElementById('id_date_naissance');
+                if (dateInput) {
+                    this.dateNaissance = dateInput.value;
+                    if (this.dateNaissance) this.handleDateChange({ target: { value: this.dateNaissance } });
+                }
 
-        initForm() {
-            // Initialisation des valeurs existantes
-            const dateInput = document.getElementById('id_date_naissance');
-            if (dateInput) {
-                this.dateNaissance = dateInput.value;
-                if (this.dateNaissance) this.handleDateChange();
-            }
+                const selectNature = document.querySelector('[name="{{ patient_form.accompagnateur_nature.name }}"]');
+                if (selectNature) {
+                    this.checkProprioAnimal(selectNature.value);
+                }
 
-            // Vérification initiale des erreurs
-            this.checkInitialErrors();
-        },
+                this.checkInitialErrors();
+            },
 
-        checkProprioAnimal() {
-            this.estProprietaireAnimal = this.accompagnateurNature === 'Propriétaire animal';
-        },
+            // ✅ Détecte si l’accompagnateur est le propriétaire de l’animal
+            checkProprioAnimal(value) {
+                this.estProprietaireAnimal = value === 'Propriétaire animal';
+            },
 
-        calculateAge(dateString) {
-            if (!dateString) return 0;
-            const today = new Date();
-            const birthDate = new Date(dateString);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const m = today.getMonth() - birthDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            return age;
-        },
+            // ✅ Calcule l’âge à partir de la date de naissance
+            calculateAge(dateString) {
+                const today = new Date();
+                const birthDate = new Date(dateString);
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                return age;
+            },
 
-        handleDateChange() {
-            const age = this.calculateAge(this.dateNaissance);
-            this.patientMineur = age < 21;
-        },
+            // ✅ Gère le changement de date de naissance
+            handleDateChange(event) {
+                const date = event?.target?.value || this.dateNaissance;
+                const age = this.calculateAge(date);
+                this.patientMineur = age < 21;
+            },
 
-        checkInitialErrors() {
-            // Focus sur le premier champ invalide
-            const firstError = document.querySelector('.is-invalid, .invalid-feedback');
-            if (firstError) {
-                const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');
-                if (input) {
-                    setTimeout(() => {
-                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        input.focus();
-                    }, 300);
+            // ✅ Fait le focus sur le premier champ invalide s’il y a une erreur
+            checkInitialErrors() {
+                const firstError = document.querySelector('.is-invalid, .invalid-feedback');
+                if (firstError) {
+                    const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');
+                    if (input) {
+                        setTimeout(() => {
+                            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            input.focus();
+                        }, 300);
+                    }
+                }
+            },
+
+            // ✅ Soumission et validation du formulaire
+            async validateAndSubmit(event) {
+                this.processing = true;
+                const form = event.target;
+                const visibleFields = Array.from(form.elements).filter(el => el.offsetParent !== null && el.willValidate);
+
+                let isValid = true;
+                for (let field of visibleFields) {
+                    if (!field.checkValidity()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                }
+
+                if (!isValid) {
+                    form.classList.add('was-validated');
+                    this.processing = false;
+                    return false;
+                }
+
+                this.loading = true;
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action || window.location.href, {
+                        method: form.method,
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        if (result.success) {
+                            window.location.href = "{% url 'postexposition_list' %}";
+                        } else {
+                            throw new Error(result.message || 'Erreur lors de la soumission');
+                        }
+                    } else {
+                        window.location.href = response.url;
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    alert("Une erreur est survenue lors de l'envoi du formulaire.");
+                } finally {
+                    this.loading = false;
+                    this.processing = false;
                 }
             }
-        },
-
-        async validateAndSubmit(event) {
-            this.processing = true;
-            const form = event.target;
-
-            // Validation des champs visibles seulement
-            const visibleFields = Array.from(form.elements)
-                .filter(el => el.offsetParent !== null && el.willValidate);
-
-            let isValid = true;
-            visibleFields.forEach(field => {
-                if (!field.checkValidity()) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-
-                    // Scroll vers le premier champ invalide
-                    if (isValid) {
-                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        field.focus();
-                    }
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-
-            if (!isValid) {
-                form.classList.add('was-validated');
-                this.processing = false;
-                return false;
-            }
-
-            // Soumission du formulaire
-            this.loading = true;
-            try {
-                const formData = new FormData(form);
-                const response = await fetch(form.action || window.location.href, {
-                    method: form.method,
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    }
-                });
-
-                if (!response.ok) throw new Error('Erreur réseau');
-
-                // Redirection après succès
-                window.location.href = "{% url 'postexposition_list' %}";
-
-            } catch (error) {
-                console.error('Erreur:', error);
-                alert("Une erreur est survenue lors de l'envoi du formulaire.");
-            } finally {
-                this.loading = false;
-                this.processing = false;
-            }
-        }
-    }));
-
-    // Sous-composants Alpine.js pour chaque section
-    Alpine.data('expositionDetails', () => ({
-        autreOui: '{{ exposition_form.autre.value }}' === 'Oui',
-        tete_cou: '{{ exposition_form.tete_cou.value }}' === 'Oui',
-        membre_superieur: '{{ exposition_form.membre_superieur.value }}' === 'Oui',
-        // ... autres états pour cette section
-    }));
-
-    Alpine.data('animalInfo', () => ({
-        especeAutre: '{{ exposition_form.espece.value }}' === 'Autre',
-        connaisProprio: '{{ exposition_form.connais_proprio.value }}' === 'Oui',
-        correctementVaccine: '{{ exposition_form.correctement_vaccine.value }}' === 'Oui',
-        // ... autres états pour cette section
-    }));
-
-    Alpine.data('medicalRecord', () => ({
-        antecedentsMedicaux: '{{ exposition_form.antecedents_medicaux.value }}' === 'Oui',
-        coagulation: '{{ exposition_form.probleme_coagulation.value }}' === 'Oui',
-        // ... autres états pour cette section
-    }));
-});
-
-// Validation dynamique améliorée
-document.addEventListener('input', function(e) {
-    const field = e.target;
-    if (field.willValidate) {
-        field.classList.toggle('is-invalid', !field.checkValidity());
-        field.classList.toggle('is-valid', field.checkValidity());
-
-        // Validation en temps réel pour les champs requis
-        if (field.required && field.value.trim() === '') {
-            field.classList.add('is-invalid');
-        }
-    }
-});
-
-// Gestion des changements pour les selects
-document.addEventListener('change', function(e) {
-    if (e.target.tagName === 'SELECT') {
-        e.target.classList.toggle('is-invalid', !e.target.checkValidity());
-    }
-});
+        }));
+    });
 </script>
+
+
+{#    <script>#}
+{#document.addEventListener('alpine:init', () => {#}
+{#    // Gestion principale du formulaire#}
+{#    Alpine.data('patientForm', () => ({#}
+{#        loading: false,#}
+{#        processing: false,#}
+{#        patientMineur: false,#}
+{#        estProprietaireAnimal: false,#}
+{#        accompagnateurNature: '',#}
+{#        dateNaissance: '',#}
+{##}
+{#        initForm() {#}
+{#            // Initialisation des valeurs existantes#}
+{#            const dateInput = document.getElementById('id_date_naissance');#}
+{#            if (dateInput) {#}
+{#                this.dateNaissance = dateInput.value;#}
+{#                if (this.dateNaissance) this.handleDateChange();#}
+{#            }#}
+{##}
+{#            // Vérification initiale des erreurs#}
+{#            this.checkInitialErrors();#}
+{#        },#}
+{##}
+{#        checkProprioAnimal() {#}
+{#            this.estProprietaireAnimal = this.accompagnateurNature === 'Propriétaire animal';#}
+{#        },#}
+{##}
+{#        calculateAge(dateString) {#}
+{#            if (!dateString) return 0;#}
+{#            const today = new Date();#}
+{#            const birthDate = new Date(dateString);#}
+{#            let age = today.getFullYear() - birthDate.getFullYear();#}
+{#            const m = today.getMonth() - birthDate.getMonth();#}
+{#            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {#}
+{#                age--;#}
+{#            }#}
+{#            return age;#}
+{#        },#}
+{##}
+{#        handleDateChange() {#}
+{#            const age = this.calculateAge(this.dateNaissance);#}
+{#            this.patientMineur = age < 21;#}
+{#        },#}
+{##}
+{#        checkInitialErrors() {#}
+{#            // Focus sur le premier champ invalide#}
+{#            const firstError = document.querySelector('.is-invalid, .invalid-feedback');#}
+{#            if (firstError) {#}
+{#                const input = firstError.closest('.mb-3')?.querySelector('input, select, textarea');#}
+{#                if (input) {#}
+{#                    setTimeout(() => {#}
+{#                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });#}
+{#                        input.focus();#}
+{#                    }, 300);#}
+{#                }#}
+{#            }#}
+{#        },#}
+{##}
+{#        async validateAndSubmit(event) {#}
+{#            this.processing = true;#}
+{#            const form = event.target;#}
+{##}
+{#            // Validation des champs visibles seulement#}
+{#            const visibleFields = Array.from(form.elements)#}
+{#                .filter(el => el.offsetParent !== null && el.willValidate);#}
+{##}
+{#            let isValid = true;#}
+{#            visibleFields.forEach(field => {#}
+{#                if (!field.checkValidity()) {#}
+{#                    field.classList.add('is-invalid');#}
+{#                    isValid = false;#}
+{##}
+{#                    // Scroll vers le premier champ invalide#}
+{#                    if (isValid) {#}
+{#                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });#}
+{#                        field.focus();#}
+{#                    }#}
+{#                } else {#}
+{#                    field.classList.remove('is-invalid');#}
+{#                }#}
+{#            });#}
+{##}
+{#            if (!isValid) {#}
+{#                form.classList.add('was-validated');#}
+{#                this.processing = false;#}
+{#                return false;#}
+{#            }#}
+{##}
+{#            // Soumission du formulaire#}
+{#            this.loading = true;#}
+{#            try {#}
+{#                const formData = new FormData(form);#}
+{#                const response = await fetch(form.action || window.location.href, {#}
+{#                    method: form.method,#}
+{#                    body: formData,#}
+{#                    headers: {#}
+{#                        'X-Requested-With': 'XMLHttpRequest',#}
+{#                        'X-CSRFToken': '{{ csrf_token }}'#}
+{#                    }#}
+{#                });#}
+{##}
+{#                if (!response.ok) throw new Error('Erreur réseau');#}
+{##}
+{#                // Redirection après succès#}
+{#                window.location.href = "{% url 'postexposition_list' %}";#}
+{##}
+{#            } catch (error) {#}
+{#                console.error('Erreur:', error);#}
+{#                alert("Une erreur est survenue lors de l'envoi du formulaire.");#}
+{#            } finally {#}
+{#                this.loading = false;#}
+{#                this.processing = false;#}
+{#            }#}
+{#        }#}
+{#    }));#}
+{##}
+{#    // Sous-composants Alpine.js pour chaque section#}
+{#    Alpine.data('expositionDetails', () => ({#}
+{#        autreOui: '{{ exposition_form.autre.value }}' === 'Oui',#}
+{#        tete_cou: '{{ exposition_form.tete_cou.value }}' === 'Oui',#}
+{#        membre_superieur: '{{ exposition_form.membre_superieur.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{##}
+{#    Alpine.data('animalInfo', () => ({#}
+{#        especeAutre: '{{ exposition_form.espece.value }}' === 'Autre',#}
+{#        connaisProprio: '{{ exposition_form.connais_proprio.value }}' === 'Oui',#}
+{#        correctementVaccine: '{{ exposition_form.correctement_vaccine.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{##}
+{#    Alpine.data('medicalRecord', () => ({#}
+{#        antecedentsMedicaux: '{{ exposition_form.antecedents_medicaux.value }}' === 'Oui',#}
+{#        coagulation: '{{ exposition_form.probleme_coagulation.value }}' === 'Oui',#}
+{#        // ... autres états pour cette section#}
+{#    }));#}
+{#});#}
+{##}
+{#// Validation dynamique améliorée#}
+{#document.addEventListener('input', function(e) {#}
+{#    const field = e.target;#}
+{#    if (field.willValidate) {#}
+{#        field.classList.toggle('is-invalid', !field.checkValidity());#}
+{#        field.classList.toggle('is-valid', field.checkValidity());#}
+{##}
+{#        // Validation en temps réel pour les champs requis#}
+{#        if (field.required && field.value.trim() === '') {#}
+{#            field.classList.add('is-invalid');#}
+{#        }#}
+{#    }#}
+{#});#}
+{##}
+{#// Gestion des changements pour les selects#}
+{#document.addEventListener('change', function(e) {#}
+{#    if (e.target.tagName === 'SELECT') {#}
+{#        e.target.classList.toggle('is-invalid', !e.target.checkValidity());#}
+{#    }#}
+{#});#}
+{#</script>#}
 
         <!--begin::Footer-->
         <!-- Tagify JS & CSS -->

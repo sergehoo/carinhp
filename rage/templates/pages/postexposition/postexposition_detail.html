@@ -26,7 +26,7 @@
                                                 <p class="text-soft">Créé le {{ postexposition.created_at|date:"d/m/Y" }} par {{ postexposition.created_by.get_full_name }}</p>
                                             </div>
                                             <div>
-                                                <a href="" class="btn btn-sm btn-outline-primary">
+                                                <a href="{% url 'postexposition_edit' postexposition.pk %}" class="btn btn-sm btn-outline-primary">
                                                     <em class="icon ni ni-edit"></em> Modifier
                                                 </a>
                                                 <a href="{% url 'postexposition_list' %}" class="btn btn-sm btn-outline-secondary">

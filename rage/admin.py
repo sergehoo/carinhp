@@ -13,7 +13,8 @@ from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSani
     PreleveMode, Epidemie, RendezVousVaccination, Echantillon, Vaccins, Facture, Caisse, TypeProtocole, \
     Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin, \
     InjectionImmunoglobuline
-from rage_INHP.resources import RageHumaineNotificationResource
+from rage_INHP.resources import RageHumaineNotificationResource, ProtocoleVaccinationResource, VaccinsResource, \
+    LotVaccinResource
 from rage_INHP.services import synchroniser_avec_mpi
 
 admin.site.site_header = 'INHP CAR BACK-END CONTROLER'
@@ -177,11 +178,11 @@ synchroniser_patients_mpi.short_description = "🔄 Synchroniser patients sélec
 class PatientAdmin(admin.ModelAdmin):
     list_display = (
         'code_patient', 'nom', 'prenoms',
-        'contact', 'accompagnateur_contact','date_naissance',
+        'contact', 'accompagnateurcontact','date_naissance',
         'calculate_age', 'poids', 'mpi_upi', 'created_at'
     )
     list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'commune', 'created_at')
-    search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateur_contact')
+    search_fields = ('nom', 'prenoms', 'code_patient', 'contact', 'accompagnateurcontact')
     readonly_fields = ('code_patient', 'calculate_age', 'created_at')
     fieldsets = (
         ("Identité du patient", {
@@ -204,7 +205,7 @@ class PatientAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
             'fields': (
                 'patient_mineur',
-                ('accompagnateur', 'accompagnateur_contact'),
+                ('accompagnateur', 'accompagnateurcontact'),
                 ('accompagnateur_nature', 'accompagnateur_niveau_etude'),
                 'accompagnateur_adresse',
             )
@@ -289,7 +290,8 @@ class EchantillonAdmin(admin.ModelAdmin):
 
 
 @admin.register(Vaccins)
-class VaccinsAdmin(admin.ModelAdmin):
+class VaccinsAdmin(ImportExportModelAdmin):
+    resource_class = VaccinsResource
     list_display = ('nom', 'unite', 'created_by', 'created_at')
     search_fields = ['nom']
     list_filter = ['unite']
@@ -297,7 +299,8 @@ class VaccinsAdmin(admin.ModelAdmin):
 
 
 @admin.register(LotVaccin)
-class LotVaccinAdmin(admin.ModelAdmin):
+class LotVaccinAdmin(ImportExportModelAdmin):
+    resource_class = LotVaccinResource
     list_display = (
         'numero_lot',
         'vaccin',
@@ -377,10 +380,12 @@ class PatientAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProtocoleVaccination)
-class ProtocoleVaccinationAdmin(admin.ModelAdmin):
+class ProtocoleVaccinationAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    resource_class = ProtocoleVaccinationResource
+
     list_display = ('nom', 'nombre_doses', 'duree', 'created_at')
     list_filter = ('nom',)
-    search_fields = ('nom__nom_protocole',)
+    search_fields = ('nom',)
     ordering = ('-created_at',)
 
 

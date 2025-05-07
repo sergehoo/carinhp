@@ -1157,15 +1157,13 @@ def generate_avis_surveillance(request, exposition_id):
 
 
 # @method_decorator(login_required, name='dispatch')
-class PostExpositionCreateView(View):
+class PostExpositionCreateView(LoginRequiredMixin, View):
     template_name = "pages/expositions/postexposition_form.html"
 
     def get(self, request):
-        patient_form = ClientForm()
-        exposition_form = PostExpositionForm()
         return render(request, self.template_name, {
-            "patient_form": patient_form,
-            "exposition_form": exposition_form
+            "patient_form": ClientForm(),
+            "exposition_form": PostExpositionForm()
         })
 
     def post(self, request):
@@ -1174,22 +1172,22 @@ class PostExpositionCreateView(View):
 
         if not request.user.is_authenticated or not isinstance(request.user, EmployeeUser):
             messages.error(request, "Vous devez être connecté avec un compte employé pour effectuer cette action.")
-            return redirect('account_login')  # 🔥 Mets ici ton URL de login
+            return redirect('account_login')
 
         if patient_form.is_valid() and exposition_form.is_valid():
-
             with transaction.atomic():
-                # 🎯 Gérer la commune (si nouvelle)
+                # 🔁 Commune : si texte libre, la créer
                 commune_field = patient_form.cleaned_data.get('commune')
 
-                if isinstance(commune_field, str) and commune_field.strip() != "":
-                    commune, created = Commune.objects.get_or_create(
-                        name=commune_field.strip(),
-                        defaults={'type': 'Commune'}
-                    )
-                    patient_form.instance.commune = commune
+                if isinstance(commune_field, str):
+                    commune_name = commune_field.strip()
+                    if commune_name:
+                        commune, _ = Commune.objects.get_or_create(name=commune_name, defaults={'type': 'Commune'})
+                        patient_form.instance.commune = commune
+                elif isinstance(commune_field, Commune):
+                    patient_form.instance.commune = commune_field
 
-                # ✅ Vérifier si le patient existe déjà
+                # 🧍 Patient : chercher ou créer
                 patient = Patient.objects.filter(
                     nom=patient_form.cleaned_data['nom'],
                     prenoms=patient_form.cleaned_data['prenoms'],
@@ -1197,48 +1195,37 @@ class PostExpositionCreateView(View):
                 ).first()
 
                 if not patient:
-                    # 🚀 Création du patient
                     patient = patient_form.save(commit=False)
                     patient.created_by = request.user
                     patient.centre_ar = request.user.centre
                     patient = patient_form.save()
                 else:
-                    # 🚨 Patient existant, on update les infos s'il faut
                     patient_form.instance = patient
                     updated_patient = patient_form.save(commit=False)
                     updated_patient.centre_ar = updated_patient.centre_ar or request.user.centre
                     patient = patient_form.save()
 
-                # ✅ Création de la PostExposition
+                # 📄 PostExposition
                 postexposition = exposition_form.save(commit=False)
                 postexposition.client = patient
                 postexposition.created_by = request.user
-                # 🎯 Injection automatique si "Propriétaire animal" sélectionné
-                accompagnateur_nature = patient_form.cleaned_data.get("accompagnateur_nature", "")
-                if accompagnateur_nature.strip() == "Propriétaire animal":
-                    exposition_form.data = exposition_form.data.copy()
-                    exposition_form.data["connais_proprio"] = "Oui"
-                    exposition_form.data["retour_info_proprietaire"] = "Oui"
-                    exposition_form.data["nom_proprietaire"] = patient_form.cleaned_data.get("accompagnateur", "")
-                    exposition_form.data["contact_proprietaire"] = patient_form.cleaned_data.get(
-                        "accompagnateur_contact", "")
-                    exposition_form = PostExpositionForm(exposition_form.data,
-                                                         request.FILES)  # rebind avec les nouvelles données
 
-                    if not exposition_form.is_valid():  # vérifier à nouveau après modification
-                        messages.error(request, "Le formulaire a échoué après injection automatique.")
-                        return render(request, self.template_name, {
-                            "patient_form": patient_form,
-                            "exposition_form": exposition_form
-                        })
+                # ✅ Injection si "Propriétaire animal"
+                accompagnateur_nature = patient_form.cleaned_data.get("accompagnateur_nature")
+                if accompagnateur_nature and isinstance(accompagnateur_nature,
+                                                        str) and accompagnateur_nature.strip() == "Propriétaire animal":
+                    postexposition.connais_proprio = "Oui"
+                    postexposition.retour_info_proprietaire = "Oui"
+                    postexposition.nom_proprietaire = patient_form.cleaned_data.get("accompagnateur", "")
+                    postexposition.contact_proprietaire = patient_form.cleaned_data.get("accompagnateurcontact", "")
+
                 postexposition.save()
 
-                # Protocole et génération RDV
-                protocole = exposition_form.cleaned_data.get(
-                    'protocole_vaccination') or ProtocoleVaccination.objects.filter(
-                    nom="ID-PEP").first()
+                # 🗓️ Génération des rendez-vous selon protocole
+                protocole = exposition_form.cleaned_data.get('protocole_vaccination') or \
+                            ProtocoleVaccination.objects.filter(nom="ID-PEP").first()
 
-                if protocole and protocole.nombre_visite and protocole.nombre_doses and protocole.nbr_dose_par_rdv:
+                if protocole and protocole.nombre_visite and protocole.nombre_doses:
                     intervals_raw = [
                         protocole.intervale_visite1_2,
                         protocole.intervale_visite2_3,
@@ -1287,24 +1274,23 @@ class PostExpositionCreateView(View):
                             date_rdv += timedelta(days=intervals[interval_index])
                         interval_index += 1
 
-                messages.success(request,
-                                 "✅ Le patient, la post-exposition et les rendez-vous ont été enregistrés avec succès.")
-
+                messages.success(request, "✅ Dossier enregistré avec succès.")
                 return redirect(reverse("postexposition_list"))
 
         else:
-            # 🐞 Débogage: afficher les erreurs dans la console
+            # 🐞 Log erreurs pour debug
             print("--- Patient Form Errors ---")
             print(patient_form.errors)
             print("--- Exposition Form Errors ---")
             print(exposition_form.errors)
 
-            messages.error(request, "Erreur lors de l'enregistrement. Merci de corriger les erreurs ci-dessous.")
+            messages.error(request, "❌ Erreur lors de l'enregistrement. Merci de corriger les champs invalides.")
 
         return render(request, self.template_name, {
             "patient_form": patient_form,
             "exposition_form": exposition_form
         })
+
 
 
 # ✅ Vue Détail

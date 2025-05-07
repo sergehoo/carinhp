@@ -15,7 +15,7 @@ def synchroniser_avec_mpi(patient_instance):
         "nom": patient_instance.nom,
         "prenoms": patient_instance.prenoms,
         "date_naissance": patient_instance.date_naissance.isoformat(),
-        "contact": patient_instance.contact,
+        "contact": str(patient_instance.contact) if patient_instance.contact else None,
         "sexe": patient_instance.sexe,
         "num_cmu": patient_instance.num_cmu,
         "cni_num": patient_instance.cni_num,

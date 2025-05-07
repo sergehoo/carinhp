@@ -1,3 +1,5 @@
+import json
+
 import phonenumbers
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
@@ -7,7 +9,6 @@ from django.forms import inlineformset_factory
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 from phonenumber_field.formfields import PhoneNumberField as FormPhoneNumberField
-
 
 from rage.models import Patient, situation_matrimoniales_choices, Sexe_choices, Goupe_sanguin_choices, Commune, \
     ProtocoleVaccination, Symptom, Echantillon, Vaccination, Vaccins, Caisse, Preexposition, PostExposition, \
@@ -33,7 +34,7 @@ conduite_CHOICES = [('Abattage', 'Abattage'), ('Surveillance vétérinaire', 'Su
                     ('Autre', 'Autre')]
 
 LIEU_EXPOSITION_CHOICES = [
-    # 🏠 Milieu familial / privé
+    ('-------', '-------'),
     ('a_domicile', 'À domicile'),
     ('Domicile_proche', 'Domicile d\'un proche'),
     ('Rue', 'Dans la rue'),
@@ -50,7 +51,9 @@ LIEU_EXPOSITION_CHOICES = [
 class ClientForm(forms.ModelForm):
     # accompagnateur_nature = forms.ChoiceField(required=False, label="Vètements déchirés ?")
     contact = FormPhoneNumberField(region='CI', required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    accompagnateur_contact = FormPhoneNumberField(region='CI', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    accompagnateurcontact = FormPhoneNumberField(required=False, region='CI',
+                                                 widget=forms.TextInput(attrs={'class': 'form-control'}))
+
     class Meta:
         model = Patient
         exclude = ['status',
@@ -62,7 +65,7 @@ class ClientForm(forms.ModelForm):
         fields = '__all__'
         labels = {
             'accompagnateur': "Nom et prénom de l'accompagnateur",
-            'accompagnateur_contact': "Contact",
+            'accompagnateurcontact': "Contact Accompagnateur",
             'accompagnateur_adresse': "Adresse",
             'accompagnateur_nature': "Quel est sa relation avec le patient ?",
             'accompagnateur_niveau_etude': "Niveau d'étude ",
@@ -297,7 +300,7 @@ class ClientPreExpositionForm(forms.ModelForm):
             'commune': forms.Select(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
-            'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
+            'accompagnateurcontact': forms.NumberInput(attrs={'class': 'form-control'}),
             'accompagnateur_adresse': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_nature': forms.Select(attrs={'class': 'form-control'}),
             'accompagnateur_niveau_etude': forms.Select(attrs={'class': 'form-control'}),
@@ -444,18 +447,26 @@ class PostExpositionForm(forms.ModelForm):
             # Dossier Médical
             'antecedents_medicaux': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
             'details_antecedents': forms.TextInput(
-                attrs={'class': 'form-control', 'id': 'kt_tagify_1', 'name': 'tags',
-                       'placeholder': 'Ajoutez des antécédents séparés par des virgules'}),
+                attrs={'class': 'form-control tagify', 'id': 'kt_tagify_1', 'name': 'tags',
+                       'placeholder': 'Séparés par des virgules'}),
             'probleme_coagulation': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
-            'details_problemes': forms.TextInput(attrs={'class': 'form-control'}),
+            'details_problemes': forms.TextInput(
+                attrs={'class': 'form-control tagify', 'id': 'kt_tagify_12', 'name': 'tags',
+                       'placeholder': 'Séparés par des virgules'}),
             'immunodepression': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
-            'details_immo': forms.TextInput(attrs={'class': 'form-control'}),
+            'details_immo': forms.TextInput(
+                attrs={'class': 'form-control tagify', 'id': 'kt_tagify_13', 'name': 'tags',
+                       'placeholder': 'Séparés par des virgules'}),
             'grossesse': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
             'details_grosesse': forms.Select(choices=Grossesse_SEMAINES_CHOICES, attrs={'class': 'form-control'}),
             'allergies': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
-            'details_allergies': forms.TextInput(attrs={'class': 'form-control'}),
-            'traitements_en_cours': forms.Textarea(attrs={'class': 'form-control', 'rows': 1, 'maxlength': 500}),
-            'details_traitements': forms.TextInput(attrs={'class': 'form-control'}),
+            'details_allergies': forms.TextInput(
+                attrs={'class': 'form-control tagify', 'id': 'kt_tagify_14', 'name': 'tags',
+                       'placeholder': 'Séparés par des virgules'}),
+            'traitements_en_cours': forms.Select(choices=OUI_NON_CHOICES, attrs={'class': 'form-control'}),
+            'details_traitements': forms.TextInput(
+                attrs={'class': 'form-control tagify', 'id': 'kt_tagify_15', 'name': 'tags',
+                       'placeholder': 'Séparés par des virgules'}),
 
             # Antécédents vaccinaux
             'vat_dernier_injection': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -646,29 +657,68 @@ class PostExpositionForm(forms.ModelForm):
 
     # def clean_details_antecedents(self):
     #     data = self.cleaned_data.get('details_antecedents')
-    #     if data:
-    #         # Tagify renvoie une chaîne CSV
-    #         return [tag.strip() for tag in data.split(',') if tag.strip()]
+    #     if not data:
+    #         return []
+    #     if isinstance(data, str):
+    #         return [item.strip() for item in data.split(',') if item.strip()]
+    #     if isinstance(data, list):
+    #         return [str(item).strip() for item in data if str(item).strip()]
+    #     return []
+    #
+    # def clean_details_allergies(self):
+    #     data = self.cleaned_data.get('details_allergies')
+    #     if not data:
+    #         return []
+    #     if isinstance(data, str):
+    #         return [item.strip() for item in data.split(',') if item.strip()]
+    #     if isinstance(data, list):
+    #         return [str(item).strip() for item in data if str(item).strip()]
     #     return []
 
-    def clean(self):
-        cleaned_data = super().clean()
-        patient_mineur = cleaned_data.get('patient_mineur')
+    def clean_preciser_tetecou(self):
+        data = self.cleaned_data.get("preciser_tetecou")
+        if not data:
+            return []
+        # No need for JSON parsing - data is already a list from SelectMultiple
+        return data if isinstance(data, list) else [str(data)]
 
-        # Champs obligatoires si patient est mineur
-        if patient_mineur:
-            required_fields = [
-                'accompagnateur',
-                'accompagnateur_contact',
-                'accompagnateur_nature',
-                'accompagnateur_niveau_etude'
-            ]
+    def clean_preciser_membre_sup(self):
+        data = self.cleaned_data.get("preciser_membre_sup")
+        if not data:
+            return []
+        return data if isinstance(data, list) else [str(data)]
 
-            for field in required_fields:
-                if not cleaned_data.get(field):
-                    self.add_error(field, "Ce champ est obligatoire pour un patient mineur.")
+    def clean_preciser_tronc(self):
+        data = self.cleaned_data.get("preciser_tronc")
+        if not data:
+            return []
+        return data if isinstance(data, list) else [str(data)]
 
-        return cleaned_data
+    def clean_preciser_membre_inf(self):
+        data = self.cleaned_data.get("preciser_membre_inf")
+        if not data:
+            return []
+        return data if isinstance(data, list) else [str(data)]
+
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     patient_mineur = cleaned_data.get('patient_mineur')
+    #
+    #     # Champs obligatoires si patient est mineur
+    #     if patient_mineur:
+    #         required_fields = [
+    #             'accompagnateur',
+    #             'accompagnateurcontact',
+    #             'accompagnateur_nature',
+    #             'accompagnateur_niveau_etude'
+    #         ]
+    #
+    #         for field in required_fields:
+    #             if not cleaned_data.get(field):
+    #                 self.add_error(field, "Ce champ est obligatoire pour un patient mineur.")
+    #
+    #     return cleaned_data
+
 
 class RageHumaineNotificationForm(forms.ModelForm):
     class Meta:
@@ -697,53 +747,53 @@ class RageHumaineNotificationForm(forms.ModelForm):
 
         widgets = {
             # ForeignKey → Select
-            "client":                        forms.Select(attrs={"class": "form-control"}),
-            "exposition":                    forms.Select(attrs={"class": "form-control"}),
-            "lieu_exposition":               forms.Select(attrs={"class": "form-control"}),
-            "signature_agent":               forms.Select(attrs={"class": "form-control"}),
+            "client": forms.Select(attrs={"class": "form-control"}),
+            "exposition": forms.Select(attrs={"class": "form-control"}),
+            "lieu_exposition": forms.Select(attrs={"class": "form-control"}),
+            "signature_agent": forms.Select(attrs={"class": "form-control"}),
 
             # Dates
-            "date_notification":             forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "date_exposition":               forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "date_debut_vaccination":        forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "date_premiers_signes":          forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "date_hospitalisation":          forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "date_deces":                    forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_notification": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_exposition": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_debut_vaccination": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_premiers_signes": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_hospitalisation": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_deces": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
 
             # Text inputs
-            "hopital":                       forms.TextInput(attrs={"class": "form-control"}),
-            "service":                       forms.TextInput(attrs={"class": "form-control"}),
-            "agent_declarant":               forms.TextInput(attrs={"class": "form-control"}),
-            "adresse":                       forms.TextInput(attrs={"class": "form-control"}),
-            "telephone":                     forms.TextInput(attrs={"class": "form-control"}),
-            "cel":                           forms.TextInput(attrs={"class": "form-control"}),
-            "email":                         forms.EmailInput(attrs={"class": "form-control"}),
-            "pays":                          forms.TextInput(attrs={"class": "form-control"}),
-            "autre_nature_exposition":       forms.TextInput(attrs={"class": "form-control"}),
-            "precision_siege":               forms.TextInput(attrs={"class": "form-control"}),
-            "precis_animal_responsable":     forms.TextInput(attrs={"class": "form-control"}),
-            "autres_labos":                  forms.TextInput(attrs={"class": "form-control"}),
-            "produit_desinfection":          forms.TextInput(attrs={"class": "form-control"}),
-            "lieu_hospitalisation":          forms.TextInput(attrs={"class": "form-control"}),
+            "hopital": forms.TextInput(attrs={"class": "form-control"}),
+            "service": forms.TextInput(attrs={"class": "form-control"}),
+            "agent_declarant": forms.TextInput(attrs={"class": "form-control"}),
+            "adresse": forms.TextInput(attrs={"class": "form-control"}),
+            "telephone": forms.TextInput(attrs={"class": "form-control"}),
+            "cel": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "pays": forms.TextInput(attrs={"class": "form-control"}),
+            "autre_nature_exposition": forms.TextInput(attrs={"class": "form-control"}),
+            "precision_siege": forms.TextInput(attrs={"class": "form-control"}),
+            "precis_animal_responsable": forms.TextInput(attrs={"class": "form-control"}),
+            "autres_labos": forms.TextInput(attrs={"class": "form-control"}),
+            "produit_desinfection": forms.TextInput(attrs={"class": "form-control"}),
+            "lieu_hospitalisation": forms.TextInput(attrs={"class": "form-control"}),
 
             # ChoiceFields → Select
-            "nature_exposition":             forms.Select(attrs={"class": "form-control"}),
-            "siege_lesion":                  forms.Select(attrs={"class": "form-control"}),
-            "categorie_lesion":              forms.Select(attrs={"class": "form-control"}),
-            "animal_responsable":            forms.Select(attrs={"class": "form-control"}),
-            "animal_suspect_rage":           forms.Select(attrs={"class": "form-control"}),
-            "devenir_animal":                forms.Select(attrs={"class": "form-control"}),
-            "prelevement_animal":            forms.Select(attrs={"class": "form-control"}),
-            "resultat_analyse":              forms.Select(attrs={"class": "form-control"}),
-            "labo_pathologie_animale":       forms.Select(attrs={"class": "form-control"}),
-            "soins_locaux":                  forms.Select(attrs={"class": "form-control"}),
-            "desinfection":                  forms.Select(attrs={"class": "form-control"}),
-            "vaccination_antirabique":       forms.Select(attrs={"class": "form-control"}),
-            "protocole_vaccination":         forms.Select(attrs={"class": "form-control"}),
-            "trouble_comportement":          forms.Select(attrs={"class": "form-control"}),
-            "agitation":                     forms.Select(attrs={"class": "form-control"}),
-            "hospitalisation":               forms.Select(attrs={"class": "form-control"}),
-            "evolution":                     forms.Select(attrs={"class": "form-control"}),
+            "nature_exposition": forms.Select(attrs={"class": "form-control"}),
+            "siege_lesion": forms.Select(attrs={"class": "form-control"}),
+            "categorie_lesion": forms.Select(attrs={"class": "form-control"}),
+            "animal_responsable": forms.Select(attrs={"class": "form-control"}),
+            "animal_suspect_rage": forms.Select(attrs={"class": "form-control"}),
+            "devenir_animal": forms.Select(attrs={"class": "form-control"}),
+            "prelevement_animal": forms.Select(attrs={"class": "form-control"}),
+            "resultat_analyse": forms.Select(attrs={"class": "form-control"}),
+            "labo_pathologie_animale": forms.Select(attrs={"class": "form-control"}),
+            "soins_locaux": forms.Select(attrs={"class": "form-control"}),
+            "desinfection": forms.Select(attrs={"class": "form-control"}),
+            "vaccination_antirabique": forms.Select(attrs={"class": "form-control"}),
+            "protocole_vaccination": forms.Select(attrs={"class": "form-control"}),
+            "trouble_comportement": forms.Select(attrs={"class": "form-control"}),
+            "agitation": forms.Select(attrs={"class": "form-control"}),
+            "hospitalisation": forms.Select(attrs={"class": "form-control"}),
+            "evolution": forms.Select(attrs={"class": "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -756,6 +806,8 @@ class RageHumaineNotificationForm(forms.ModelForm):
         self.fields["autre_nature_exposition"].widget.attrs.update({
             "placeholder": "Précisez si « Autres »"
         })
+
+
 # class RageHumaineNotificationForm(forms.ModelForm):
 #     class Meta:
 #         model = RageHumaineNotification
@@ -832,7 +884,7 @@ class ClientPostExpositionForm(forms.ModelForm):
             'commune': forms.Select(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
-            'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
+            'accompagnateurcontact': forms.NumberInput(attrs={'class': 'form-control'}),
             'accompagnateur_adresse': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_nature': forms.Select(attrs={'class': 'form-control'}),
             'accompagnateur_niveau_etude': forms.Select(attrs={'class': 'form-control'}),
@@ -972,7 +1024,7 @@ class PatientRageNotificationForm(forms.ModelForm):
             'village': forms.TextInput(attrs={'class': 'form-control'}),
             'patient_mineur': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'accompagnateur': forms.TextInput(attrs={'class': 'form-control'}),
-            'accompagnateur_contact': forms.NumberInput(attrs={'class': 'form-control'}),
+            'accompagnateurcontact': forms.NumberInput(attrs={'class': 'form-control'}),
             'accompagnateur_adresse': forms.TextInput(attrs={'class': 'form-control'}),
             'accompagnateur_nature': forms.Select(attrs={'class': 'form-control'}),
             'accompagnateur_niveau_etude': forms.Select(attrs={'class': 'form-control'}),
@@ -1221,11 +1273,12 @@ class InjectionImmunoglobulineForm(forms.ModelForm):
             'patient', 'refus_injection', 'motif_refus', 'type_produit', 'dose_ml', 'voie_injection',
             'site_injection', 'numero_lot', 'date_peremption', 'laboratoire_fabricant', 'commentaire'
         ]
-        exclude =['patient']
+        exclude = ['patient']
         widgets = {
             'patient': forms.HiddenInput(),
-            'refus_injection': forms.CheckboxInput(attrs={'class': 'form-check-input','role': 'switch','id': 'refusInjectionSwitch'
-}),
+            'refus_injection': forms.CheckboxInput(
+                attrs={'class': 'form-check-input', 'role': 'switch', 'id': 'refusInjectionSwitch'
+                       }),
             'motif_refus': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'id': 'motifRefusField'}),
             'type_produit': forms.TextInput(attrs={'class': 'form-control'}),
             'dose_ml': forms.NumberInput(attrs={'class': 'form-control'}),

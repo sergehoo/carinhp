@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django.contrib.humanize',
     'rage',
-'django_celery_beat'
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
