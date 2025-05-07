@@ -193,6 +193,11 @@ PHONENUMBER_DEFAULT_FORMAT = "E164"
 PHONENUMBER_DEFAULT_REGION = 'CI'
 
 # Custom App Variables
+CSRF_TRUSTED_ORIGINS = [
+    "https://carinhp.ci",
+    "http://localhost:8000",  # si développement local
+    "https://www.carinhp.ci",  # si tu as aussi le www
+]
 
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
