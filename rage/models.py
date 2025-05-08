@@ -475,7 +475,7 @@ class Patient(models.Model):
     )
 
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
-    proprietaire_animal = models.BooleanField(default=False)
+    proprietaire_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES, default='Non', db_index=True)
     typeanimal = models.CharField(choices=typeAnimal_choices, max_length=255, blank=True, null=True)
     autretypeanimal = models.CharField(max_length=255, blank=True, null=True)
 
@@ -605,6 +605,7 @@ class Preexposition(models.Model):
     aime_animaux = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
     type_animal_aime = models.CharField(choices=ESPECE_CHOICES, max_length=255, blank=True, null=True)
     conduite_animal_mordeur = models.CharField(choices=conduite_CHOICES, max_length=255, null=True, blank=True)
+
     connait_protocole_var = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
     dernier_var_animal_type = models.CharField(max_length=255, blank=True, null=True)
     dernier_var_animal_date = models.DateField(blank=True, null=True)
@@ -615,7 +616,7 @@ class Preexposition(models.Model):
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="employeer")
     created_at = models.DateTimeField(auto_now_add=True)
-    fin_protocole = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non')
+    fin_protocole = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non',null=True, blank=True,)
 
     history = HistoricalRecords()
 

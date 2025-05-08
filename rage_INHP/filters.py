@@ -1,5 +1,6 @@
 import django_filters
 from django import forms
+from django.utils.timezone import localdate
 
 from rage.models import RendezVousVaccination, RageHumaineNotification
 
@@ -11,12 +12,16 @@ class RendezVousFilter(django_filters.FilterSet):
     protocole = django_filters.CharFilter(field_name="protocole__nom", lookup_expr="icontains", label="Protocole",
                                           widget=forms.TextInput(
                                               attrs={'class': 'form-control', 'placeholder': 'Rechercher...'}))
-    statut_rdv = django_filters.ChoiceFilter(choices=[
-        ('Passé', 'Passé'),
-        ('Aujourd\'hui', 'Aujourd\'hui'),
-        ('À venir', 'À venir'),
-    ], label="État du rendez-vous",
-        widget=forms.Select(attrs={'class': 'form-control form-select'}))
+    statut_rdv = django_filters.ChoiceFilter(
+        label="État du rendez-vous",
+        method="filter_statut_rdv",
+        choices=[
+            ('past', 'Passé'),
+            ('today', 'Aujourd\'hui'),
+            ('upcoming', 'À venir'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
 
     est_effectue = django_filters.BooleanFilter(label="Statut",
                                                 widget=forms.Select(choices=[('', 'Tous'), ('true', 'Effectué'),
@@ -44,6 +49,19 @@ class RendezVousFilter(django_filters.FilterSet):
             return queryset.filter(preexposition__isnull=False)
         elif value == 'postexposition':
             return queryset.filter(postexposition__isnull=False)
+        return queryset
+
+    def filter_statut_rdv(self, queryset, name, value):
+        """
+        Filtre les rdv passés (< today), d'aujourd'hui (= today) ou à venir (> today)
+        """
+        today = localdate()
+        if value == 'past':
+            return queryset.filter(date_rendez_vous__lt=today)
+        elif value == 'today':
+            return queryset.filter(date_rendez_vous=today)
+        elif value == 'upcoming':
+            return queryset.filter(date_rendez_vous__gt=today)
         return queryset
 
 

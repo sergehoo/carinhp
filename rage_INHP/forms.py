@@ -101,7 +101,7 @@ class ClientForm(forms.ModelForm):
             'accompagnateur_nature': forms.Select(attrs={'class': 'form-control'}),
             'accompagnateur_niveau_etude': forms.Select(attrs={'class': 'form-control'}),
 
-            'proprietaire_animal': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
+            'proprietaire_animal': forms.Select(attrs={'class': 'form-control'}),
             'typeanimal': forms.TextInput(attrs={'class': 'form-control'}),
 
         }
@@ -121,14 +121,39 @@ class ClientForm(forms.ModelForm):
 
 
 class PreExpositionForm(forms.ModelForm):
-    # mesures_elimination_rage = forms.MultipleChoiceField(
-    #     choices=mesure_CHOICES,
-    #     widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-control'})
-    # )
-
     class Meta:
         model = Preexposition
-        exclude = ['client']
+        fields = '__all__'
+        # exclude = ['created_by', 'convocation', 'prophylaxie', 'observance']
+        # exclude = ['client']
+        labels = {
+            'codeexpo': 'Code Pré-Exposition',
+            'voyage': 'Voyage',
+            'mise_a_jour': 'Mise à jour de vaccination',
+            'protection_rage': 'Protection contre la rage',
+            'chien_voisin': 'Chien du voisinage',
+            'chiens_errants': 'Présence de chiens errants',
+            'autre': 'Autre motif',
+            'autre_motif': 'Précisez autre motif',
+            'tele': 'Information via télévision',
+            'radio': 'Information via radio',
+            'sensibilisation': 'Sensibilisation communautaire',
+            'proche': 'Information par proche',
+            'presse': 'Information via presse',
+            'passage_car': 'Passage de car de sensibilisation',
+            'diff_canal': 'Autre canal d\'information',
+            'canal_infos': 'Détails des canaux d\'information',
+            'aime_animaux': 'Aime les animaux',
+            'type_animal_aime': 'Type d\'animal préféré',
+            'conduite_animal_mordeur': 'Conduite à tenir après morsure',
+            'connait_protocole_var': 'Connaît le protocole VAR',
+            'dernier_var_animal_type': 'Type du dernier animal vacciné',
+            'dernier_var_animal_date': 'Date du dernier VAR animal',
+            'appreciation_cout_var': 'Appréciation du coût du VAR',
+            'protocole_vaccination': 'Protocole de vaccination',
+            'fin_protocole': 'Protocole terminé',
+        }
+
         widgets = {
             'codeexpo': forms.TextInput(attrs={'class': 'form-control'}),
             'autre_motif': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
@@ -137,7 +162,8 @@ class PreExpositionForm(forms.ModelForm):
             'conduite_animal_mordeur': forms.Select(attrs={'class': 'form-control'}),
             'appreciation_cout_var': forms.Select(attrs={'class': 'form-control'}),
             'dernier_var_animal_type': forms.TextInput(attrs={'class': 'form-control'}),
-            'dernier_var_animal_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'dernier_var_animal_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'mesures_elimination_rage': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'protocole_vaccination': forms.Select(attrs={'class': 'form-control'}),
         }
 
@@ -145,12 +171,8 @@ class PreExpositionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         for field_name, field in self.fields.items():
-            # Ajouter form-control à tous sauf Checkbox/Radio
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
-                existing_classes = field.widget.attrs.get('class', '')
-                field.widget.attrs['class'] = f"{existing_classes} form-control".strip()
-
-            # Ajouter l’astérisque rouge pour les champs requis
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
             if field.required:
                 field.label = mark_safe(f"{field.label} <span class='text-danger'>*</span>")
                 field.widget.attrs['required'] = 'required'
@@ -162,11 +184,6 @@ class PreExpositionForm(forms.ModelForm):
         autre_motif = cleaned_data.get("autre_motif")
         if autre == "Oui" and not autre_motif:
             self.add_error("autre_motif", "Veuillez préciser le motif si 'Autre' est sélectionné.")
-
-        date_prevue = cleaned_data.get("date_prevue")
-        date_effective = cleaned_data.get("date_effective")
-        if date_effective and date_prevue and date_effective < date_prevue:
-            self.add_error("date_effective", "La date effective ne peut pas être antérieure à la date prévue.")
 
         return cleaned_data
 

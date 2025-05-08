@@ -41,7 +41,7 @@
                                 </div>
                                 <div class="card-body row">
                                     {% for field in patient_form %}
-                                        {% if field.name in "nom prenoms contact sexe num_cmu cni_num cni_nni secteur_activite niveau_etude commune quartier village" %}
+                                        {% if field.name in "nom prenoms contact sexe poids num_cmu cni_num cni_nni secteur_activite niveau_etude commune quartier  " %}
                                             <div class="col-md-4 mb-3">
                                                 <label>{{ field.label|capfirst }}</label>
                                                 {{ field }}
@@ -49,6 +49,7 @@
                                             </div>
                                         {% endif %}
                                     {% endfor %}
+
 
                                     <div class="col-md-4 mb-3">
                                         <label>Date de naissance</label>
@@ -59,8 +60,8 @@
                                     <div class="card-body row" x-show="patientMineur" x-transition>
                                         <div class="col-12 text-muted mb-3">Le patient est un mineur de moins de 21 ans, veuillez renseigner les informations de l'accompagnant</div>
                                         {% for field in patient_form %}
-                                            {% if field.name in "accompagnateur accompagnateur_contact accompagnateur_adresse accompagnateur_nature accompagnateur_niveau_etude" %}
-                                                <div class="col-md-4 mb-3">
+                                            {% if field.name == "accompagnateur" or field.name == "accompagnateur_adresse" or field.name == "accompagnateur_nature" or field.name == "accompagnateurcontact" or field.name == "accompagnateur_niveau_etude" %}
+                                                <div class="col-md-3 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
                                                     <small class="text-danger">{{ field.errors }}</small>
@@ -68,18 +69,49 @@
                                             {% endif %}
                                         {% endfor %}
                                     </div>
-                                </div>
-                            </div>
 
+
+                         <div x-data="{ proprietaire: '{{ patient_form.proprietaire_animal.value }}' }" class="row col-12">
+  <!-- Propriétaire d’un animal -->
+  <div class="col-md-4 mb-3">
+    <label for="id_proprietaire_animal">Propriétaire d’un animal ?</label>
+    <select name="proprietaire_animal"
+            id="id_proprietaire_animal"
+            x-model="proprietaire"
+            class="form-control">
+      <option value="Non" {% if patient_form.proprietaire_animal.value == 'Non' %}selected{% endif %}>Non</option>
+      <option value="Oui" {% if patient_form.proprietaire_animal.value == 'Oui' %}selected{% endif %}>Oui</option>
+    </select>
+    <small class="text-danger">{{ patient_form.proprietaire_animal.errors }}</small>
+  </div>
+
+  <!-- Type d’animal (ne s’affiche que si proprietaire === 'Oui') -->
+  <div class="col-md-4 mb-3" x-show="proprietaire === 'Oui'" x-transition>
+    <label for="id_typeanimal">Espèce de l’animal</label>
+    <select name="typeanimal"
+            id="id_typeanimal"
+            class="form-control">
+      {% for val,label in patient_form.typeanimal.field.choices %}
+        <option value="{{ val }}"
+                {% if patient_form.typeanimal.value == val %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+    <small class="text-danger">{{ patient_form.typeanimal.errors }}</small>
+  </div>
+</div>
+</div>
+   </div>
                             <!-- Informations Pré-Exposition -->
                             <div class="card mb-5 shadow-sm">
                                 <div class="card-header bg-info text-white font-weight-bold">
-                                    Informations Pré-Exposition
+                                     Motif de vaccination
                                 </div>
                                 <div class="card-body row">
                                     {% for field in exposition_form %}
                                         {% if field.name == "accompagnateur_niveau_etude" or field.name == "voyage" or field.name == "mise_a_jour" or field.name == "protection_rage" or field.name == "chien_voisin" or field.name == "chiens_errants" or field.name == "autre" or field.name == "autre_motif" %}
-                                                <div class="col-md-4 mb-3">
+                                                <div class="col-md-3 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
                                                     <small class="text-danger">{{ field.errors }}</small>
@@ -91,12 +123,36 @@
                             </div>
 
                         <div class="card mb-5 shadow-sm">
-                                <div class="card-header bg-info text-white font-weight-bold">
-                                    Informations Pré-Exposition
+                                <div class="card-header bg-warning text-white font-weight-bold">
+                                   Canaux d’information vaccination antirabique du client sur la rage
                                 </div>
                                 <div class="card-body row">
                                     {% for field in exposition_form %}
                                         {% if field.name == "tele" or field.name == "radio" or field.name == "sensibilisation" or field.name == "proche" or field.name == "presse" or field.name == "passage_car" or field.name == "diff_canal" or field.name == "canal_infos" %}
+                                                <div class="col-md-4 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                         <div class="card mb-5 shadow-sm">
+                                <div class="card-header bg-dark text-white font-weight-bold">
+                                   Connaissance et attitude du client sur la rage
+                                </div>
+
+
+
+
+
+
+                                <div class="card-body row">
+                                    {% for field in exposition_form %}
+                                        {% if field.name == "aime_animaux" or field.name == "type_animal_aime"  or field.name == "connait_protocole_var"  or field.name == "dernier_var_animal_type"  or field.name == "dernier_var_animal_date"  or field.name == "mesures_elimination_rage"  or field.name == "appreciation_cout_var" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}

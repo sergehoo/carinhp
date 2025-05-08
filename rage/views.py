@@ -841,6 +841,7 @@ class PreExpositionCreateView(View):
             try:
                 with transaction.atomic():
                     # 🎯 Création du Patient
+
                     patient = patient_form.save(commit=False)
                     patient.created_by = request.user
                     if hasattr(request.user, 'centre'):
