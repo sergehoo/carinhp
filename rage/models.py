@@ -4,6 +4,8 @@ import random
 import string
 import uuid
 import datetime as dt
+from decimal import Decimal
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 # from django.contrib.auth import get_user_model
@@ -24,7 +26,9 @@ from tinymce.models import HTMLField
 from datetime import datetime, date
 from rage_INHP.services import synchroniser_avec_mpi
 from rage_INHP.utils.phone import nettoyer_numero, formater_numero_local
+
 import logging
+
 logger = logging.getLogger(__name__)
 # Create your models here.
 # User = get_user_model()
@@ -177,6 +181,44 @@ Membre_Inferieur_CHOICES = [
     # ('Orteils', 'Orteils'),
 ]
 
+site_injection = [
+    ('epaule', 'Épaule'),
+    ('bras', 'Bras'),
+    ('coude', 'Coude'),
+    ('avant_bras', 'Avant-bras'),
+    ('poignet', 'Poignet'),
+    ('main', 'Main'),
+    ('Zone Clavicule', 'Zone Clavicule'),
+    ('Zone Sternum', 'Zone Sternum'),
+    ('Zone Côtes', 'Zone Côtes'),
+    ('Poitrine', 'Poitrine'),
+    ('Seins', 'Seins'),
+    ('Abdomen', 'Abdomen'),
+    ('Dos', 'Dos'),
+    ('Cuire chevelure', 'Cuire chevelure'),
+    ('Front', 'Front'),
+    ('Tempe', 'Tempe'),
+    ('Yeux/paupieres', 'Yeux/paupieres'),
+    ('Joues', 'Joues'),
+    ('Nez', 'Nez'),
+    ('Bouche/lèvres', 'Bouche/lèvres'),
+    ('Oreilles', 'Oreilles'),
+    ('Mâchoire', 'Mâchoire'),
+    ('Menton', 'Menton'),
+    ('Nuque', 'Nuque'),
+    ('Cou', 'Cou'),
+
+    ('Hanche', 'Hanche'),
+    ('Fesse', 'Fesse'),
+    ('Cuisse', 'Cuisse'),
+    ('Genou', 'Genou'),
+    ('Jambe', 'Jambe'),
+    ('Cheville', 'Cheville'),
+
+    ('Talon', 'Talon'),
+    ('Pied', 'Pied'),
+    ('Organes_genitaux_externe', 'Organes génitaux externes'),
+]
 Grossesse_SEMAINES_CHOICES = [
     ('1', 'Semaine 1'),
     ('2', 'Semaine 2'),
@@ -253,8 +295,8 @@ appreciation_CHOICES = [
 ]
 
 CARACASSE_CHOICES = [
-    ('Caracasse disponible', 'Caracasse disponible'),
-    ('Caracasse non disponible', 'Caracasse non disponible'),
+    ('Carcasse disponible', 'Carcasse disponible'),
+    ('Carcasse non disponible', 'Carcasse non disponible'),
     ('Non', 'Non')
 ]
 
@@ -262,7 +304,7 @@ STATUT_VACCINAL_CHOICES = [
     ('Animal non vacciné', 'Animal non vacciné'),
     ('Statut vaccinal Inconnu', 'Statut vaccinal Inconnu'),
     ('Non à jour', 'Non à jour'),
-    ('Oui', 'Correctement vaccine')
+    ('Oui', 'Correctement vacciné')
 ]
 
 
@@ -434,18 +476,18 @@ class Commune(models.Model):
 
     def __str__(self):
         if self.district:
-            return f"{self.name} - {self.district.nom}"
+            return f"{self.name}"
         return self.name or "Commune sans nom"
 
 
 class Patient(models.Model):
     nature_acompagnateur_CHOICES = [
-        ('Pere', 'Pere'),
-        ('Mere', 'Mere'),
+        ('Pere', 'Père'),
+        ('Mere', 'Mère'),
         ('Oncle', 'Oncle'),
         ('Tante', 'Tante'),
-        ('Frère', 'Frère'),
-        ('Soeure', 'Soeure'),
+        ('Frere', 'Frère'),
+        ('Soeur', 'Soeur'),
         ('Cousin', 'Cousin'),
         ('Cousine', 'Cousine'),
         ('Connaissance du quartier', 'Connaissance du quartier'),
@@ -475,7 +517,8 @@ class Patient(models.Model):
     )
 
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
-    proprietaire_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES, default='Non', db_index=True)
+    district = models.ForeignKey(DistrictSanitaire, on_delete=models.SET_NULL, null=True, blank=True)
+    proprietaire_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES,  null=True, blank=True,default='Non', db_index=True)
     typeanimal = models.CharField(choices=typeAnimal_choices, max_length=255, blank=True, null=True)
     autretypeanimal = models.CharField(max_length=255, blank=True, null=True)
 
@@ -531,6 +574,15 @@ class Patient(models.Model):
     @property
     def contact_formatte(self):
         return formater_numero_local(self.contact)
+
+    @property
+    def dose_immunoglobuline_ui(self):
+        """
+        Calcule la dose à injecter en UI : 40 UI par kg
+        """
+        if self.poids:
+            return round(Decimal(self.poids) * Decimal('40.0'), 2)
+        return None
 
     @property
     def accompagnateurcontact_formatte(self):
@@ -616,7 +668,7 @@ class Preexposition(models.Model):
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name="employeer")
     created_at = models.DateTimeField(auto_now_add=True)
-    fin_protocole = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non',null=True, blank=True,)
+    fin_protocole = models.CharField(max_length=3, choices=OUI_NON_CHOICES, default='Non', null=True, blank=True, )
 
     history = HistoricalRecords()
 
@@ -802,6 +854,8 @@ class PostExposition(models.Model):
     protocole_vaccination = models.ForeignKey('ProtocoleVaccination', on_delete=models.CASCADE, null=True, blank=True)
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.CASCADE, null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    temps_saisie = models.PositiveIntegerField(null=True, blank=True,
+                                               help_text="Temps de saisie du formulaire (en secondes)")
     history = HistoricalRecords()
 
     def determiner_gravite_oms(self):
@@ -827,11 +881,17 @@ class PostExposition(models.Model):
     def save(self, *args, **kwargs):
         for field in ['preciser_tetecou', 'preciser_membre_sup', 'preciser_tronc', 'preciser_membre_inf']:
             value = getattr(self, field)
-            if isinstance(value, str):
-                try:
-                    setattr(self, field, json.loads(value))
-                except (json.JSONDecodeError, TypeError):
-                    pass
+            # if isinstance(value, str):
+            #     try:
+            #         # Accepte une chaîne JSON valide venant d’un POST brut (cas très rare)
+            #         parsed = json.loads(value)
+            #         if isinstance(parsed, list):
+            #             setattr(self, field, parsed)
+            #     except json.JSONDecodeError:
+            #         pass
+            # elif not isinstance(value, list):
+            #     # Fallback de sécurité pour toujours avoir une liste
+            #     setattr(self, field, [value])
         # First determine gravity before any save operation
         if not self.gravite_oms:
             self.gravite_oms = self.determiner_gravite_oms()
@@ -1215,19 +1275,19 @@ class Caisse(models.Model):
 
 
 class Vaccination(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE)
     date_prevue = models.DateField()
     date_effective = models.DateTimeField(null=True, blank=True)
     dose_ml = models.FloatField()
     dose_numero = models.IntegerField(help_text="Numéro de la dose dans le protocole")
     nombre_dose = models.IntegerField()
-    vaccin = models.ForeignKey(Vaccins, on_delete=models.CASCADE, null=True, blank=True)
-    lot = models.ForeignKey(LotVaccin, on_delete=models.SET_NULL, null=True, blank=True)
+    vaccin = models.ForeignKey("Vaccins", on_delete=models.CASCADE, null=True, blank=True)
+    lot = models.ForeignKey("LotVaccin", on_delete=models.SET_NULL, null=True, blank=True)
     voie_injection = models.CharField(max_length=5, choices=[('ID', 'Intradermique')])
-    protocole = models.ForeignKey(ProtocoleVaccination, on_delete=models.CASCADE, max_length=255)
+    protocole = models.ForeignKey("ProtocoleVaccination", on_delete=models.CASCADE, max_length=255)
     lieu = models.CharField(max_length=255)
-    created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=now)
+    created_by = models.ForeignKey("EmployeeUser", on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=timezone.now)
 
     history = HistoricalRecords()
 
@@ -1236,72 +1296,76 @@ class Vaccination(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        super().save(*args, **kwargs)  # Sauvegarde de la vaccination
+        super().save(*args, **kwargs)
 
         if self.date_effective:
-            # Crée une observation de 15 minutes
-            from django.utils import timezone
-            debut = timezone.now()
-            fin = debut + dt.timedelta(minutes=15)
+            self._schedule_sms_notification()
+            self._create_observation()
 
-            # Créer ou mettre à jour une éventuelle observation liée
-            ObservationPostVaccination.objects.update_or_create(
-                vaccination=self,
-                defaults={'heure_debut': debut, 'heure_fin': fin}
-            )
+            if self.date_effective.date() != self.date_prevue:
+                self.mettre_a_jour_rendez_vous()
 
-        # Vérifier si la date effective est différente de la date prévue
-        if self.date_effective and self.date_effective != self.date_prevue:
-            self.mettre_a_jour_rendez_vous()
-            # Vérifier si la date effective est différente de la date prévue
+    def _schedule_sms_notification(self):
+        from .tasks import send_sms_postvaccination
+        eta = self.date_effective + dt.timedelta(minutes=15)
+        if eta > timezone.now():
+            from .tasks import send_sms_postvaccination
+            send_sms_postvaccination.apply_async(args=[self.pk], eta=eta)
+        else:
+            send_sms_postvaccination.delay(self.pk)
+
+    def _create_observation(self):
+        from .models import ObservationPostVaccination
+        debut = timezone.now()
+        fin = debut + dt.timedelta(minutes=15)
+        ObservationPostVaccination.objects.update_or_create(
+            vaccination=self,
+            defaults={"heure_debut": debut, "heure_fin": fin}
+        )
 
     def mettre_a_jour_rendez_vous(self):
-        """
-        Met à jour les rendez-vous restants si la date effective diffère de la date prévue.
-        """
+        from .models import RendezVousVaccination
         with transaction.atomic():
-            # Récupérer les rendez-vous restants pour ce patient et ce protocole
-            rendez_vous_restants = RendezVousVaccination.objects.filter(
+            rendez_vous = RendezVousVaccination.objects.filter(
                 patient=self.patient,
                 protocole=self.protocole,
                 date_rendez_vous__gte=self.date_prevue,
                 est_effectue=False
             ).order_by('date_rendez_vous')
 
-            if not rendez_vous_restants.exists():
-                return  # Aucun rendez-vous à mettre à jour
+            if not rendez_vous.exists():
+                return
 
-            # Récupération des intervalles définis dans le protocole
-            intervals = [
-                self.protocole.intervale_visite1_2,
-                self.protocole.intervale_visite2_3,
-                self.protocole.intervale_visite3_4,
-                self.protocole.intervale_visite4_5
-            ]
+            intervals = self._get_protocol_intervals()
+            nouvelle_date = self.date_effective.date()
+            date_fin_max = self._get_protocol_end_date()
 
-            # Convertir les intervalles en jours (gérer les cas où les valeurs sont None)
-            try:
-                intervals = [int(i.replace("Jours", "").strip()) if i else None for i in intervals]
-            except ValueError:
-                intervals = [None] * len(intervals)  # Définit des valeurs nulles si conversion impossible
+            for i, rdv in enumerate(rendez_vous):
+                if date_fin_max and nouvelle_date > date_fin_max:
+                    break
 
-            # Nouvelle date de départ basée sur la date effective de la vaccination
-            nouvelle_date_rdv = self.date_effective
-            duree_max = dt.timedelta(days=self.protocole.duree) if self.protocole.duree else None
-            date_fin_max = self.date_effective + duree_max if duree_max else None  # Date limite du protocole
-
-            for i, rdv in enumerate(rendez_vous_restants):
-                # Vérifier si on ne dépasse pas la durée maximale du protocole
-                if date_fin_max and nouvelle_date_rdv > date_fin_max:
-                    break  # Stopper la mise à jour si la nouvelle date dépasse la durée max
-
-                # Mise à jour de la date du rendez-vous
-                rdv.date_rendez_vous = nouvelle_date_rdv
+                rdv.date_rendez_vous = nouvelle_date
                 rdv.save()
 
-                # Mise à jour de la date pour le prochain rendez-vous
                 if i < len(intervals) and intervals[i]:
-                    nouvelle_date_rdv += dt.timedelta(days=intervals[i])
+                    nouvelle_date += dt.timedelta(days=intervals[i])
+
+    def _get_protocol_intervals(self):
+        raw = [
+            self.protocole.intervale_visite1_2,
+            self.protocole.intervale_visite2_3,
+            self.protocole.intervale_visite3_4,
+            self.protocole.intervale_visite4_5,
+        ]
+        try:
+            return [int(i.replace("Jours", "").strip()) if i else None for i in raw]
+        except Exception:
+            return [None] * len(raw)
+
+    def _get_protocol_end_date(self):
+        if self.protocole.duree:
+            return self.date_effective.date() + dt.timedelta(days=self.protocole.duree)
+        return None
 
 
 VOIE_CHOICES = [
@@ -1318,10 +1382,11 @@ class InjectionImmunoglobuline(models.Model):
     refus_injection = models.BooleanField(default=False, help_text="Le patient a-t-il refusé l'injection ?")
     motif_refus = models.TextField(blank=True, null=True, help_text="Motif du refus (si refusé)")
 
-    type_produit = models.CharField(max_length=100, blank=True, null=True,
-                                    help_text="Ex: Immunoglobuline antirabique humaine")
-    dose_ml = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
-                                  help_text="Volume injecté en ml")
+    type_produit = models.CharField(max_length=100, blank=True, null=True)
+    dose_ui = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True,
+                                  help_text="Volume injecté en Unite International")
+    dose_a_injecter = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True,
+                                          help_text="Dose à prescrire en UI ")
     voie_injection = models.CharField(max_length=10, choices=VOIE_CHOICES, blank=True, null=True)
     site_injection = models.TextField(blank=True, null=True,
                                       help_text="Sites anatomiques d'injection (ex: bras gauche, cuisse droite...)")
@@ -1335,6 +1400,32 @@ class InjectionImmunoglobuline(models.Model):
 
     class Meta:
         ordering = ['-date_injection']
+
+    def clean(self):
+        errors = {}
+
+        # Vérification dose_a_injecter ≥ 0
+        if self.dose_a_injecter is not None and self.dose_a_injecter < 0:
+            errors['dose_a_injecter'] = "La dose à injecter ne peut pas être négative."
+
+        # Vérification dose_ui ≤ dose_a_injecter
+        if (
+                self.dose_ui is not None and
+                self.dose_a_injecter is not None and
+                self.dose_ui > self.dose_a_injecter
+        ):
+            errors['dose_ui'] = "La dose injectée (UI) ne peut pas dépasser la dose à injecter."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        # Calcul automatique dose_a_injecter si vide et poids dispo
+        if not self.dose_a_injecter and self.patient and self.patient.poids:
+            self.dose_a_injecter = round(Decimal(self.patient.poids) * Decimal('40.0'), 2)
+
+        self.full_clean()  # Appelle clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.refus_injection:
@@ -1495,9 +1586,28 @@ class City(models.Model):
 
 
 class WhatsAppMessageLog(models.Model):
-    numero = models.CharField(max_length=20)
-    template = models.CharField(max_length=100, null=True, blank=True)
-    contenu_message = models.TextField(null=True, blank=True)
-    statut = models.CharField(max_length=20)
-    response = models.TextField(null=True, blank=True)
-    date_envoi = models.DateTimeField(auto_now_add=True)
+    vaccination = models.ForeignKey(
+        'Vaccination',
+        on_delete=models.CASCADE,
+        related_name='whatsapp_logs'
+    )
+    sid = models.CharField(
+        max_length=64,
+        help_text="Twilio Message SID",
+        unique=True
+    )
+    to = models.CharField(max_length=32, help_text="Numéro destinataire")
+    status = models.CharField(
+        max_length=32,
+        help_text="Statut du message (queued, sent, delivered, failed…)"
+    )
+    body = models.TextField(help_text="Contenu du message")
+    date_sent = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_sent']
+        verbose_name = "Log message WhatsApp"
+        verbose_name_plural = "Logs messages WhatsApp"
+
+    def __str__(self):
+        return f"{self.to} – {self.status} @ {self.date_sent:%Y-%m-%d %H:%M}"

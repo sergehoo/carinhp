@@ -14,5 +14,5 @@ def formater_numero_local(numero):
     elif len(numero) == 8:
         return f"{numero[:2]} {numero[2:4]} {numero[4:6]} {numero[6:]}"
     elif len(numero) > 10:
-        return f"+{numero}"
+        return f"{numero}"
     return numero

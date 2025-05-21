@@ -6,13 +6,14 @@ from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin, ExportMixin
 from leaflet.admin import LeafletGeoAdmin
+from pandas.tests.tseries.offsets.test_custom_business_month import dt
 from simple_history.admin import SimpleHistoryAdmin
 
 from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSanitaire, CentreAntirabique, Commune, \
     EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
     PreleveMode, Epidemie, RendezVousVaccination, Echantillon, Vaccins, Facture, Caisse, TypeProtocole, \
     Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin, \
-    InjectionImmunoglobuline
+    InjectionImmunoglobuline, ObservationPostVaccination, WhatsAppMessageLog
 from rage_INHP.resources import RageHumaineNotificationResource, ProtocoleVaccinationResource, VaccinsResource, \
     LotVaccinResource
 from rage_INHP.services import synchroniser_avec_mpi
@@ -178,7 +179,7 @@ synchroniser_patients_mpi.short_description = "🔄 Synchroniser patients sélec
 class PatientAdmin(admin.ModelAdmin):
     list_display = (
         'code_patient', 'nom', 'prenoms',
-        'contact', 'accompagnateurcontact','date_naissance',
+        'contact', 'accompagnateurcontact', 'date_naissance',
         'calculate_age', 'poids', 'mpi_upi', 'created_at'
     )
     list_filter = ('status', 'gueris', 'decede', 'centre_ar', 'commune', 'created_at')
@@ -229,11 +230,30 @@ class PatientAdmin(admin.ModelAdmin):
         return True
 
 
-class VaccinationAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'date_prevue', 'date_effective', 'dose_ml', 'protocole', 'lieu')
-    search_fields = ('patient__nom', 'patient__prenoms', 'protocole')
-    list_filter = ('date_prevue', 'date_effective', 'protocole')
+# class VaccinationAdmin(admin.ModelAdmin):
+#     list_display = ('patient', 'date_prevue', 'date_effective', 'dose_ml', 'protocole', 'lieu')
+#     search_fields = ('patient__nom', 'patient__prenoms', 'protocole')
+#     list_filter = ('date_prevue', 'date_effective', 'protocole')
 
+@admin.register(Vaccination)
+class VaccinationAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'date_effective', 'test_sms_link')
+    actions = ['envoyer_test_sms']
+
+    def test_sms_link(self, obj):
+        return format_html(
+            '<a class="button" href="/admin/rage/vaccination/{}/send-sms/" target="_blank">📲 Test SMS</a>',
+            obj.pk
+        )
+    test_sms_link.short_description = "Test SMS"
+    test_sms_link.allow_tags = True
+
+    def envoyer_test_sms(self, request, queryset):
+        from .tasks import send_sms_postvaccination
+        for vac in queryset:
+            send_sms_postvaccination.delay(vac.pk)
+        self.message_user(request, f"{queryset.count()} envois SMS planifiés.")
+    envoyer_test_sms.short_description = "📲 Envoyer SMS (test)"
 
 class EpidemieAdmin(admin.ModelAdmin):
     list_display = ('nom', 'date_debut', 'date_fin', 'is_active')
@@ -248,7 +268,7 @@ class EpidemieAdmin(admin.ModelAdmin):
 # admin.site.register(Patient, PatientAdmin)
 admin.site.register(Animal)
 admin.site.register(DossierMedical)
-admin.site.register(Vaccination, VaccinationAdmin)
+# admin.site.register(Vaccination, VaccinationAdmin)
 admin.site.register(PreleveMode)
 admin.site.register(Epidemie, EpidemieAdmin)
 
@@ -442,7 +462,7 @@ class MAPIAdmin(admin.ModelAdmin):
 
 @admin.register(InjectionImmunoglobuline)
 class InjectionImmunoglobulineAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'injection_status', 'date_injection', 'dose_ml', 'voie_injection', 'created_by')
+    list_display = ('patient', 'injection_status', 'date_injection', 'dose_ui', 'voie_injection', 'created_by')
     list_filter = ('type_produit', 'voie_injection', 'date_injection', 'refus_injection')
     search_fields = ('patient__nom', 'patient__prenom', 'type_produit', 'numero_lot', 'motif_refus')
     date_hierarchy = 'date_injection'
@@ -458,7 +478,7 @@ class InjectionImmunoglobulineAdmin(admin.ModelAdmin):
             'classes': ('collapse', 'wide')
         }),
         ('Détails de l\'injection', {
-            'fields': ('type_produit', 'dose_ml', 'voie_injection', 'site_injection'),
+            'fields': ('type_produit', 'dose_ui', 'voie_injection','dose_a_injecter', 'site_injection'),
             'classes': ('collapse',)
         }),
         ('Information produit', {
@@ -504,3 +524,20 @@ class InjectionImmunoglobulineAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('patient', 'created_by')
+
+
+class WhatsAppMessageLogInline(admin.TabularInline):
+    model = WhatsAppMessageLog
+    extra = 0
+    readonly_fields = ('sid', 'to', 'status', 'body', 'date_sent')
+    can_delete = False
+    verbose_name = "Log WhatsApp"
+    verbose_name_plural = "Logs WhatsApp"
+
+
+@admin.register(WhatsAppMessageLog)
+class WhatsAppMessageLogAdmin(admin.ModelAdmin):
+    list_display = ('vaccination', 'to', 'status', 'date_sent')
+    list_filter = ('status',)
+    search_fields = ('to', 'sid')
+    date_hierarchy = 'date_sent'

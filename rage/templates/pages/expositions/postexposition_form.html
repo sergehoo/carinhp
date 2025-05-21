@@ -10,6 +10,7 @@
             display: none !important;
         }
     </style>
+
     <!--begin::Wrapper-->
     <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
         <!--begin::Content-->
@@ -38,6 +39,7 @@
 
                         <!--begin::Body-->
                         <div class="card-body">
+
                             <div class="container mt-5" >
                                 <h1 class="text-center text-primary mb-4">Création d'un Dossier de Post-Exposition</h1>
 
@@ -67,19 +69,26 @@
                                 {% endif %}
 
 
-                                <form x-data="patientForm" x-init="initForm()" @submit="loading = true" method="post" enctype="multipart/form-data" class="needs-validation">
+                                <form x-data="patientForm()" x-init="initForm()" @submit="loading = true" method="post"
+                                      enctype="multipart/form-data" class="needs-validation">
 
                                     {% csrf_token %}
+                                    <!-- Timer display -->
+                                    <div id="saisie-timer"
+                                         style="position: fixed; top: 2rem; left: 12rem; background: #ffc107; color: white; padding: 10px 10px;margin-top:50px ; border-radius: 8px; font-weight: bold; z-index: 9999;">
+                                        Temps <br>Saisie : <span id="saisie-temps">0</span> s
+                                    </div>
                                     <!-- 1️⃣ Informations Principales du Patient -->
 
-
+                                    <input type="hidden" name="temps_saisie" id="temps_saisie" value="0">
                                     <div class="card mb-5 shadow-sm">
                                         <div class="card-header bg-primary text-white font-weight-bold">
-                                            Identification du Patient
+                                            <h2>Identification du Patient</h2>
                                         </div>
                                         <div class="card-body row">
                                             {% for field in patient_form %}
-                                                {% if field.name == "nom" or field.name == "prenoms" or field.name == "contact" or field.name == "sexe" or field.name == "poids"  or field.name == "num_cmu" or field.name == "cni_num" or field.name == "secteur_activite" or field.name == "niveau_etude" or field.name == "commune" or field.name == "quartier" %}
+                                                {% if field.name == "nom" or field.name == "prenoms" or field.name == "contact" or field.name == "sexe" or field.name == "poids"  or field.name == "num_cmu" or field.name == "cni_num" or field.name == "secteur_activite" or field.name == "niveau_etude" or field.name == "district" or field.name == "commune" or field.name == "quartier" %}
+
 
                                                     <div class="col-md-3 mb-3" x-data
                                                          x-init="if('{{ field.name }}' === 'patient_mineur') { $el.querySelector('input').addEventListener('change', e => patientMineur = e.target.checked) }">
@@ -96,9 +105,8 @@
                                                 <input type="date"
                                                        name="date_naissance"
                                                        id="id_date_naissance"
-
                                                        class="form-control"
-                                                       @change="handleDateChange">
+                                                       @change="handleDateChange" required>
                                                 <small class="text-danger">{{ field.errors }}</small>
                                             </div>
                                             <!-- 2️⃣ Informations Accompagnateur (seulement si Patient Mineur) -->
@@ -142,7 +150,7 @@
                                     <!-- 3️⃣ Détails de l'Exposition -->
                                     <div class="card mb-5 shadow-sm">
                                         <div class="card-header bg-info text-white font-weight-bold">
-                                            Détails de l'Exposition
+                                            <h2>Détails de l'Exposition</h2>
                                         </div>
                                         <div class="card-body row">
                                             {% for field in exposition_form %}
@@ -356,7 +364,7 @@
                                     <!-- 4️⃣ Informations Animal -->
                                     <div class="card mb-5 shadow-sm">
                                         <div class="card-header bg-danger text-white font-weight-bold">
-                                            Informations Animal
+                                            <h3>Informations Animal</h3>
                                         </div>
                                         <div class="card-body row"
                                              x-data="{ especeAutre: '{{ exposition_form.espece.value }}' === 'Autre', updateAutreEspece(e) {
@@ -541,7 +549,7 @@
                                     <!-- 6️⃣ Dossier Médical -->
                                     <div class="card mb-5 shadow-sm">
                                         <div class="card-header bg-success text-white font-weight-bold">
-                                            Dossier Médical
+                                            <h3>Dossier Médical</h3>
                                         </div>
                                         <div class="card-body row">
                                             <div class="card-body row"
@@ -749,7 +757,7 @@
                                             <div class="col-12"><h2 class="text-success">Antécédents vaccinaux </h2>
                                             </div>
                                             {% for field in exposition_form %}
-                                                {% if field.name == "vat_dernier_injection" or field.name == "vat_rappel" or field.name == "vat_lot" or field.name == "vaccin_antirabique" or field.name == "carnet_vaccinal" or field.name == "carnet_vaccinal_verso" %}
+                                                {% if field.name == "vaccin_antirabique" or field.name == "carnet_vaccinal" or field.name == "carnet_vaccinal_verso" %}
                                                     <div class="col-md-3 mb-3">
                                                         <label>{{ field.label|capfirst }}</label>
                                                         {{ field }}
@@ -924,6 +932,20 @@
             <!--end::Entry-->
         </div>
         <!--end::Content-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let seconds = 0;
+        const timerSpan = document.getElementById("saisie-temps");
+        const hiddenInput = document.getElementById("temps_saisie");
+
+        // Incrémenter le compteur chaque seconde
+        setInterval(() => {
+            seconds++;
+            timerSpan.textContent = seconds;
+            hiddenInput.value = seconds;
+        }, 1000);
+    });
+</script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
 

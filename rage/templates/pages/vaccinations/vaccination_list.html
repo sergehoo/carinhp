@@ -139,7 +139,7 @@
                                                       title="Temps restant d'observation">
                                                 </span>
                                                 <span class="text-muted font-size-sm">
-                                                    (15 min)
+
                                                 </span>
                                             </div>
                                             {% else %}
@@ -147,42 +147,61 @@
                                             {% endif %}
                                         </td>
                                         <td style="text-align: center">
-                                        {% if v.mapi.all %}
-    <span class="badge badge-danger" data-toggle="popover"
-               title="Alerte"
-               data-content="⚠️Le patient a signalé une ou plusieurs manisfestation(s) post-injection merci de consulter les donnees dans le detail de la vaccination ">{{ v.mapi.count }} MAPI</span>
-{% else %}
-    <span class="text-muted">Aucun</span>
-                                            <button class="btn btn-icon btn-primary btn-xs mt-1" data-toggle="modal"
-                                                    data-target="#addMAPI-{{ v.id }}"
-                                                    title="Ajouter un MAPI">
-                                                <i class="flaticon2-add"></i>
-                                            </button>
-{% endif %}
-
-
+                                            {% if v.mapi.all %}
+                                                <span class="badge badge-danger" data-toggle="popover"
+                                                      title="Alerte"
+                                                      data-content="⚠️Le patient a signalé une ou plusieurs manisfestation(s) post-injection merci de consulter les donnees dans le detail de la vaccination ">{{ v.mapi.count }} MAPI</span>
+                                            {% else %}
+                                                <span class="text-muted">Aucun</span>
+                                                <button class="btn btn-icon btn-primary btn-xs mt-1" data-toggle="modal"
+                                                        data-target="#addMAPI-{{ v.id }}"
+                                                        title="Ajouter un MAPI">
+                                                    <i class="flaticon2-add"></i>
+                                                </button>
+                                            {% endif %}
 
                                             <!-- MAPI Modal -->
-                                            <div class="modal fade" id="addMAPI-{{ v.id }}" tabindex="-1" role="dialog">
-                                                <div class="modal-dialog" role="document">
+                                            <!--begin::New MAPI Modal-->
+                                            <div class="modal fade" id="addMAPI-{{ v.id }}" tabindex="-1" role="dialog" aria-labelledby="addMAPI-{{ v.id }}" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Ajouter un effet secondaire</h5>
-                                                            <button type="button" class="close" data-dismiss="modal">
+                                                            <h5 class="modal-title" id="addMAPI-{{ v.id }}">
+                                                                <i class="fas fa-exclamation-triangle text-danger mr-2"></i>
+                                                                Signaler une MAPI pour le Patient {{ v.patient.nom }} {{ v.patient.prenoms }}
+                                                            </h5>
+                                                            <button type="button" class="close" data-dismiss="modal"
+                                                                    aria-label="Close">
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
-                                                        <div class="modal-body">
-                                                            <!-- Formulaire MAPI ici -->
-                                                            <p>Formulaire d'ajout d'effet secondaire pour {{ v.patient.nom }}</p>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-light-primary" data-dismiss="modal">Annuler</button>
-                                                            <button type="button" class="btn btn-primary">Enregistrer</button>
-                                                        </div>
+                                                        <form method="post">
+                                                            <div class="modal-body">
+                                                                {% csrf_token %}
+                                                                <div class="row">
+                                                                    {% for field in mapi_form %}
+                                                                        <div class="col-md-6">
+                                                                            <label>{{ field.label }}</label>
+                                                                            {{ field }}
+                                                                        </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button"
+                                                                        class="btn btn-light-primary font-weight-bold"
+                                                                        data-dismiss="modal">Annuler
+                                                                </button>
+                                                                <button type="submit"
+                                                                        class="btn btn-danger font-weight-bold">
+                                                                    <i class="fas fa-save mr-2"></i>Enregistrer
+                                                                </button>
+                                                            </div>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
+                                            <!--end::New MAPI Modal-->
                                         </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center">
@@ -201,7 +220,7 @@
                                         </td>
                                     </tr>
                                     {% empty %}
-                                    <tr>
+                                        <tr>
                                         <td colspan="11" class="text-center py-8">
                                             <div class="d-flex flex-column align-items-center">
                                                 <i class="flaticon2-search-1 font-size-h1 text-muted mb-4"></i>
@@ -227,6 +246,44 @@
         <!--end::Entry-->
     </div>
     <!--end::Content-->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Sélectionne tous les badges
+  const badges = document.querySelectorAll('.countdown-badge');
+  badges.forEach(function(badge) {
+    // Récupère la date_effective et calcule la date de fin (+15min)
+    const endtimeStr = badge.dataset.endtime;
+    // Convertit en objet Date (compatible ISO)
+    const dateEff = new Date(endtimeStr.replace(' ', 'T'));
+    const countdownEnd = new Date(dateEff.getTime() + 15 * 60 * 1000);
+
+    // Fonction de mise à jour
+    function update() {
+      const now = new Date();
+      const diff = countdownEnd - now;
+
+      if (diff <= 0) {
+        badge.textContent = '00:00';
+        clearInterval(interval);
+        badge.classList.remove('badge-info');
+        badge.classList.add('badge-secondary'); // style “terminé”
+        return;
+      }
+
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      // Formatte en MM:SS
+      const m = String(minutes).padStart(2, '0');
+      const s = String(seconds).padStart(2, '0');
+      badge.textContent = `${m}:${s}`;
+    }
+
+    // Lancer immédiatement et toutes les secondes
+    update();
+    const interval = setInterval(update, 1000);
+  });
+});
+</script>
 <script>
 // Document Ready Handler
 $(document).ready(function() {
@@ -415,59 +472,7 @@ function showToast(message, type = 'success') {
     console.log(`Toast [${type}]:`, message);
 }
 </script>
-{#    <script>#}
-{#        // Initialisation des tooltips#}
-{#        $(function () {#}
-{#            $('[data-toggle="tooltip"]').tooltip();#}
-{#        });#}
-{##}
-{#        // Gestion des exports#}
-{#        $(document).on('click', '[data-export]', function (e) {#}
-{#            e.preventDefault();#}
-{#            const format = $(this).data('export');#}
-{#            // Implémenter la logique d'export ici#}
-{#            console.log('Export format:', format);#}
-{#        });#}
-{##}
-{#        // Compte à rebours pour l'observation#}
-{#        function updateCountdowns() {#}
-{#            $('.countdown-badge').each(function () {#}
-{#                const endTime = new Date($(this).data('endtime'));#}
-{#                const observationEnd = new Date(endTime.getTime() + 15 * 60 * 1000);#}
-{#                const now = new Date();#}
-{#                const diff = Math.max(0, observationEnd - now);#}
-{##}
-{#                if (diff <= 0) {#}
-{#                    $(this).html('<span class="badge badge-success">Terminé</span>');#}
-{#                    return;#}
-{#                }#}
-{##}
-{#                const minutes = Math.floor(diff / 1000 / 60);#}
-{#                const seconds = Math.floor((diff / 1000) % 60);#}
-{##}
-{#                $(this).html(`<span class="badge badge-${minutes < 5 ? 'danger' : 'warning'}">#}
-{#            ${minutes}m ${seconds}s#}
-{#        </span>`);#}
-{#            });#}
-{##}
-{#            setTimeout(updateCountdowns, 1000);#}
-{#        }#}
-{##}
-{#        // Initialisation#}
-{#        $(document).ready(function () {#}
-{#            updateCountdowns();#}
-{##}
-{#            // Initialisation de DataTable si nécessaire#}
-{#            if ($.fn.dataTable) {#}
-{#                $('#kt_datatable').DataTable({#}
-{#                    responsive: true,#}
-{#                    language: {#}
-{#                        url: "{% static 'plugins/custom/datatables/French.json' %}"#}
-{#                    }#}
-{#                });#}
-{#            }#}
-{#        });#}
-{#    </script>#}
+
     <!--begin::Footer-->
     {% include 'layout/footer.html' %}
     <!--end::Footer-->

@@ -199,6 +199,14 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.carinhp.ci",  # si tu as aussi le www
 ]
 
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+TWILIO_SMS_NUMBER = os.getenv("TWILIO_SMS_NUMBER", "+14237194194")  # mets ton numéro réel ici
+
+TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', default='whatsapp:+14237194194')
+TWILIO_CONTENT_SID = 'HXa645afca250223e0e68952c62a89a62e'
+TWILIO_MESSAGING_SERVICE_SID = 'MG315cb644340b92dcb221670bbf69dbae'
+
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v19.0")

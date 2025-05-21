@@ -77,6 +77,7 @@
             backdrop-filter: blur(8px);
             transition: var(--ci-transition);
             overflow: hidden;
+            margin-right:50px;
         }
 
         .control-panel:hover {
@@ -489,6 +490,7 @@
                 left: 0;
                 right: 0;
                 border-radius: 0;
+
             }
 
             .control-panel {
@@ -522,7 +524,7 @@
 </div>
 
 <!-- Panneau de contrôle -->
-<div class="map-controls">
+<div class="map-controls ">
     <!-- Panneau de résumé -->
     <div class="control-panel">
         <div class="panel-header" id="summary-header">
@@ -532,21 +534,21 @@
         <div class="panel-content" id="summary-content">
             <div class="summary-grid">
                 <div class="summary-item">
-                    <div class="summary-label">Pré-exposition</div>
+                    <div class="summary-label">PreP</div>
                     <div class="summary-count" id="pre-count">0</div>
                     <div class="progress mt-2" style="height: 4px;">
                         <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                     </div>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label">Post-exposition</div>
+                    <div class="summary-label">PEP</div>
                     <div class="summary-count" id="post-count">0</div>
                     <div class="progress mt-2" style="height: 4px;">
                         <div class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
                     </div>
                 </div>
                 <div class="summary-item">
-                    <div class="summary-label"> Cas de Rage H.</div>
+                    <div class="summary-label">Cas </div>
                     <div class="summary-count" id="notification-count">0</div>
                     <div class="progress mt-2" style="height: 4px;">
                         <div class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>

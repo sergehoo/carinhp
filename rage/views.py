@@ -1094,26 +1094,74 @@ class PreExpositionDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
+# @login_required
+# def add_injection_immunoglobuline(request, patient_id):
+#     patient = get_object_or_404(Patient, pk=patient_id)
+#
+#     if request.method == 'POST':
+#         form = InjectionImmunoglobulineForm(request.POST)
+#         if form.is_valid():
+#             injection = form.save(commit=False)
+#             injection.created_by = request.user
+#             injection.patient = patient
+#             injection.save()
+#             messages.success(request, "Informations enregistrées avec succès.")
+#             return redirect('vaccin-rdv-list')
+#         else:
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, f"{form.fields.get(field).label or field} : {error}")
+#     else:
+#         form = InjectionImmunoglobulineForm(initial={'patient': patient})
+#
+#     return render(request, 'vaccins/injection_form.html', {
+#         'form': form,
+#         'patient': patient,
+#     })
+
+
+# ✅ Vue Liste des PostExposition avec django-tables2
+
 @login_required
 def add_injection_immunoglobuline(request, patient_id):
     patient = get_object_or_404(Patient, pk=patient_id)
+
     if request.method == 'POST':
         form = InjectionImmunoglobulineForm(request.POST)
+
         if form.is_valid():
+            dose_ui = form.cleaned_data.get('dose_ui')
+            refus = form.cleaned_data.get('refus_injection', False)
+
+            if not refus:
+                dose_max = patient.dose_immunoglobuline_ui
+
+                if dose_ui and dose_max and dose_ui > dose_max:
+                    messages.error(
+                        request,
+                        f"La dose injectée ({dose_ui} UI) dépasse la dose maximale prescrite ({dose_max} UI)."
+                    )
+                    return redirect('vaccin-rdv-list')
+
             injection = form.save(commit=False)
             injection.created_by = request.user
             injection.patient = patient
             injection.save()
-            messages.success(request, "Informations enregistree avec success")
-            return redirect('vaccin-rdv-list')  # Ou Ajax/hx-trigger sur succès
+
+            messages.success(request, "Informations enregistrées avec succès.")
+            return redirect('vaccin-rdv-list')
+
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{form.fields.get(field).label or field} : {error}")
+
     else:
-        messages.error(request, "Un probleme est survenu")
         form = InjectionImmunoglobulineForm(initial={'patient': patient})
 
     return redirect('vaccin-rdv-list')
 
 
-# ✅ Vue Liste des PostExposition avec django-tables2
 class PostExpositionListView(SingleTableView, LoginRequiredMixin):
     model = PostExposition
     table_class = PostExpositionTable
@@ -1211,10 +1259,11 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
                 postexposition.client = patient
                 postexposition.created_by = request.user
 
+                postexposition.temps_saisie = exposition_form.cleaned_data.get('temps_saisie') or 0
+
                 # ✅ Injection si "Propriétaire animal"
                 accompagnateur_nature = patient_form.cleaned_data.get("accompagnateur_nature")
-                if accompagnateur_nature and isinstance(accompagnateur_nature,
-                                                        str) and accompagnateur_nature.strip() == "Propriétaire animal":
+                if accompagnateur_nature and isinstance(accompagnateur_nature, str) and accompagnateur_nature.strip() == "Propriétaire animal":
                     postexposition.connais_proprio = "Oui"
                     postexposition.retour_info_proprietaire = "Oui"
                     postexposition.nom_proprietaire = patient_form.cleaned_data.get("accompagnateur", "")
@@ -1284,6 +1333,9 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
             print(patient_form.errors)
             print("--- Exposition Form Errors ---")
             print(exposition_form.errors)
+            for field, errors in exposition_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{exposition_form.fields.get(field).label or field} : {error}")
 
             messages.error(request, "❌ Erreur lors de l'enregistrement. Merci de corriger les champs invalides.")
 
@@ -1759,6 +1811,7 @@ class RendezVousListView(SingleTableMixin, LoginRequiredMixin, FilterView):
             self.filterset_class)  # Utiliser get_filterset() au lieu de self.filterset
         context["vaccins"] = Vaccins.objects.all()
         context["igform"] = InjectionImmunoglobulineForm()
+
         return context
 
 
@@ -2084,6 +2137,11 @@ class VaccinationListView(LoginRequiredMixin, ListView):
     context_object_name = 'vaccinations'
     ordering = ['-created_at']
     paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["mapi_form"] = MAPIForm()
+        return context
 
 
 class VaccinationDetailView(LoginRequiredMixin, DetailView):

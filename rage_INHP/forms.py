@@ -15,7 +15,7 @@ from rage.models import Patient, situation_matrimoniales_choices, Sexe_choices, 
     nbr_lesions_CHOICES, DistrictSanitaire, RageHumaineNotification, ESPECE_CHOICES, MAPI, OUI_NON_CHOICES, \
     Retour_CHOICES, Membre_Superieur_CHOICES, Tete_Cou_CHOICES, Grossesse_SEMAINES_CHOICES, delai_CHOICES, \
     NIVEAU_ETUDE_CHOICES, LotVaccin, EmployeeUser, CentreAntirabique, Membre_Inferieur_CHOICES, Tronc_CHOICES, \
-    CARACASSE_CHOICES, InjectionImmunoglobuline, STATUT_VACCINAL_CHOICES
+    CARACASSE_CHOICES, InjectionImmunoglobuline, STATUT_VACCINAL_CHOICES, site_injection
 
 mesure_CHOICES = [('Abattage des chiens', 'Abattage des chiens'),
                   ('Eviter d’avoir un chien', 'Eviter d’avoir un chien'),
@@ -50,9 +50,11 @@ LIEU_EXPOSITION_CHOICES = [
 
 class ClientForm(forms.ModelForm):
     # accompagnateur_nature = forms.ChoiceField(required=False, label="Vètements déchirés ?")
-    contact = FormPhoneNumberField(region='CI', required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    accompagnateurcontact = FormPhoneNumberField(required=False, region='CI',
-                                                 widget=forms.TextInput(attrs={'class': 'form-control'}))
+    contact = FormPhoneNumberField(region='CI', required=True, min_length='10',
+                                   widget=forms.TextInput(attrs={'class': 'form-control'}))
+    accompagnateurcontact = FormPhoneNumberField(required=False, min_length='10', label="Contact de l'accompagnateur",
+                                                 region='CI',
+                                                 widget=forms.TextInput(attrs={'class': 'form-control', }))
 
     class Meta:
         model = Patient
@@ -64,14 +66,20 @@ class ClientForm(forms.ModelForm):
                    'created_by', 'mpi_upi']
         fields = '__all__'
         labels = {
+
+            'niveau_etude': "Niveau d'étude",
+            'prenoms': "Prénoms",
+            'commune': "Commune de résidence",
+            'district': "District de résidence",
+            'quartier': "Quartier de résidence",
             'accompagnateur': "Nom et prénom de l'accompagnateur",
             'accompagnateurcontact': "Contact Accompagnateur",
             'accompagnateur_adresse': "Adresse",
             'accompagnateur_nature': "Quel est sa relation avec le patient ?",
-            'accompagnateur_niveau_etude': "Niveau d'étude ",
+            'accompagnateur_niveau_etude': "Niveau d'étude de l'accompagnateur ",
             'secteur_activite': "Profession",
-            'num_cmu': "Numeros CMU",
-            'cni_num': "Numeros CNI/NNI",
+            'num_cmu': "Numéros CMU",
+            'cni_num': "Numéros CNI/NNI",
         }
         widgets = {
             'nom': forms.TextInput(attrs={'class': 'form-control'}),
@@ -87,8 +95,11 @@ class ClientForm(forms.ModelForm):
             'niveau_etude': forms.Select(choices=NIVEAU_ETUDE_CHOICES, attrs={'class': 'form-control'}),
             # 'commune': forms.Select(attrs={'class': 'form-control'}),
             # 'centre_ar': forms.Select(attrs={'class': 'form-control'}),
+            'district': forms.Select(
+                attrs={'class': 'form-control select2', 'id': 'kt_select2_2', 'name': 'param'}),
             'commune': forms.Select(
                 attrs={'class': 'form-control select2', 'id': 'kt_select2_1', 'name': 'param'}),
+
             # 'patient_mineur': forms.CheckboxInput(attrs={'class': 'custom-checkbox'}),
             'secteur_activite': forms.TextInput(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
@@ -140,7 +151,7 @@ class PreExpositionForm(forms.ModelForm):
             'sensibilisation': 'Sensibilisation communautaire',
             'proche': 'Information par proche',
             'presse': 'Information via presse',
-            'passage_car': 'Passage de car de sensibilisation',
+            'passage_car': 'Passage au car ',
             'diff_canal': 'Autre canal d\'information',
             'canal_infos': 'Détails des canaux d\'information',
             'aime_animaux': 'Aime les animaux',
@@ -169,6 +180,7 @@ class PreExpositionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['temps_saisie'] = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
@@ -367,7 +379,7 @@ class PostExpositionForm(forms.ModelForm):
             'date_exposition': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'lieu_exposition': forms.Select(choices=LIEU_EXPOSITION_CHOICES, attrs={'class': 'form-control'}),
             'exposition_commune': forms.Select(
-                attrs={'class': 'form-control select2', 'id': 'kt_select2_2', 'name': 'param'}),
+                attrs={'class': 'form-control select2', 'id': 'kt_select2_88', 'name': 'param'}),
             'exposition_quartier': forms.TextInput(attrs={'class': 'form-control'}),
 
             'circonstance': forms.Select(attrs={'class': 'form-control'}),
@@ -524,6 +536,7 @@ class PostExpositionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['temps_saisie'] = forms.IntegerField(widget=forms.HiddenInput(), required=False)
         self.fields['espece'].required = True
         self.fields['lieu_exposition'].required = True
         self.fields['exposition_commune'].required = True
@@ -551,6 +564,7 @@ class PostExpositionForm(forms.ModelForm):
             'exposition_quartier': "Quartier d'exposition",
 
             # Circonstances
+            'autre_statut_precis': "Autre statut préciser",
             'circonstance': "Circonstance de l'exposition",
             'attaque_provoquee': "Attaque provoquée ?",
             'agression': "Agression ?",
@@ -572,7 +586,7 @@ class PostExpositionForm(forms.ModelForm):
             'tete_cou': "Atteinte à la tête et cou",
             'preciser_tetecou': "Préciser tête et cou",
             'membre_superieur': "Atteinte membre supérieur",
-            'preciser_membre_sup': "Préciser membre e supérieur",
+            'preciser_membre_sup': "Préciser membre supérieur",
             'tronc': "Atteinte au tronc",
             'preciser_tronc': "Préciser tronc",
             'membre_inferieur': "Atteinte membre inférieur",
@@ -580,6 +594,9 @@ class PostExpositionForm(forms.ModelForm):
 
             'organes_genitaux_externes': "Atteinte organes génitaux externes",
 
+            'details_traitements': "Détails traitements",
+            'details_allergies': "Détails allergies",
+            'details_antecedents': "Détails antécédents",
             'saignement_immediat': "Saignement immédiat",
             'vetements_presents': "Vêtements présents",
             'dechires': "Vêtements déchirés",
@@ -635,9 +652,10 @@ class PostExpositionForm(forms.ModelForm):
             'vat_dernier_injection': "Date dernière injection VAT",
             'vat_rappel': "Date rappel VAT",
             'vat_lot': "Lot du VAT",
-            'vaccin_antirabique': 'vaccin antirabique antérrieur',
+            'vaccin_antirabique': 'vaccination antirabique antérieur',
             'carnet_vaccinal': "Carnet vaccinal",
             'delai_traitement': "Délai après exposition",
+            'delai_apres_exposition': "Délai après exposition",
             'immunoglobulines': "Immunoglobulines administrées",
             'details_vaccination': "Détails vaccination",
             'lavage_plaies': "Lavage des plaies (eau + savon)",
@@ -650,6 +668,7 @@ class PostExpositionForm(forms.ModelForm):
             'details_serologie': "Détails sérologie",
 
             # Issue
+            'produits_utilises': "Produits utilisés",
             'issue': "Issue de la prise en charge",
             'protocole_vaccination': "Protocole de vaccination",
             'evolution_patient': "Évolution du patient",
@@ -1287,10 +1306,15 @@ class InjectionImmunoglobulineForm(forms.ModelForm):
     class Meta:
         model = InjectionImmunoglobuline
         fields = [
-            'patient', 'refus_injection', 'motif_refus', 'type_produit', 'dose_ml', 'voie_injection',
+            'patient', 'refus_injection', 'motif_refus', 'type_produit', 'dose_ui',
             'site_injection', 'numero_lot', 'date_peremption', 'laboratoire_fabricant', 'commentaire'
         ]
-        exclude = ['patient']
+        exclude = ['patient', 'voie_injection']
+        labels = {
+            'dose_ui': 'Dose UI',
+            'type_produit': 'Nom commercial',
+            'numero_lot': 'Numéro de lot',
+        }
         widgets = {
             'patient': forms.HiddenInput(),
             'refus_injection': forms.CheckboxInput(
@@ -1298,9 +1322,9 @@ class InjectionImmunoglobulineForm(forms.ModelForm):
                        }),
             'motif_refus': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'id': 'motifRefusField'}),
             'type_produit': forms.TextInput(attrs={'class': 'form-control'}),
-            'dose_ml': forms.NumberInput(attrs={'class': 'form-control'}),
-            'voie_injection': forms.Select(attrs={'class': 'form-control'}),
-            'site_injection': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'dose_ui': forms.NumberInput(attrs={'class': 'form-control'}),
+            # 'voie_injection': forms.Select(attrs={'class': 'form-control'}),
+            'site_injection': forms.Select(choices=site_injection, attrs={'class': 'form-control'}),
             'numero_lot': forms.TextInput(attrs={'class': 'form-control'}),
             'date_peremption': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'laboratoire_fabricant': forms.TextInput(attrs={'class': 'form-control'}),
@@ -1310,14 +1334,29 @@ class InjectionImmunoglobulineForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         refus = cleaned_data.get("refus_injection")
+        dose_ui = cleaned_data.get("dose_ui")
+        patient = cleaned_data.get("patient")
 
         if refus:
             if not cleaned_data.get("motif_refus"):
                 self.add_error("motif_refus", "Veuillez préciser le motif du refus.")
         else:
-            required_fields = ['type_produit', 'dose_ml', 'voie_injection']
-            for field in required_fields:
+            # Champs requis si injection acceptée
+            for field in ['type_produit', 'dose_ui']:
                 if not cleaned_data.get(field):
                     self.add_error(field, "Ce champ est requis si le patient accepte l'injection.")
+
+            # Dose UI ≥ 0
+            if dose_ui is not None and dose_ui < 0:
+                self.add_error("dose_ui", "La dose injectée ne peut pas être négative.")
+
+            # Dose UI ≤ dose théorique
+            if patient and dose_ui is not None:
+                dose_max = patient.dose_immunoglobuline_ui
+                if dose_max is not None and dose_ui > dose_max:
+                    self.add_error(
+                        "dose_ui",
+                        f"La dose injectée dépasse la dose théorique calculée ({dose_max} UI)."
+                    )
 
         return cleaned_data

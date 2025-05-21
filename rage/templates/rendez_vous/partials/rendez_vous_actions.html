@@ -40,14 +40,19 @@
                         <label>Voie d'injection</label>
                         <select class="form-control" name="voie_injection">
                             <option value="">-- Choisir --</option>
-                            <option value="ID">Intradermique</option>
-                            <option value="IM">Intramusculaire</option>
+                            <option value="ID">Intradermique (ID)</option>
+                            <option value="IM">Intramusculaire (IM)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Dose (ml)</label>
-                        <input type="number" step="any" name="dose_ml" class="form-control">
+                       <select name="dose_ml" id="dose_ml" class="form-control">
+    <option value="0.1">0,1 ml</option>
+                              <option value="0.5">0,5 ml</option>
+    <option value="1">1 ml</option>
+
+</select>
                     </div>
 
                     <div class="form-group">
@@ -63,7 +68,6 @@
         </div>
     </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const modalId = '#vaccinerModal{{ record.id }}';
@@ -145,7 +149,8 @@
       <div class="modal-header">
         <h5 class="modal-title" id="injectionModalLabel{{ record.patient.pk }}">
             <i class="flaticon-injection text-danger mr-2"></i>
-            Injection d'Immunoglobuline pour {{ record.patient.nom }} {{ record.patient.prenoms }}
+            Injection d'Immunoglobuline <span class="badge badge-info">{{ record.patient.dose_immunoglobuline_ui|floatformat:"-2"  }} UI </span> pour {{ record.patient.nom }} {{ record.patient.prenoms }}
+
         </h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Fermer">
           <span aria-hidden="true">&times;</span>

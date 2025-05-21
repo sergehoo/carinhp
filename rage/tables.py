@@ -79,7 +79,7 @@ class RendezVousTable(tables.Table):
                class="btn btn-icon btn-sm" 
                data-toggle="popover" 
                title="Alerte" 
-               data-content="⚠️ Exposition de gravité OMS III - Immunoglobuline requise">
+               data-content="⚠️ Exposition de gravité OMS III - Immunoglobuline requise ({{ record.patient.dose_immunoglobuline_ui|floatformat:"-2" }} UI )">
                 <img src="/static/icons/alerte.gif" alt="⚠️" width="20">
             </a>
             
@@ -291,6 +291,15 @@ class PostExpositionTable(tables.Table):
     immunoglobuline = InjectionImmunoglobuline.objects.filter()
     # nom = tables.LinkColumn("postexposition_detail", args=[A("pk")], accessor="client.nom",
     #                         verbose_name="Nom du Patient")
+    created_at = tables.Column(accessor="created_at", verbose_name="Date creation")
+    temps_saisie = tables.Column(verbose_name="Temps saisie (min)")
+
+    def render_temps_saisie(self, value):
+        if value is None:
+            return "-"
+        minutes = value // 60
+        seconds = value % 60
+        return format_html("{}m {}s", minutes, seconds)
     nom = tables.TemplateColumn(
         template_code="""
 {% with injections=record.client.patients_immuno.all %}
@@ -301,7 +310,7 @@ class PostExpositionTable(tables.Table):
            class="btn btn-icon btn-sm" 
            data-toggle="popover" 
            title="Action requise" 
-           data-content="⚠️ Exposition gravité OMS III - Injection d'immunoglobuline nécessaire">
+           data-content="⚠️ Exposition gravité OMS III - Injection d'immunoglobuline nécessaire ({{ record.client.dose_immunoglobuline_ui|floatformat:"-2" }} UI )">
            <img src="/static/icons/alerte.gif" alt="⚠️" width="20">
         </a>
     
@@ -339,14 +348,14 @@ class PostExpositionTable(tables.Table):
 
                 
             """,
-        verbose_name="Nom du Patient",
+        verbose_name="Nom",
         orderable=True
     )
     prenoms = tables.Column(accessor="client.prenoms", verbose_name="Prénom")
     age = tables.Column(accessor="client.calculate_age", verbose_name="Âge")
     date_naissance = tables.Column(accessor="client.date_naissance", verbose_name="Date de naissance")
     sexe = tables.Column(accessor="client.sexe", verbose_name="Sexe")
-    residence_commune = tables.Column(accessor="client.commune", verbose_name="Commune de résidence")
+    residence_commune = tables.Column(accessor="client.commune", verbose_name="Commune résidence")
     date_exposition = tables.DateColumn(format="d/m/Y", verbose_name="Date Exposition")
     gravite_oms = tables.Column(verbose_name="Gravité OMS")
 
@@ -360,7 +369,8 @@ class PostExpositionTable(tables.Table):
         model = PostExposition
         template_name = "django_tables2/bootstrap4.html"
         fields = (
-            "nom", "prenoms", "date_naissance", "age", "sexe", "date_exposition", "gravite_oms",)
+            "nom", "prenoms", "date_naissance", "age", "sexe",'residence_commune', "date_exposition", "gravite_oms", 'created_at',
+            'temps_saisie')
 
 
 class RageHumaineNotificationTable(tables.Table):
