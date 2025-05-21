@@ -6,8 +6,6 @@ from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin, ExportMixin
 from leaflet.admin import LeafletGeoAdmin
-from pandas.tests.tseries.offsets.test_custom_business_month import dt
-from simple_history.admin import SimpleHistoryAdmin
 
 from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSanitaire, CentreAntirabique, Commune, \
     EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
