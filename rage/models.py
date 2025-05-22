@@ -32,6 +32,10 @@ import logging
 logger = logging.getLogger(__name__)
 # Create your models here.
 # User = get_user_model()
+Provenance_choices = [
+    ('Urbaine', 'Urbaine'),
+    ('Rurale', 'Rurale'),
+]
 
 Sexe_choices = [('Masculin', 'Masculin'), ('Feminin', 'Féminin')]
 
@@ -464,7 +468,200 @@ type_localite_choices = [
     ('Ville', 'Ville'),
     ('Quartier', 'Quartier'),
 ]
-
+Pays_choice = [
+    ('Afghanistan', 'Afghanistan'),
+    ('Albanie', 'Albanie'),
+    ('Algérie', 'Algérie'),
+    ('Allemagne', 'Allemagne'),
+    ('Andorre', 'Andorre'),
+    ('Angola', 'Angola'),
+    ('Antigua-et-Barbuda', 'Antigua-et-Barbuda'),
+    ('Arabie saoudite', 'Arabie saoudite'),
+    ('Argentine', 'Argentine'),
+    ('Arménie', 'Arménie'),
+    ('Australie', 'Australie'),
+    ('Autriche', 'Autriche'),
+    ('Azerbaïdjan', 'Azerbaïdjan'),
+    ('Bahamas', 'Bahamas'),
+    ('Bahreïn', 'Bahreïn'),
+    ('Bangladesh', 'Bangladesh'),
+    ('Barbade', 'Barbade'),
+    ('Belgique', 'Belgique'),
+    ('Belize', 'Belize'),
+    ('Bénin', 'Bénin'),
+    ('Bhoutan', 'Bhoutan'),
+    ('Biélorussie', 'Biélorussie'),
+    ('Birmanie', 'Birmanie'),
+    ('Bolivie', 'Bolivie'),
+    ('Bosnie-Herzégovine', 'Bosnie-Herzégovine'),
+    ('Botswana', 'Botswana'),
+    ('Brésil', 'Brésil'),
+    ('Brunei', 'Brunei'),
+    ('Bulgarie', 'Bulgarie'),
+    ('Burkina Faso', 'Burkina Faso'),
+    ('Burundi', 'Burundi'),
+    ('Cambodge', 'Cambodge'),
+    ('Cameroun', 'Cameroun'),
+    ('Canada', 'Canada'),
+    ('Cap-Vert', 'Cap-Vert'),
+    ('Chili', 'Chili'),
+    ('Chine', 'Chine'),
+    ('Chypre', 'Chypre'),
+    ('Colombie', 'Colombie'),
+    ('Comores', 'Comores'),
+    ('Congo (Brazzaville)', 'Congo (Brazzaville)'),
+    ('Congo (RDC)', 'Congo (RDC)'),
+    ('Corée du Nord', 'Corée du Nord'),
+    ('Corée du Sud', 'Corée du Sud'),
+    ('Costa Rica', 'Costa Rica'),
+    ('Côte d’Ivoire', 'Côte d’Ivoire'),
+    ('Croatie', 'Croatie'),
+    ('Cuba', 'Cuba'),
+    ('Danemark', 'Danemark'),
+    ('Djibouti', 'Djibouti'),
+    ('Dominique', 'Dominique'),
+    ('Égypte', 'Égypte'),
+    ('Émirats arabes unis', 'Émirats arabes unis'),
+    ('Équateur', 'Équateur'),
+    ('Érythrée', 'Érythrée'),
+    ('Espagne', 'Espagne'),
+    ('Estonie', 'Estonie'),
+    ('Eswatini', 'Eswatini'),
+    ('États-Unis', 'États-Unis'),
+    ('Éthiopie', 'Éthiopie'),
+    ('Fidji', 'Fidji'),
+    ('Finlande', 'Finlande'),
+    ('France', 'France'),
+    ('Gabon', 'Gabon'),
+    ('Gambie', 'Gambie'),
+    ('Géorgie', 'Géorgie'),
+    ('Ghana', 'Ghana'),
+    ('Grèce', 'Grèce'),
+    ('Grenade', 'Grenade'),
+    ('Guatemala', 'Guatemala'),
+    ('Guinée', 'Guinée'),
+    ('Guinée équatoriale', 'Guinée équatoriale'),
+    ('Guinée-Bissau', 'Guinée-Bissau'),
+    ('Guyana', 'Guyana'),
+    ('Haïti', 'Haïti'),
+    ('Honduras', 'Honduras'),
+    ('Hongrie', 'Hongrie'),
+    ('Inde', 'Inde'),
+    ('Indonésie', 'Indonésie'),
+    ('Irak', 'Irak'),
+    ('Iran', 'Iran'),
+    ('Irlande', 'Irlande'),
+    ('Islande', 'Islande'),
+    ('Israël', 'Israël'),
+    ('Italie', 'Italie'),
+    ('Jamaïque', 'Jamaïque'),
+    ('Japon', 'Japon'),
+    ('Jordanie', 'Jordanie'),
+    ('Kazakhstan', 'Kazakhstan'),
+    ('Kenya', 'Kenya'),
+    ('Kirghizistan', 'Kirghizistan'),
+    ('Kiribati', 'Kiribati'),
+    ('Koweït', 'Koweït'),
+    ('Laos', 'Laos'),
+    ('Lesotho', 'Lesotho'),
+    ('Lettonie', 'Lettonie'),
+    ('Liban', 'Liban'),
+    ('Libéria', 'Libéria'),
+    ('Libye', 'Libye'),
+    ('Liechtenstein', 'Liechtenstein'),
+    ('Lituanie', 'Lituanie'),
+    ('Luxembourg', 'Luxembourg'),
+    ('Macédoine du Nord', 'Macédoine du Nord'),
+    ('Madagascar', 'Madagascar'),
+    ('Malaisie', 'Malaisie'),
+    ('Malawi', 'Malawi'),
+    ('Maldives', 'Maldives'),
+    ('Mali', 'Mali'),
+    ('Malte', 'Malte'),
+    ('Maroc', 'Maroc'),
+    ('Îles Marshall', 'Îles Marshall'),
+    ('Maurice', 'Maurice'),
+    ('Mauritanie', 'Mauritanie'),
+    ('Mexique', 'Mexique'),
+    ('Micronésie', 'Micronésie'),
+    ('Moldavie', 'Moldavie'),
+    ('Monaco', 'Monaco'),
+    ('Mongolie', 'Mongolie'),
+    ('Monténégro', 'Monténégro'),
+    ('Mozambique', 'Mozambique'),
+    ('Namibie', 'Namibie'),
+    ('Nauru', 'Nauru'),
+    ('Népal', 'Népal'),
+    ('Nicaragua', 'Nicaragua'),
+    ('Niger', 'Niger'),
+    ('Nigéria', 'Nigéria'),
+    ('Norvège', 'Norvège'),
+    ('Nouvelle-Zélande', 'Nouvelle-Zélande'),
+    ('Oman', 'Oman'),
+    ('Ouganda', 'Ouganda'),
+    ('Ouzbékistan', 'Ouzbékistan'),
+    ('Pakistan', 'Pakistan'),
+    ('Palaos', 'Palaos'),
+    ('Palestine', 'Palestine'),
+    ('Panama', 'Panama'),
+    ('Papouasie-Nouvelle-Guinée', 'Papouasie-Nouvelle-Guinée'),
+    ('Paraguay', 'Paraguay'),
+    ('Pays-Bas', 'Pays-Bas'),
+    ('Pérou', 'Pérou'),
+    ('Philippines', 'Philippines'),
+    ('Pologne', 'Pologne'),
+    ('Portugal', 'Portugal'),
+    ('Qatar', 'Qatar'),
+    ('Roumanie', 'Roumanie'),
+    ('Royaume-Uni', 'Royaume-Uni'),
+    ('Russie', 'Russie'),
+    ('Rwanda', 'Rwanda'),
+    ('Saint-Christophe-et-Niévès', 'Saint-Christophe-et-Niévès'),
+    ('Sainte-Lucie', 'Sainte-Lucie'),
+    ('Saint-Marin', 'Saint-Marin'),
+    ('Saint-Vincent-et-les-Grenadines', 'Saint-Vincent-et-les-Grenadines'),
+    ('Salomon', 'Salomon'),
+    ('Salvador', 'Salvador'),
+    ('Samoa', 'Samoa'),
+    ('São Tomé-et-Príncipe', 'São Tomé-et-Príncipe'),
+    ('Sénégal', 'Sénégal'),
+    ('Serbie', 'Serbie'),
+    ('Seychelles', 'Seychelles'),
+    ('Sierra Leone', 'Sierra Leone'),
+    ('Singapour', 'Singapour'),
+    ('Slovaquie', 'Slovaquie'),
+    ('Slovénie', 'Slovénie'),
+    ('Somalie', 'Somalie'),
+    ('Soudan', 'Soudan'),
+    ('Soudan du Sud', 'Soudan du Sud'),
+    ('Sri Lanka', 'Sri Lanka'),
+    ('Suède', 'Suède'),
+    ('Suisse', 'Suisse'),
+    ('Suriname', 'Suriname'),
+    ('Syrie', 'Syrie'),
+    ('Tadjikistan', 'Tadjikistan'),
+    ('Tanzanie', 'Tanzanie'),
+    ('Tchad', 'Tchad'),
+    ('République tchèque', 'République tchèque'),
+    ('Thaïlande', 'Thaïlande'),
+    ('Timor oriental', 'Timor oriental'),
+    ('Togo', 'Togo'),
+    ('Tonga', 'Tonga'),
+    ('Trinité-et-Tobago', 'Trinité-et-Tobago'),
+    ('Tunisie', 'Tunisie'),
+    ('Turkménistan', 'Turkménistan'),
+    ('Turquie', 'Turquie'),
+    ('Tuvalu', 'Tuvalu'),
+    ('Ukraine', 'Ukraine'),
+    ('Uruguay', 'Uruguay'),
+    ('Vanuatu', 'Vanuatu'),
+    ('Vatican', 'Vatican'),
+    ('Venezuela', 'Venezuela'),
+    ('Viêt Nam', 'Viêt Nam'),
+    ('Yémen', 'Yémen'),
+    ('Zambie', 'Zambie'),
+    ('Zimbabwe', 'Zimbabwe'),
+]
 
 class Commune(models.Model):
     name = models.CharField(max_length=500, null=True, blank=True, unique=True, db_index=True)
@@ -502,6 +699,7 @@ class Patient(models.Model):
 
     date_naissance = models.DateField(db_index=True)
     sexe = models.CharField(max_length=10, choices=Sexe_choices, )
+    provenance = models.CharField(max_length=10, choices=Provenance_choices,blank=True, null=True )
     num_cmu = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     cni_num = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     cni_nni = models.CharField(max_length=100, null=True, blank=True, db_index=True)
@@ -924,23 +1122,29 @@ class PostExposition(models.Model):
 class RageHumaineNotification(models.Model):
     # Identification du patient
     client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True,
-                               related_name="notifications_rage")
+                               related_name="notifications_rage", db_index=True)
     # Informations générales
-    date_notification = models.DateField("Date de la notification")
-    hopital = models.CharField("Hôpital", max_length=100)
-    service = models.CharField("Service", max_length=100)
-    agent_declarant = models.CharField("Agent déclarant", max_length=100)
-    adresse = models.CharField("Adresse", max_length=200)
-    telephone = models.CharField("Téléphone", max_length=20)
-    cel = models.CharField("Cel", max_length=20)
-    email = models.EmailField("E-mail")
+    date_notification = models.DateField("Date de la notification",db_index=True, null=True, blank=True)
+    hopital = models.ForeignKey("ServiceSanitaire", on_delete=models.SET_NULL,null=True, blank=True,db_index=True)
+    service = models.CharField("Service", max_length=100, null=True, blank=True)
+    district_declarant = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,related_name='district_declarant',null=True, blank=True,db_index=True)
+    agent_declarant = models.CharField("Agent déclarant", max_length=100, null=True, blank=True)
+    adresse = models.CharField("Adresse", max_length=200, null=True, blank=True)
+    telephone = models.CharField("Téléphone", max_length=20, null=True, blank=True)
+    fonction = models.CharField("fonction", max_length=20, null=True, blank=True)
+    email = models.EmailField("E-mail", null=True, blank=True)
 
     # Origine possible de la contamination
-    exposition = models.ForeignKey(PostExposition, on_delete=models.CASCADE, null=True, blank=True)
+    exposition = models.ForeignKey(PostExposition, on_delete=models.CASCADE, null=True, blank=True,db_index=True)
 
     date_exposition = models.DateField("Date de l’exposition")
+    pays = models.CharField("Pays",choices=Pays_choice, max_length=100)
     lieu_exposition = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
-    pays = models.CharField("Pays", max_length=100)
+    district_expo = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,related_name='district_dexposition',null=True, blank=True,db_index=True)
+
+
+    commune = models.CharField("Commune", max_length=100)
+    localite = models.CharField("Localite", max_length=100)
 
     nature_exposition = models.CharField("Nature de l’exposition", max_length=20, choices=[
         ('Morsure', 'Morsure'), ('Griffure', 'Griffure'), ('Léchage', 'Léchage'),

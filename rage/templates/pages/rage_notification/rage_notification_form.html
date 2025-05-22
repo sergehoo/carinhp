@@ -65,14 +65,68 @@
                                   @submit="if ($event.target.checkValidity()) { loading = true } else { $event.target.reportValidity(); }">
                                 {% csrf_token %}
 
+                             <!-- 1️⃣ Informations du Patient -->
+                                <div class="card mb-5 shadow-sm">
+                                    <div class="card-header bg-secondary text-white font-weight-bold">
+                                        <h3 class="text-dark">Informations sur notificateur </h3>
+                                    </div>
+                                    <div class="card-body row">
+                                        {% for field in rage_notif_form %}
+                                            {% if field.name == "date_notification" or field.name == "hopital" or field.name == "service" or field.name == "district_declarant" or field.name == "agent_declarant" or field.name == "fonction" or field.name == "telephone" or field.name == "email" %}
+                                                <div class="col-md-3 mb-3">
+                                                    <label>{{ field.label|capfirst }}</label>
+                                                    {{ field }}
+                                                    <small class="text-danger">{{ field.errors }}</small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+
+
+
+
+
+                                        <!-- Section Accompagnateur si mineur -->
+                                        <div class="card-body row" x-show="patientMineur" x-transition>
+                                            <div class="row col-12 text-muted">
+                                                Le patient est un mineur de moins de 21 ans, veuillez renseigner les informations de l'accompagnant
+                                            </div>
+                                            <h2>Informations Accompagnateur</h2>
+                                            {% for field in patient_form %}
+                                                {% if field.name in "accompagnateur accompagnateur_contact accompagnateur_niveau_etude" %}
+                                                    <div class="col-md-6 mb-3">
+                                                        <label>{{ field.label|capfirst }} <span class="text-danger">*</span></label>
+                                                        {{ field }}
+                                                        <small class="text-danger">{{ field.errors }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            <div class="col-md-6 mb-3">
+                                                <label>{{ patient_form.accompagnateur_nature.label|capfirst }} <span class="text-danger">*</span></label>
+                                                <select x-ref="accompagnateurNature"
+                                                        @change="checkProprioAnimal($event.target.value)"
+                                                        name="{{ patient_form.accompagnateur_nature.name }}"
+                                                        class="form-control">
+                                                    {% for val, label in patient_form.accompagnateur_nature.field.choices %}
+                                                        <option value="{{ val }}"
+                                                                {% if patient_form.accompagnateur_nature.value == val %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <small class="text-danger">{{ patient_form.accompagnateur_nature.errors }}</small>
+                                            </div>
+                                        </div>
+
+                                </div>
+
                                 <!-- 1️⃣ Informations du Patient -->
                                 <div class="card mb-5 shadow-sm">
                                     <div class="card-header bg-primary text-white font-weight-bold">
-                                        Identification du Patient
+                                        <h3>Identification du Patient</h3>
                                     </div>
                                     <div class="card-body row">
                                         {% for field in patient_form %}
-                                            {% if field.name in "nom prenoms contact sexe poids num_cmu cni_num secteur_activite niveau_etude commune quartier" %}
+                                            {% if field.name == "nom" or field.name == "prenoms" or field.name == "sexe" or field.name == "num_cmu" or field.name == "cni_num" or field.name == "secteur_activite" or field.name ==  "niveau_etude" or field.name == "commune" or field.name ==  "quartier"  or field.name == "provenance" %}
                                                 <div class="col-md-3 mb-3" x-data
                                                      x-init="if('{{ field.name }}' === 'patient_mineur') { $el.querySelector('input').addEventListener('change', e => patientMineur = e.target.checked) }">
                                                     <label>{{ field.label|capfirst }}</label>
@@ -122,32 +176,14 @@
                                     </div>
                                 </div>
 
-                                <!-- 2️⃣ Informations de Notification -->
-                                <div class="card mb-5 shadow-sm">
-                                    <div class="card-header bg-info text-white font-weight-bold">
-                                        Détails de la Notification
-                                    </div>
-                                    <div class="card-body row">
-                                        {% for field in rage_notif_form %}
-                                            {% if field.name in "date_notification hopital agent_declarant service adresse telephone cel email" %}
-                                                <div class="col-md-4 mb-3">
-                                                    <label>{{ field.label|capfirst }}</label>
-                                                    {{ field }}
-                                                    <small class="text-danger">{{ field.errors }}</small>
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <!-- 3️⃣ Origine de la Contamination -->
+                                <!-- 2️⃣ Origine de la Contamination -->
                                 <div class="card mb-5 shadow-sm">
                                     <div class="card-header bg-danger text-white font-weight-bold">
-                                        Origine de la Contamination
+                                        <h3>Origine Possible de la Contamination</h3>
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
-                                            {% if field.name in "date_exposition lieu_exposition exposition_commune district_sanitaire_exposition nature_exposition siege_lesion precision_siege categorie_lesion" %}
+                                            {% if field.name == "date_exposition" or field.name == "pays" or field.name == "lieu_exposition" or field.name == "pays" or field.name == "localite" or field.name == "exposition_commune" or field.name == "district_sanitaire_exposition" or field.name == "nature_exposition" or field.name == "siege_lesion" or field.name == "precision_siege" or field.name == "categorie_lesion" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
@@ -161,7 +197,7 @@
                                 <!-- 4️⃣ Prophylaxie Post-Exposition -->
                                 <div class="card mb-5 shadow-sm">
                                     <div class="card-header bg-success text-white font-weight-bold">
-                                        Prophylaxie Post-Exposition
+                                        <h3> Prophylaxie Post-Exposition</h3>
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
@@ -179,7 +215,7 @@
                                 <!-- 5️⃣ Évolution et Conclusion -->
                                 <div class="card mb-5 shadow-sm">
                                     <div class="card-header bg-warning text-white font-weight-bold">
-                                        Évolution et Conclusion
+                                        <h3> Évolution et Conclusion</h3>
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
