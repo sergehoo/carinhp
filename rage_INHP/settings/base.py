@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-
+from decouple import config
 from rage.core import version
 from rage.core.version import get_version
 
@@ -218,3 +218,8 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+ORANGE_SMS_CLIENT_ID = config("ORANGE_SMS_CLIENT_ID")
+ORANGE_SMS_CLIENT_SECRET = config("ORANGE_SMS_CLIENT_SECRET")
+ORANGE_SMS_SENDER = config("ORANGE_SMS_SENDER")

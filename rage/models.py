@@ -663,6 +663,7 @@ Pays_choice = [
     ('Zimbabwe', 'Zimbabwe'),
 ]
 
+
 class Commune(models.Model):
     name = models.CharField(max_length=500, null=True, blank=True, unique=True, db_index=True)
     type = models.CharField(choices=type_localite_choices, max_length=100, null=True, blank=True)
@@ -699,7 +700,7 @@ class Patient(models.Model):
 
     date_naissance = models.DateField(db_index=True)
     sexe = models.CharField(max_length=10, choices=Sexe_choices, )
-    provenance = models.CharField(max_length=10, choices=Provenance_choices,blank=True, null=True )
+    provenance = models.CharField(max_length=10, choices=Provenance_choices, blank=True, null=True)
     num_cmu = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     cni_num = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     cni_nni = models.CharField(max_length=100, null=True, blank=True, db_index=True)
@@ -716,7 +717,8 @@ class Patient(models.Model):
 
     centre_ar = models.ForeignKey(CentreAntirabique, on_delete=models.SET_NULL, null=True, blank=True)
     district = models.ForeignKey(DistrictSanitaire, on_delete=models.SET_NULL, null=True, blank=True)
-    proprietaire_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES,  null=True, blank=True,default='Non', db_index=True)
+    proprietaire_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES, null=True, blank=True, default='Non',
+                                           db_index=True)
     typeanimal = models.CharField(choices=typeAnimal_choices, max_length=255, blank=True, null=True)
     autretypeanimal = models.CharField(max_length=255, blank=True, null=True)
 
@@ -1077,20 +1079,7 @@ class PostExposition(models.Model):
         return None
 
     def save(self, *args, **kwargs):
-        for field in ['preciser_tetecou', 'preciser_membre_sup', 'preciser_tronc', 'preciser_membre_inf']:
-            value = getattr(self, field)
-            # if isinstance(value, str):
-            #     try:
-            #         # Accepte une chaîne JSON valide venant d’un POST brut (cas très rare)
-            #         parsed = json.loads(value)
-            #         if isinstance(parsed, list):
-            #             setattr(self, field, parsed)
-            #     except json.JSONDecodeError:
-            #         pass
-            # elif not isinstance(value, list):
-            #     # Fallback de sécurité pour toujours avoir une liste
-            #     setattr(self, field, [value])
-        # First determine gravity before any save operation
+
         if not self.gravite_oms:
             self.gravite_oms = self.determiner_gravite_oms()
 
@@ -1124,10 +1113,11 @@ class RageHumaineNotification(models.Model):
     client = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True,
                                related_name="notifications_rage", db_index=True)
     # Informations générales
-    date_notification = models.DateField("Date de la notification",db_index=True, null=True, blank=True)
-    hopital = models.ForeignKey("ServiceSanitaire", on_delete=models.SET_NULL,null=True, blank=True,db_index=True)
+    date_notification = models.DateField("Date de la notification", db_index=True, null=True, blank=True)
+    hopital = models.ForeignKey("ServiceSanitaire", on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     service = models.CharField("Service", max_length=100, null=True, blank=True)
-    district_declarant = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,related_name='district_declarant',null=True, blank=True,db_index=True)
+    district_declarant = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,
+                                           related_name='district_declarant', null=True, blank=True, db_index=True)
     agent_declarant = models.CharField("Agent déclarant", max_length=100, null=True, blank=True)
     adresse = models.CharField("Adresse", max_length=200, null=True, blank=True)
     telephone = models.CharField("Téléphone", max_length=20, null=True, blank=True)
@@ -1135,13 +1125,13 @@ class RageHumaineNotification(models.Model):
     email = models.EmailField("E-mail", null=True, blank=True)
 
     # Origine possible de la contamination
-    exposition = models.ForeignKey(PostExposition, on_delete=models.CASCADE, null=True, blank=True,db_index=True)
+    exposition = models.ForeignKey(PostExposition, on_delete=models.CASCADE, null=True, blank=True, db_index=True)
 
     date_exposition = models.DateField("Date de l’exposition")
-    pays = models.CharField("Pays",choices=Pays_choice, max_length=100)
+    pays = models.CharField("Pays", choices=Pays_choice, max_length=100)
     lieu_exposition = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True, blank=True)
-    district_expo = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,related_name='district_dexposition',null=True, blank=True,db_index=True)
-
+    district_expo = models.ForeignKey("DistrictSanitaire", on_delete=models.SET_NULL,
+                                      related_name='district_dexposition', null=True, blank=True, db_index=True)
 
     commune = models.CharField("Commune", max_length=100)
     localite = models.CharField("Localite", max_length=100)
@@ -1168,7 +1158,8 @@ class RageHumaineNotification(models.Model):
                                       choices=[('Vivant', 'Vivant'), ('Errant', 'Errant'), ('Mort', 'Mort'),
                                                ('Abattu', 'Abattu'), ('Disparu', 'Disparu')])
     prelevement_animal = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
-    resultat_analyse = models.CharField("Résultat analyse", max_length=10, choices=[('Oui', 'Oui'), ('Non', 'Non')],
+    resultat_analyse = models.CharField("Résultat analyse", max_length=10,
+                                        choices=[('Positif', 'Positif'), ('Negatif', 'Négatif')],
                                         blank=True, null=True)
     labo_pathologie_animale = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     autres_labos = models.CharField("Autres laboratoires", max_length=100, blank=True, null=True)
@@ -1178,15 +1169,38 @@ class RageHumaineNotification(models.Model):
     desinfection = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     produit_desinfection = models.CharField("Produit utilisé pour la désinfection", max_length=100, blank=True,
                                             null=True)
+
+    serotherapie_antitetanique = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    dateserotherapie = models.DateField("Date de la sérothérapie antitétanique ", blank=True, null=True)
     vaccination_antirabique = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     date_debut_vaccination = models.DateField("Date de début de la vaccination antirabique", blank=True, null=True)
     protocole_vaccination = models.CharField("Protocole utilisé", max_length=10,
                                              choices=[('Essen', 'Essen'), ('Zagreb', 'Zagreb'), ('ID', 'ID')],
                                              blank=True, null=True)
+    nbr_dose_recu = models.CharField("Nombre de dose recu", max_length=10,
+                                     choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('6', '6')],
+                                     blank=True, null=True)
+    lieu_vaccination = models.CharField(max_length=100)
+    raison_absence_vaccination = models.CharField("Raison d'absence de vaccination", max_length=30,
+                                                  choices=[('Ignorance', 'Ignorance'), ('Négligence', 'Négligence'),
+                                                           ('Difficultés financières', 'Difficultés financières'),
+                                                           ('Manque de temps', 'Manque de temps'),
+                                                           ('Refus soutiennpropriétaire', 'Refus soutiennpropriétaire'),
+                                                           ('Centre de vaccination éloigné',
+                                                            'Centre de vaccination éloigné'),
+                                                           ('Motif Inconnu ', 'Motif Inconnu '), ('Autre', 'Autre')],
+                                                  blank=True, null=True)
+    autreraison = models.CharField("Préciser la raison", max_length=150, blank=True, null=True)
 
     # Période de la maladie
     date_premiers_signes = models.DateField("Date des premiers signes", blank=True, null=True)
     trouble_comportement = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    hyper_salivation = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    hydrophobie = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    aerophobie = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    photophobie = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    troubles_respiratoires = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    coma = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     agitation = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     hospitalisation = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
     date_hospitalisation = models.DateField("Date d’hospitalisation", blank=True, null=True)
@@ -1194,7 +1208,25 @@ class RageHumaineNotification(models.Model):
     evolution = models.CharField("Évolution", max_length=20,
                                  choices=[('Encore malade', 'Encore malade'), ('Décédé(e)', 'Décédé(e)')], blank=True,
                                  null=True)
+    prelevement_patient = models.CharField(max_length=10, choices=OUI_NON_CHOICES)
+    type_echantillon = models.CharField("Préciser le type d'échantillon", max_length=30,
+                                        choices=[('Salive', 'Salive'), ('Peau', 'Peau')], blank=True, null=True)
+    date_prelevement = models.DateField("Date de prélèvement", blank=True, null=True)
+
     date_deces = models.DateField("Date de décès", blank=True, null=True)
+    lieu_deces = models.CharField("Lieu de décès", max_length=100,
+                                  choices=[('Hôpital', 'Hôpital'), ('Domicile', 'Domicile'),
+                                           ('Chez un guérisseur', 'Chez un guérisseur'),
+                                           ('dans un camp de prière', 'dans un camp de prière'),
+                                           ('au cours du transfert', 'au cours du transfert'),
+                                           ('Autre lieu de décès', 'Autre lieu de décès')], blank=True, null=True)
+
+    resultat_virologie = models.CharField("Résultat analyse", max_length=100,
+                                          choices=[('Positif', 'Positif'), ('Negatif', 'Négatif'),
+                                                   ('Echantillon inadéquat', 'Echantillon inadéquat'),
+                                                   ('Echantillon non trouvé', 'Echantillon non trouvé')], blank=True,
+                                          null=True)
+    date_confirmation_IPCI = models.DateField("Date de confirmation IPCI", blank=True, null=True)
 
     # Signature
     signature_agent = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True)
@@ -1338,6 +1370,7 @@ class RendezVousVaccination(models.Model):
     statut_rdv = models.CharField(
         choices=[('Passé', 'Passé'), ('Aujourd\'hui', 'Aujourd\'hui'), ('À venir', 'À venir')],
         max_length=100, null=True, blank=True)
+    rappel_envoye = models.BooleanField(default=False)
     created_by = models.ForeignKey(EmployeeUser, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -1815,3 +1848,35 @@ class WhatsAppMessageLog(models.Model):
 
     def __str__(self):
         return f"{self.to} – {self.status} @ {self.date_sent:%Y-%m-%d %H:%M}"
+
+class SMSLog(models.Model):
+    STATUS_CHOICES = (
+        ("SUCCESS", "Succès"),
+        ("FAILED", "Échec"),
+    )
+
+    phone_number = models.CharField(max_length=30)
+    message = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    response_content = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    error = models.TextField(null=True, blank=True)
+    task_id = models.CharField(max_length=100, null=True, blank=True)
+    message_length = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["status", "sent_at"]),
+            models.Index(fields=["phone_number", "sent_at"]),
+        ]
+        ordering = ["-sent_at"]
+        verbose_name = "Log SMS"
+        verbose_name_plural = "Logs SMS"
+
+    def save(self, *args, **kwargs):
+        if self.message:
+            self.message_length = len(self.message)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"[{self.sent_at}] {self.phone_number} - {self.status}"

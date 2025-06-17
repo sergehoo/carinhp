@@ -11,11 +11,11 @@ from rage.models import EmployeeUser, PolesRegionaux, HealthRegion, DistrictSani
     EmployeeProfile, Patient, Animal, DossierMedical, Vaccination, Symptom, \
     PreleveMode, Epidemie, RendezVousVaccination, Echantillon, Vaccins, Facture, Caisse, TypeProtocole, \
     Preexposition, RageHumaineNotification, PostExposition, Technique, ProtocoleVaccination, MAPI, LotVaccin, \
-    InjectionImmunoglobuline, ObservationPostVaccination, WhatsAppMessageLog
+    InjectionImmunoglobuline, ObservationPostVaccination, WhatsAppMessageLog, SMSLog
 from rage_INHP.resources import RageHumaineNotificationResource, ProtocoleVaccinationResource, VaccinsResource, \
     LotVaccinResource
 from rage_INHP.services import synchroniser_avec_mpi
-
+from rage_INHP.utils.tasks import send_analysis_sms
 admin.site.site_header = 'INHP CAR BACK-END CONTROLER'
 admin.site.site_title = 'INHP CAR  Super Admin Pannel'
 admin.site.site_url = 'http://carinhp.com/'
@@ -539,3 +539,66 @@ class WhatsAppMessageLogAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     search_fields = ('to', 'sid')
     date_hierarchy = 'date_sent'
+
+
+@admin.register(SMSLog)
+class SMSLogAdmin(admin.ModelAdmin):
+    """
+    Interface d'administration pour les logs d'envoi de SMS.
+    Conçue en lecture seule pour la consultation et le débogage.
+    """
+    # --- Configuration de la vue liste ---
+    list_display = ('sent_at', 'phone_number', 'status', 'message_preview', 'message_length', 'task_id')
+    list_filter = ('status', 'sent_at')
+    search_fields = ('phone_number', 'message', 'error', 'task_id', 'response_content')
+    date_hierarchy = 'sent_at'
+    actions = ['resend_failed_sms']
+
+    # --- Configuration de la vue détail (formulaire) ---
+    readonly_fields = [field.name for field in SMSLog._meta.fields]
+    fieldsets = (
+        ('Résumé', {
+            'fields': ('sent_at', 'phone_number', 'status', 'task_id')
+        }),
+        ('Contenu', {
+            'fields': ('message',)
+        }),
+        ('Informations de Débogage', {
+            'classes': ('collapse',),  # Section repliée par défaut
+            'fields': ('response_content', 'error')
+        }),
+    )
+
+    @admin.display(description='Aperçu du Message')
+    def message_preview(self, obj):
+        """Affiche un aperçu tronqué du message dans la liste."""
+        return (obj.message[:75] + '...') if len(obj.message) > 75 else obj.message
+
+    # --- Sécurité : Rendre le modèle entièrement non modifiable ---
+    def has_add_permission(self, request):
+        """Empêche la création de nouveaux logs depuis l'admin."""
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """Empêche la modification des logs existants."""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Autorise la suppression si nécessaire (ex: pour le nettoyage).
+           Mettre à False pour interdire toute suppression."""
+        return True
+
+    @admin.action(description="📲 Renvoyer les SMS échoués")
+    def resend_failed_sms(self, request, queryset):
+        failed_logs = queryset.filter(status="FAILED")
+        count = 0
+
+        for log in failed_logs:
+            try:
+                send_analysis_sms.delay(log.phone_number, log.message)
+                count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur en renvoyant le SMS à {log.phone_number} : {e}",
+                                  level=messages.ERROR)
+
+        self.message_user(request, f"{count} SMS ont été renvoyés avec succès.")

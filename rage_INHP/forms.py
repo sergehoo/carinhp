@@ -87,6 +87,7 @@ class ClientForm(forms.ModelForm):
             # 'contact': forms.TextInput(attrs={'class': 'form-control'}),
             'date_naissance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'sexe': forms.Select(attrs={'class': 'form-control '}),
+            'provenance': forms.Select(attrs={'class': 'form-control '}),
             'num_cmu': forms.TextInput(attrs={'class': 'form-control'}),
             'poids': forms.NumberInput(attrs={'class': 'form-control'}),
             'cni_num': forms.TextInput(attrs={'class': 'form-control'}),
@@ -537,23 +538,23 @@ class PostExpositionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['temps_saisie'] = forms.IntegerField(widget=forms.HiddenInput(), required=False)
-        self.fields['espece'].required = True
-        self.fields['lieu_exposition'].required = True
-        self.fields['exposition_commune'].required = True
-        self.fields['circonstance'].required = True
-        self.fields['connu'].required = True
-        self.fields['disponible'].required = True
-        self.fields['errant'].required = True
-        self.fields['disparu'].required = True
-        self.fields['mort'].required = True
-        self.fields['abatu'].required = True
-        self.fields['correctement_vaccine'].required = True
+        # self.fields['espece'].required = True
+        # self.fields['lieu_exposition'].required = True
+        # self.fields['exposition_commune'].required = True
+        # self.fields['circonstance'].required = True
+        # self.fields['connu'].required = True
+        # self.fields['disponible'].required = True
+        # self.fields['errant'].required = True
+        # self.fields['disparu'].required = True
+        # self.fields['mort'].required = True
+        # self.fields['abatu'].required = True
+        # self.fields['correctement_vaccine'].required = True
         # self.fields['non_vaccine'].required = True
         # self.fields['nonajours'].required = True
         # self.fields['vacinconnu'].required = True
-        self.fields['vaccin_antirabique'].required = True
-        self.fields['lavage_plaies'].required = True
-        self.fields['desinfection_plaies'].required = True
+        # self.fields['vaccin_antirabique'].required = True
+        # self.fields['lavage_plaies'].required = True
+        # self.fields['desinfection_plaies'].required = True
         # self.fields['profession'].required = True
         labels = {
             # Identification
@@ -691,25 +692,25 @@ class PostExpositionForm(forms.ModelForm):
             else:
                 field.label = label_text
 
-    # def clean_details_antecedents(self):
-    #     data = self.cleaned_data.get('details_antecedents')
-    #     if not data:
-    #         return []
-    #     if isinstance(data, str):
-    #         return [item.strip() for item in data.split(',') if item.strip()]
-    #     if isinstance(data, list):
-    #         return [str(item).strip() for item in data if str(item).strip()]
-    #     return []
+    def clean_details_antecedents(self):
+        data = self.cleaned_data.get('details_antecedents')
+        if not data:
+            return []
+        if isinstance(data, str):
+            return [item.strip() for item in data.split(',') if item.strip()]
+        if isinstance(data, list):
+            return [str(item).strip() for item in data if str(item).strip()]
+        return []
     #
-    # def clean_details_allergies(self):
-    #     data = self.cleaned_data.get('details_allergies')
-    #     if not data:
-    #         return []
-    #     if isinstance(data, str):
-    #         return [item.strip() for item in data.split(',') if item.strip()]
-    #     if isinstance(data, list):
-    #         return [str(item).strip() for item in data if str(item).strip()]
-    #     return []
+    def clean_details_allergies(self):
+        data = self.cleaned_data.get('details_allergies')
+        if not data:
+            return []
+        if isinstance(data, str):
+            return [item.strip() for item in data.split(',') if item.strip()]
+        if isinstance(data, list):
+            return [str(item).strip() for item in data if str(item).strip()]
+        return []
 
     def clean_preciser_tetecou(self):
         data = self.cleaned_data.get("preciser_tetecou")
@@ -848,15 +849,15 @@ class RageHumaineNotificationForm(forms.ModelForm):
     class Meta:
         model = RageHumaineNotification
         fields = '__all__'  # Inclut tous les champs sauf ceux exclus explicitement
-        exclude = ['created_at']  # Exclut le champ created_at
+        exclude = ['created_at','signature_agent']  # Exclut le champ created_at
 
         widgets = {
             # ForeignKey → Select
             "client": forms.Select(attrs={"class": "form-control"}),
             "hopital": forms.Select(attrs={"class": "form-control"}),
-            "district_declarant": forms.Select(attrs={"class": "form-control"}),
+            "district_declarant": forms.Select(attrs={'class': 'form-control select2', 'id': 'kt_select2_90', 'name': 'param'}),
             "exposition": forms.Select(attrs={"class": "form-control"}),
-            "lieu_exposition": forms.Select(attrs={"class": "form-control"}),
+            "lieu_exposition": forms.Select(attrs={'class': 'form-control select2', 'id': 'kt_select2_88', 'name': 'param'}),
             "district_expo": forms.Select(attrs={"class": "form-control"}),
             "signature_agent": forms.Select(attrs={"class": "form-control"}),
 
@@ -867,6 +868,8 @@ class RageHumaineNotificationForm(forms.ModelForm):
             "date_premiers_signes": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "date_hospitalisation": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "date_deces": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "date_confirmation_IPCI": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "dateserotherapie": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
 
             # Text inputs
             "service": forms.TextInput(attrs={"class": "form-control"}),
@@ -875,7 +878,7 @@ class RageHumaineNotificationForm(forms.ModelForm):
             "telephone": forms.TextInput(attrs={"class": "form-control"}),
             "fonction": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
-            "pays": forms.Select(attrs={"class": "form-control"}),
+            "pays": forms.Select(attrs={'class': 'form-control select2', 'id': 'kt_select2_89', 'name': 'param'}),
             "localite": forms.TextInput(attrs={"class": "form-control"}),
             "autre_nature_exposition": forms.TextInput(attrs={"class": "form-control"}),
             "precision_siege": forms.TextInput(attrs={"class": "form-control"}),
@@ -886,7 +889,9 @@ class RageHumaineNotificationForm(forms.ModelForm):
 
             # ChoiceFields → Select
             "nature_exposition": forms.Select(attrs={"class": "form-control"}),
-            "siege_lesion": forms.Select(attrs={"class": "form-control"}),
+            "siege_lesion": forms.SelectMultiple(choices=Membre_Superieur_CHOICES,
+                attrs={'class': 'form-control select2', 'id': "kt_select2_3",'name': "param", 'multiple': "multiple"}),
+
             "categorie_lesion": forms.Select(attrs={"class": "form-control"}),
             "animal_responsable": forms.Select(attrs={"class": "form-control"}),
             "animal_suspect_rage": forms.Select(attrs={"class": "form-control"}),
@@ -933,7 +938,7 @@ class RageHumaineNotificationForm(forms.ModelForm):
             "resultat_analyse": "Résultat d'analyse",
             "labo_pathologie_animale": "Laboratoire pathologie animale",
             "autres_labos": "Autres laboratoires",
-            "soins_locaux": "Soins locaux",
+            "soins_locaux": "Lavage de la plaie (Eau+savon) ",
             "desinfection": "Désinfection",
             "produit_desinfection": "Produit de désinfection",
             "vaccination_antirabique": "Vaccination antirabique",

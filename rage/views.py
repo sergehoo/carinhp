@@ -53,6 +53,7 @@ from rage_INHP.forms import EchantillonForm, SymptomForm, \
     InjectionImmunoglobulineForm
 from rage_INHP.services import synchroniser_avec_mpi
 from rage_INHP.utils.whatsapp_service import WhatsAppService
+from rage_INHP.utils.tasks import send_analysis_sms
 
 EmployeeUser = get_user_model()
 
@@ -909,6 +910,40 @@ class PreExpositionCreateView(View):
                                 date_rdv += timedelta(days=intervals[interval_index])
                             interval_index += 1
 
+                        # 🗓️ Liste des RDV
+                        rendez_vous_dates = RendezVousVaccination.objects.filter(
+                            preexposition=preexposition
+                        ).order_by('date_rendez_vous')
+
+                        liste_rdv_str = "\n".join(
+                            [f"- {rdv.date_rendez_vous.strftime('%d/%m/%Y')}" for rdv in rendez_vous_dates]
+                        )
+
+                        # 📨 Message formaté
+                        message = (
+                            f"Bonjour {patient.nom}, vous êtes inscrit(e) à la vaccination antirabique (PrEP) à l’INHP.\n\n"
+                            "📅 Vos rendez-vous sont prévus aux dates suivantes :\n"
+                            f"{liste_rdv_str}\n\n"
+                            f"8h-15h"
+                            "Merci de respecter ces rendez-vous pour une bonne protection.\n"
+                            "💪L’équipe INHP est avec vous !"
+                        )
+                        # message = (
+                        #     f"INHP : Bonjour {patient.nom}, vos RDV PrEP rage sont fixés aux dates : {dates}. "
+                        #     "Respectez-les pour une bonne protection. 💪 L’INHP est avec vous !"
+                        # )
+
+                        # 📲 Envoi SMS via Celery
+                        def try_send_sms(number, msg):
+                            if number:
+                                try:
+                                    send_analysis_sms.delay(str(number), msg)
+                                except Exception as e:
+                                    print(f"[❌] Erreur d’envoi SMS à {number} : {e}")
+
+                        # Envoi au patient uniquement
+                        try_send_sms(patient.contact, message)
+
                     messages.success(request, "✅ Patient, pré-exposition et rendez-vous enregistrés avec succès.")
                     return redirect(reverse("preexposition_list"))
 
@@ -1263,7 +1298,8 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
 
                 # ✅ Injection si "Propriétaire animal"
                 accompagnateur_nature = patient_form.cleaned_data.get("accompagnateur_nature")
-                if accompagnateur_nature and isinstance(accompagnateur_nature, str) and accompagnateur_nature.strip() == "Propriétaire animal":
+                if accompagnateur_nature and isinstance(accompagnateur_nature,
+                                                        str) and accompagnateur_nature.strip() == "Propriétaire animal":
                     postexposition.connais_proprio = "Oui"
                     postexposition.retour_info_proprietaire = "Oui"
                     postexposition.nom_proprietaire = patient_form.cleaned_data.get("accompagnateur", "")
@@ -1323,6 +1359,48 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
                         if interval_index < len(intervals) and intervals[interval_index]:
                             date_rdv += timedelta(days=intervals[interval_index])
                         interval_index += 1
+                    # 📲 Envoi du SMS de confirmation au patient
+                    rendez_vous_dates = RendezVousVaccination.objects.filter(postexposition=postexposition).order_by(
+                        'date_rendez_vous')
+
+                    liste_rdv_str = ", ".join([
+                        rdv.date_rendez_vous.strftime('%d/%m/%Y') for rdv in rendez_vous_dates
+                    ])
+
+                    # 📨 Message version courte (≤160 caractères)
+                    # message = (
+                    #     f"INHP : Bonjour {patient.nom}, vos rendez-vous pour la vaccination antirabique (PEP) sont prévus le {liste_rdv_str}. "
+                    #     "Merci de bien les respecter. L’INHP vous accompagne."
+                    # )
+                    message = (
+                        f"Bonjour {patient.nom}, vous êtes enregistré(e) pour une prise en charge antirabique (PEP).\n"
+                        f"📅Vos rendez-vous de vaccination sont prévus aux dates suivantes : \n{liste_rdv_str}. \n\n"
+                        "Merci de les respecter pour votre santé. \n💪L’équipe INHP vous accompagne."
+                    )
+
+                    # Gravité OMS déterminée automatiquement à la sauvegarde
+                    if postexposition.gravite_oms == "III":
+                        message_immuno = (
+                            f"Attention ! Votre exposition est classée de gravité OMS III. Une injection d’immunoglobuline est nécessaire "
+                            "le plus tôt possible. Merci de vous rapproché de votre consillé INHP au centre de vaccination le plus proche"
+                        )
+                    else:
+                        message_immuno = None
+
+                    # 📦 Envoi SMS via Celery
+                    def try_send_sms(number, msg):
+                        if number:
+                            try:
+                                send_analysis_sms.delay(str(number), msg)
+                            except Exception as e:
+                                print(f"[❌] Erreur d’envoi SMS à {number} : {e}")
+
+                    # Envoi au patient
+
+                    try_send_sms(patient.contact, message)
+
+                    if message_immuno:
+                        try_send_sms(patient.contact, message_immuno)
 
                 messages.success(request, "✅ Dossier enregistré avec succès.")
                 return redirect(reverse("postexposition_list"))
@@ -1341,7 +1419,8 @@ class PostExpositionCreateView(LoginRequiredMixin, View):
 
         return render(request, self.template_name, {
             "patient_form": patient_form,
-            "exposition_form": exposition_form
+            "exposition_form": exposition_form,
+            'can_edit': True,
         })
 
 
@@ -1671,6 +1750,39 @@ def vacciner(request, rendez_vous_id):
 
                     rendez_vous.est_effectue = True
                     rendez_vous.save()
+
+                    # Récupération du prochain rendez-vous (si disponible)
+                    prochain_rdv = RendezVousVaccination.objects.filter(
+                        patient=rendez_vous.patient,
+                        protocole=rendez_vous.protocole,
+                        est_effectue=False,
+                        date_rendez_vous__gt=rendez_vous.date_rendez_vous
+                    ).order_by('date_rendez_vous').first()
+
+                    # Construction du message SMS
+                    message_sms = (
+                        f"Merci {rendez_vous.patient.nom}, votre vaccination du "
+                        f"{vaccination.date_prevue.strftime('%d/%m/%Y')} a bien été enregistrée.\n"
+                        f"👉 Veuillez rester 15 minutes en observation (MAPI).\n"
+                    )
+
+                    if prochain_rdv:
+                        message_sms += (
+                            f"📅 Votre prochain RDV est prévu pour le "
+                            f"{prochain_rdv.date_rendez_vous.strftime('%d/%m/%Y')} "
+                            f"(dose {prochain_rdv.ordre_rdv}).\n"
+                        )
+
+                    message_sms += (
+                        "📣 Signalez tout effet secondaire ici : "
+                        f"{request.build_absolute_uri(reverse('cartographie'))}"
+                    )
+
+                    # Envoi du SMS
+                    try:
+                        send_analysis_sms(rendez_vous.patient.contact, message_sms)
+                    except Exception as sms_error:
+                        logger.warning(f"Échec de l'envoi du SMS au {rendez_vous.patient.contact} : {sms_error}")
 
                     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                         return JsonResponse({

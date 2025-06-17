@@ -183,7 +183,7 @@
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
-                                            {% if field.name == "date_exposition" or field.name == "pays" or field.name == "lieu_exposition" or field.name == "pays" or field.name == "localite" or field.name == "exposition_commune" or field.name == "district_sanitaire_exposition" or field.name == "nature_exposition" or field.name == "siege_lesion" or field.name == "precision_siege" or field.name == "categorie_lesion" %}
+                                            {% if field.name == "date_exposition" or field.name == "pays" or field.name == "lieu_exposition" or field.name == "pays" or field.name == "localite" or field.name == "exposition_commune" or field.name == "district_sanitaire_exposition" or field.name == "nature_exposition" or field.name == "siege_lesion" or field.name == "precision_siege" or field.name == "categorie_lesion" or field.name == "animal_responsable" or field.name == "precis_animal_responsable" or field.name == "animal_suspect_rage" or field.name == "devenir_animal" or field.name == "prelevement_animal" or field.name == "resultat_analyse" or field.name == "labo_pathologie_animale" or field.name == "autres_labos" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
@@ -201,7 +201,7 @@
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
-                                            {% if field.name in "vaccination_antirabique date_debut_vaccination protocole_vaccination soins_locaux desinfection produit_desinfection" %}
+                                            {% if field.name == "vaccination_antirabique" or field.name == "date_debut_vaccination" or field.name == "protocole_vaccination" or field.name == "soins_locaux" or field.name == "desinfection" or field.name == "produit_desinfection" or field.name == "serotherapie_antitetanique" or field.name == "dateserotherapie" or field.name == "nbr_dose_recu" or field.name == "lieu_vaccination" or field.name == "raison_absence_vaccination" or field.name == "autreraison" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
@@ -215,11 +215,11 @@
                                 <!-- 5️⃣ Évolution et Conclusion -->
                                 <div class="card mb-5 shadow-sm">
                                     <div class="card-header bg-warning text-white font-weight-bold">
-                                        <h3> Évolution et Conclusion</h3>
+                                        <h3> Période de la Maladie </h3>
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
-                                            {% if field.name in "evolution date_deces signature_agent" %}
+                                            {% if field.name == "date_premiers_signes" or field == "evolution" or field.name == "date_deces" or field.name == date_premiers_signes or field.name == "trouble_comportement" or field.name == "agitation" or field.name == "hospitalisation" or field.name == "date_hospitalisation" or field.name == "lieu_hospitalisation" or field.name == "evolution" or field.name == "lieu_deces" or field.name == "resultat_virologie" or field.name == "date_confirmation_IPCI" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}
