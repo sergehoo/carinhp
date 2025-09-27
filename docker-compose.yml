@@ -1,48 +1,149 @@
+# === RAGE + Traefik ===
+
+networks:
+  carnet:
+    driver: bridge
+  proxy:
+    external: true   # doit déjà exister: docker network create proxy
+
+volumes:
+  pgdata:
+  static_volume:
+  media_volume:
 
 services:
 
+  # --- Django/ASGI app (rage) ---
   rageweb:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - 1524:8000  # port du server : port de l'application
+    # Pas de port mappé si tu passes par Traefik
+    # ports:
+    #   - "1524:8000"
+    env_file:
+      - ./.env
+    command: ["/app/docker/entrypoint.sh", "daphne",
+              "--access-log", "off", "--verbosity", "1",
+              "-b", "0.0.0.0", "-p", "8000", "rage.asgi:application"]
+    depends_on:
+      - rageDB
     volumes:
       - .:/rage-app/
       - static_volume:/rage-app/staticfiles
       - media_volume:/rage-app/mediafiles
-    env_file:
-      - ./.env
-    restart: always
-    depends_on:
-      - rageDB
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
 
+      # Router public (domaine depuis .env)
+      # .env : RAGE_HOST=rage.example.com
+      - traefik.http.routers.rageweb.rule=Host(`${RAGE_HOST}`)
+      - traefik.http.routers.rageweb.entrypoints=websecure
+      - traefik.http.routers.rageweb.tls.certresolver=lets
+      - traefik.http.routers.rageweb.middlewares=rageweb-sec-headers@docker,rageweb-compress@docker,rageweb-rl@docker
+      - traefik.http.routers.rageweb.service=rageweb-svc
+
+      # Service amont en HTTP:8000
+      - traefik.http.services.rageweb-svc.loadbalancer.server.port=8000
+      - traefik.http.services.rageweb-svc.loadbalancer.server.scheme=http
+
+      # Middlewares (sécurité / compression / rate-limit)
+      - traefik.http.middlewares.rageweb-sec-headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.rageweb-sec-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.rageweb-sec-headers.headers.stsPreload=true
+      - traefik.http.middlewares.rageweb-sec-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.rageweb-sec-headers.headers.frameDeny=true
+      - traefik.http.middlewares.rageweb-sec-headers.headers.referrerPolicy=no-referrer
+      - traefik.http.middlewares.rageweb-compress.compress=true
+      - traefik.http.middlewares.rageweb-rl.ratelimit.average=150
+      - traefik.http.middlewares.rageweb-rl.ratelimit.burst=250
+    restart: always
+    networks:
+      - carnet
+      - proxy
+
+  # --- Postgres/PostGIS ---
   rageDB:
     image: postgis/postgis:16-3.4
-    platform: linux/amd64
-    restart: always
+    # Supprime 'platform' sauf besoin spécifique
+    # platform: linux/amd64
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-#    networks:
-#      - rage_default
-
-  adminer:
-    image: adminer
     restart: always
-    ports:
-      - 2058:8080
-#    networks:
-#      - rage_default
+    networks:
+      - carnet
 
-#networks:
-#  rage_default:
-
-volumes:
-  pgdata:
-    driver: local
-  static_volume:
-  media_volume:
+  # --- Adminer (via Traefik) ---
+  adminer:
+    image: adminer:latest
+    restart: always
+    # Pas de ports locaux; exposé via Traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      # .env : ADMINER_RAGE_HOST=adminer.rage.example.com
+      - traefik.http.routers.adminer-rage.rule=Host(`${ADMINER_RAGE_HOST}`)
+      - traefik.http.routers.adminer-rage.entrypoints=websecure
+      - traefik.http.routers.adminer-rage.tls.certresolver=lets
+      - traefik.http.services.adminer-rage-svc.loadbalancer.server.port=8080
+    networks:
+      - carnet
+      - proxy
+#
+#services:
+#
+#  rageweb:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - 1524:8000  # port du server : port de l'application
+#    volumes:
+#      - .:/rage-app/
+#      - static_volume:/rage-app/staticfiles
+#      - media_volume:/rage-app/mediafiles
+#    env_file:
+#      - ./.env
+#    restart: always
+#    depends_on:
+#      - rageDB
+#
+#  rageDB:
+#    image: postgis/postgis:16-3.4
+#    platform: linux/amd64
+#    restart: always
+#    environment:
+#      POSTGRES_DB: ${DATABASE_NAME}
+#      POSTGRES_USER: ${DATABASE_USER}
+#      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+#    volumes:
+#      - pgdata:/var/lib/postgresql/data
+##    networks:
+##      - rage_default
+#
+#  adminer:
+#    image: adminer
+#    restart: always
+#    ports:
+#      - 2058:8080
+##    networks:
+##      - rage_default
+#
+##networks:
+##  rage_default:
+#
+#volumes:
+#  pgdata:
+#    driver: local
+#  static_volume:
+#  media_volume:

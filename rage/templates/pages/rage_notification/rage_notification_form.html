@@ -219,7 +219,7 @@
                                     </div>
                                     <div class="card-body row">
                                         {% for field in rage_notif_form %}
-                                            {% if field.name == "date_premiers_signes" or field == "evolution" or field.name == "date_deces" or field.name == date_premiers_signes or field.name == "trouble_comportement" or field.name == "agitation" or field.name == "hospitalisation" or field.name == "date_hospitalisation" or field.name == "lieu_hospitalisation" or field.name == "evolution" or field.name == "lieu_deces" or field.name == "resultat_virologie" or field.name == "date_confirmation_IPCI" %}
+                                            {% if field.name == "date_premiers_signes" or field == "evolution" or field.name == "date_deces" or field.name == date_premiers_signes or field.name == "trouble_comportement" or field.name == "agitation" or field.name == "hospitalisation" or field.name == "date_hospitalisation" or field.name == "lieu_hospitalisation" or field.name == "evolution" or field.name == "lieu_deces" or field.name == "resultat_virologie" or field.name == "type_echantillon" or field.name == "date_confirmation_IPCI" or field == "hydrophobie" or field == "aerophobie" or field == "photophobie" or field == "troubles_respiratoires" or field == "coma" %}
                                                 <div class="col-md-4 mb-3">
                                                     <label>{{ field.label|capfirst }}</label>
                                                     {{ field }}

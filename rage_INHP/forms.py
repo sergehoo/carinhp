@@ -907,6 +907,11 @@ class RageHumaineNotificationForm(forms.ModelForm):
             "agitation": forms.Select(attrs={"class": "form-control"}),
             "hospitalisation": forms.Select(attrs={"class": "form-control"}),
             "evolution": forms.Select(attrs={"class": "form-control"}),
+            "hydrophobie": forms.Select(attrs={"class": "form-control"}),
+            "aerophobie": forms.Select(attrs={"class": "form-control"}),
+            "photophobie": forms.Select(attrs={"class": "form-control"}),
+            "troubles_respiratoires": forms.Select(attrs={"class": "form-control"}),
+            "coma": forms.Select(attrs={"class": "form-control"}),
         }
 
         labels = {

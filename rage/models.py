@@ -268,10 +268,12 @@ Grossesse_SEMAINES_CHOICES = [
 ]
 
 delai_CHOICES = [
-    ('0', 'moin d\'une heure'),
-    ('1-2', '1 -2 heure'),
-    ('3-4', '3-4 heure'),
-    ('5-6', '5-6 heure'),
+    ('Immediat', 'Immediat'),
+    ('J1', 'J1'),
+    ('J3', 'J2'),
+    ('J3', 'J3'),
+    ('J3+', 'Au dela de J3'),
+
 ]
 
 # Connaissance & attitude
