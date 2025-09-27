@@ -9,26 +9,10 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Install system dependencies including g++ and GDAL
-#RUN apt-get update && \
-#    apt-get install -y --no-install-recommends \
-#    g++ \
-#    gcc \
-#    gdal-bin \
-#    libgdal-dev \
-#    libpq-dev \
-#    software-properties-common \
-#    ca-certificates \
-#    dirmngr \
-#    gnupg2 \
-#    lsb-release \
-#    postgresql-client && \
-#    apt-get clean && \
-#    rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv $VIRTUAL_ENV \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
-      # compilateurs & headers Python pour les extensions C
+      # build & headers Python (wheels C)
       build-essential \
       python3-dev \
       \
@@ -38,23 +22,22 @@ RUN python3 -m venv $VIRTUAL_ENV \
       postgresql-client \
       libpq-dev \
       \
-      # dependencies WeasyPrint (Cairo, Pango, GdkPixbuf)
+      # WeasyPrint deps (Cairo, Pango, GdkPixbuf)
       libcairo2 \
       libcairo2-dev \
       libpango-1.0-0 \
       libpango1.0-dev \
       libpangocairo-1.0-0 \
-      libgdk-pixbuf2.0-0 \
+      libgdk-pixbuf-2.0-0 \
       \
-      # libffi pour cffi
+      # cffi
       libffi-dev \
       \
       # utilitaires
       shared-mime-info \
       ca-certificates \
-  && pip install --upgrade pip \
-  && rm -rf /var/lib/apt/lists/*
-
+ && pip install --upgrade pip \
+ && rm -rf /var/lib/apt/lists/*
 # Set GDAL environment variables
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
 ENV C_INCLUDE_PATH=/usr/include/gdal
