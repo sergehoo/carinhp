@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import path, include
 from django_unicorn import views
@@ -26,6 +27,7 @@ from rage.views import CADashborad, DistrictDashborad, RegionDashborad, National
     CartographieDataView
 
 urlpatterns = [
+                  path("healthz", lambda r: HttpResponse("ok")),
                   path('admin/', admin.site.urls),
                   path('accounts/', include('allauth.urls')),
                   # path('accounts/signup/', lambda request: redirect('/')),
