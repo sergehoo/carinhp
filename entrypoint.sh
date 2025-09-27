@@ -1,20 +1,25 @@
 #!/bin/sh
 set -e
 
-# Attendre que la DB soit prête
+# Vérifs simples
 echo "⏳ Attente de la base de données..."
+: "${DATABASE_HOST:=rageDB}"
+: "${DATABASE_USER:?DATABASE_USER manquant}"
+: "${DATABASE_NAME:?DATABASE_NAME manquant}"
+
 until pg_isready -h "$DATABASE_HOST" -U "$DATABASE_USER" -d "$DATABASE_NAME"; do
   sleep 2
 done
 echo "✅ Base de données disponible"
 
-# Appliquer migrations
+# Migrations
 echo "📦 Application des migrations..."
 python manage.py migrate --noinput
 
-# Collecter les fichiers statiques
+# Collecte statiques
 echo "🎨 Collecte des statiques..."
 python manage.py collectstatic --noinput
 
-# Démarrer l’application (par défaut Daphne ici)
+# Lancer la commande finale (Gunicorn/Daphne passée par CMD)
+echo "🚀 Lancement: $@"
 exec "$@"

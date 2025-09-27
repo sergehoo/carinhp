@@ -23,9 +23,9 @@ services:
     #   - "1524:8000"
     env_file:
       - ./.env
-    command: ["entrypoint.sh", "daphne",
-              "--access-log", "off", "--verbosity", "1",
-              "-b", "0.0.0.0", "-p", "8000", "rage.asgi:application"]
+    command: [ "/rage-app/docker/entrypoint.sh",
+               "gunicorn", "rage_INHP.wsgi:application",
+               "--bind=0.0.0.0:8000", "--workers=4", "--timeout=180", "--log-level=debug" ]
     depends_on:
       - rageDB
     volumes:
