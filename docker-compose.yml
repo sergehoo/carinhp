@@ -24,7 +24,7 @@ services:
     env_file:
       - ./.env
     command: [  "/bin/sh","/rage-app/entrypoint.sh",
-               "daphne", "rage_INHP.wsgi:application", "--access-log", "off", "--verbosity", "1",
+               "daphne", "rage_INHP.asgi:application", "--access-log", "off", "--verbosity", "1",
                "-b", "0.0.0.0", "-p", "8000"]
 
     depends_on:
