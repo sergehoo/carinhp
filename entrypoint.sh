@@ -17,8 +17,8 @@ echo "📦 Application des migrations..."
 python manage.py migrate --noinput
 
 # Collecte statiques
-echo "🎨 Collecte des statiques..."
-python manage.py collectstatic --noinput
+#echo "🎨 Collecte des statiques..."
+#python manage.py collectstatic --noinput
 
 # Lancer la commande finale (Gunicorn/Daphne passée par CMD)
 echo "🚀 Lancement: $@"
