@@ -35,6 +35,7 @@ services:
       - media_volume:/rage-app/media
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz || exit 1"]
+#      test: [ "CMD-SHELL", "python - <<'PY'\nimport urllib.request,sys\ntry:\n  urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)\n  sys.exit(0)\nexcept Exception:\n  sys.exit(1)\nPY" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -60,7 +61,7 @@ services:
       - traefik.http.middlewares.rageweb-sec-headers.headers.stsPreload=true
       - traefik.http.middlewares.rageweb-sec-headers.headers.contentTypeNosniff=true
       - traefik.http.middlewares.rageweb-sec-headers.headers.frameDeny=true
-      - traefik.http.middlewares.rageweb-sec-headers.headers.referrerPolicy=no-referrer
+#      - traefik.http.middlewares.rageweb-sec-headers.headers.referrerPolicy=no-referrer
       - traefik.http.middlewares.rageweb-compress.compress=true
       - traefik.http.middlewares.rageweb-rl.ratelimit.average=150
       - traefik.http.middlewares.rageweb-rl.ratelimit.burst=250
